@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Upload, X, Eye, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Download,
 } from "lucide-react";
@@ -76,6 +76,48 @@ export function AttachmentUploader({
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // ── cache de object URLs pra thumbnails ───────────────────
+  // Sem isso, toda re-renderização criava uma blob URL NOVA pro
+  // mesmo arquivo (URL.createObjectURL dentro do render), o navegador
+  // tratava como imagem diferente e recarregava/redecodificava —
+  // esse é o "piscar até estabilizar" no celular. Agora a URL só é
+  // criada uma vez por arquivo e só é liberada quando ele sai da lista.
+  const thumbUrlsRef = useRef<Map<File, string>>(new Map());
+  const [, forceThumbUpdate] = useState(0);
+
+  useEffect(() => {
+    const cache = thumbUrlsRef.current;
+
+    // libera URLs de arquivos que não estão mais na lista
+    for (const [file, url] of cache) {
+      if (!newFiles.includes(file)) {
+        URL.revokeObjectURL(url);
+        cache.delete(file);
+      }
+    }
+
+    // cria URL só pros arquivos novos que ainda não têm uma
+    let changed = false;
+    newFiles.forEach((file) => {
+      const isImage =
+        /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name) || file.type.startsWith("image/");
+      if (isImage && !cache.has(file)) {
+        cache.set(file, URL.createObjectURL(file));
+        changed = true;
+      }
+    });
+
+    if (changed) forceThumbUpdate((n) => n + 1);
+
+    // libera tudo ao desmontar
+    return () => {
+      if (newFiles.length === 0) {
+        for (const url of cache.values()) URL.revokeObjectURL(url);
+        cache.clear();
+      }
+    };
+  }, [newFiles]);
+
   const activeExisting = existingAttachments.filter((a) => !removedIds.includes(a.id));
   const removedExisting = existingAttachments.filter((a) => removedIds.includes(a.id));
 
@@ -108,18 +150,15 @@ export function AttachmentUploader({
       .filter((x): x is { kind: "new"; fileIndex: number; type: "image" | "pdf" } => canPreview(x.type)),
   ];
 
-  // ── objectURLs para thumbnails de novos arquivos imagem ──
-  // Criados inline no render — controlados por chave fileIndex
-  function getNewFileThumbUrl(file: File): string | undefined {
-    if (fileType(file) !== "image") return undefined;
-    return URL.createObjectURL(file);
-  }
+  // ── busca a URL cacheada (não cria nada durante o render) ─
+  const getNewFileThumbUrl = useCallback((file: File): string | undefined => {
+    return thumbUrlsRef.current.get(file);
+  }, []);
 
   // ── abrir preview ────────────────────────────────────────
   function openPreviewExisting(att: ExistingAttachment) {
     const t = attType(att);
     if (!canPreview(t)) { window.open(att.url, "_blank", "noopener,noreferrer"); return; }
-    if (preview?.kind === "new") URL.revokeObjectURL(preview.url);
     const idx = navList.findIndex((n) => n.kind === "existing" && n.id === att.id);
     setPreview({ url: att.url, name: att.nome, size: att.tamanho, type: t, navIndex: idx, kind: "existing" });
   }
@@ -127,8 +166,8 @@ export function AttachmentUploader({
   function openPreviewNew(file: File, fileIndex: number) {
     const t = fileType(file);
     if (!canPreview(t)) { downloadFile(file); return; }
-    if (preview?.kind === "new") URL.revokeObjectURL(preview.url);
-    const url = URL.createObjectURL(file);
+    // reaproveita a URL já cacheada pra imagem; só cria na hora pra PDF (não tem thumb)
+    const url = thumbUrlsRef.current.get(file) ?? URL.createObjectURL(file);
     const idx = navList.findIndex((n) => n.kind === "new" && n.fileIndex === fileIndex);
     setPreview({ url, name: file.name, size: file.size, type: t, navIndex: idx, kind: "new" });
   }
@@ -140,19 +179,17 @@ export function AttachmentUploader({
         ? (preview.navIndex - 1 + navList.length) % navList.length
         : (preview.navIndex + 1) % navList.length;
     const target = navList[next];
-    if (preview.kind === "new") URL.revokeObjectURL(preview.url);
     if (target.kind === "existing") {
       const att = activeExisting.find((a) => a.id === target.id)!;
       setPreview({ url: att.url, name: att.nome, size: att.tamanho, type: target.type, navIndex: next, kind: "existing" });
     } else {
       const file = newFiles[target.fileIndex];
-      const url = URL.createObjectURL(file);
+      const url = thumbUrlsRef.current.get(file) ?? URL.createObjectURL(file);
       setPreview({ url, name: file.name, size: file.size, type: target.type, navIndex: next, kind: "new" });
     }
   }
 
   function closePreview() {
-    if (preview?.kind === "new") URL.revokeObjectURL(preview.url);
     setPreview(null);
   }
 
@@ -385,10 +422,15 @@ export function AttachmentUploader({
 
             <div className="flex-1 overflow-auto flex items-center justify-center bg-slate-50 min-h-0">
               {preview.type === "image" && (
-                <img src={preview.url} alt="preview" className="max-w-full max-h-full object-contain p-4" />
+                <img
+                  key={preview.url}
+                  src={preview.url}
+                  alt="preview"
+                  className="max-w-full max-h-full object-contain p-4"
+                />
               )}
               {preview.type === "pdf" && (
-                <iframe src={preview.url} className="w-full h-full min-h-[60vh]" title="preview pdf" />
+                <iframe key={preview.url} src={preview.url} className="w-full h-full min-h-[60vh]" title="preview pdf" />
               )}
             </div>
 
