@@ -101,8 +101,19 @@ export default function MachineDetails() {
   const [selectedOS, setSelectedOS] =
     useState<OrdemServico | null>(null);
 
+  const user = getUser();
+
+  const userRole: UserRole =
+    user?.role ?? "OPERADOR";
+
+  const userId =
+    user?.id ?? 0;
+
+  // 👇 técnico e gestor entram já filtrados por "ABERTA"
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(
+    userRole === "TECNICO" || userRole === "GESTOR" ? "ABERTA" : ""
+  );
   const [priority, setPriority] = useState("");
 
   const [page, setPage] = useState(1);
@@ -116,13 +127,9 @@ export default function MachineDetails() {
 
   // 👇 MODAL CREATE OS
   const [openCreateOS, setOpenCreateOS] = useState(false);
-  const user = getUser();
 
-  const userRole: UserRole =
-    user?.role ?? "OPERADOR";
-
-  const userId =
-    user?.id ?? 0;
+  // 👇 usado no refreshOsList pra saber se acompanha o filtro automaticamente
+  const isTecnico = userRole === "TECNICO";
 
   useEffect(() => {
     async function carregarTecnicos() {
@@ -200,9 +207,16 @@ export default function MachineDetails() {
     );
   }, [filtered, page, pageSize]);
 
-  const refreshOsList = async () => {
+  // 👇 refreshOsList agora aceita um "hint" do próximo status da OS que
+  // acabou de ser alterada. Se quem alterou for o técnico, o filtro de
+  // status acompanha automaticamente (aberta -> atribuida -> andamento -> finalizada)
+  const refreshOsList = async (nextStatus?: string) => {
     const updated = await getOrdensByMachineId(machineId);
     setOsList(updated ?? []);
+
+    if (nextStatus && isTecnico) {
+      setStatus(nextStatus);
+    }
   };
 
   const columns = useMemo(
@@ -304,6 +318,8 @@ export default function MachineDetails() {
                 <FiltersSkeleton />
               ) : (
                 <MachineDetailsFilters
+                  status={status}
+                  userRole={userRole}
                   onSearch={setSearch}
                   onStatus={setStatus}
                   onPriority={setPriority}

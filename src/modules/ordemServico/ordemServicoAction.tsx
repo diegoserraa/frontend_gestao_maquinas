@@ -27,7 +27,7 @@ type Props = {
   machineId?: number;
   onCreateOS?: (machineId: number) => void;
   onViewOS?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: (nextStatus?: string) => void; // 👈 agora aceita o hint do próximo status
   onView?: (os: OrdemServico) => void;
 };
 
@@ -175,7 +175,7 @@ const podeDefinirExterno =
       // pra técnico externo, então já habilita a finalização (evita erro de
       // transição de status "ATRIBUIDA → FINALIZADA" no backend)
       await iniciarAtendimentoOS(ordem.id);
-      onRefresh?.();
+      onRefresh?.("EM_ANDAMENTO"); // 👈 pula ATRIBUIDA e já vai pra EM_ANDAMENTO
     } catch (err) {
       console.error(err);
     } finally {
@@ -192,7 +192,7 @@ const podeDefinirExterno =
     await finalizarOS(osSelecionada.id, resolucao, valorGasto, parceiro);
     setOpenFinalizar(false);
     setOsSelecionada(null);
-    onRefresh?.();
+    onRefresh?.("FINALIZADA"); // 👈
   }
 
   /* =========================
@@ -217,7 +217,7 @@ const podeDefinirExterno =
                 e.stopPropagation();
                 try {
                   await atribuirTecnicoOS(ordem.id, userId, userId);
-                  onRefresh?.();
+                  onRefresh?.("ATRIBUIDA"); // 👈
                 } catch (err) {
                   console.error(err);
                 }
@@ -234,7 +234,7 @@ const podeDefinirExterno =
                 e.stopPropagation();
                 try {
                   await iniciarAtendimentoOS(ordem.id);
-                  onRefresh?.();
+                  onRefresh?.("EM_ANDAMENTO"); // 👈
                 } catch (err) {
                   console.error(err);
                 }
@@ -360,7 +360,7 @@ const podeDefinirExterno =
                 e.stopPropagation();
                 try {
                   await atribuirTecnicoOS(ordem.id, userId, userId);
-                  onRefresh?.();
+                  onRefresh?.("ATRIBUIDA"); // 👈
                 } catch (err) {
                   console.error(err);
                 }
@@ -377,7 +377,7 @@ const podeDefinirExterno =
                 e.stopPropagation();
                 try {
                   await iniciarAtendimentoOS(ordem.id);
-                  onRefresh?.();
+                  onRefresh?.("EM_ANDAMENTO"); // 👈
                 } catch (err) {
                   console.error(err);
                 }

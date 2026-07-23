@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Search,
   Activity,
@@ -14,36 +14,21 @@ import {
 } from "@/components/ui/select";
 
 type Props = {
+  status: string; // 👈 agora controlado por fora (MachineDetails.tsx)
+  userRole: string; // 👈 recebido de verdade, sem mock
   onSearch: (v: string) => void;
   onStatus: (v: string) => void;
   onPriority: (v: string) => void;
 };
 
 export function MachineDetailsFilters({
+  status,
+  userRole,
   onSearch,
   onStatus,
   onPriority,
 }: Props) {
   const [search, setSearch] = useState("");
-
-  // 🔥 MOCK ROLE
-  const userRole = "tecnico";
-  // const userRole = "gestor";
-  // const userRole = "operador";
-
-  const defaultStatus =
-    userRole === "tecnico" || userRole === "gestor"
-      ? "ABERTA"
-      : "all";
-
-  useEffect(() => {
-    if (
-      userRole === "tecnico" ||
-      userRole === "gestor"
-    ) {
-      onStatus("ABERTA");
-    }
-  }, []);
 
   return (
     <div className="flex flex-col xl:flex-row gap-3 w-full">
@@ -90,7 +75,7 @@ export function MachineDetailsFilters({
       {/* STATUS */}
       <div className="w-full md:w-56">
         <Select
-          defaultValue={defaultStatus}
+          value={status || "all"} // 👈 controlado (antes era defaultValue)
           onValueChange={(value) =>
             onStatus(value === "all" ? "" : value)
           }
@@ -112,6 +97,10 @@ export function MachineDetailsFilters({
 
             <SelectItem value="ABERTA">
               Aberta
+            </SelectItem>
+
+            <SelectItem value="ATRIBUIDA">
+              Atribuída
             </SelectItem>
 
             <SelectItem value="EM_ANDAMENTO">

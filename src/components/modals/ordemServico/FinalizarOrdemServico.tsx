@@ -412,7 +412,6 @@ export function FinalizarOrdemServicoModal({
                     Valor gasto {isExterno ? "(peças)" : "na manutenção"}
                   </label>
                   <div className="flex items-center gap-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition-all hover:shadow-md focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500">
-                    <DollarSign size={14} className="text-slate-400 shrink-0" />
                     <span className="text-sm text-slate-400 shrink-0">R$</span>
                     <input
                       type="text"
@@ -432,7 +431,6 @@ export function FinalizarOrdemServicoModal({
                       Valor do parceiro
                     </label>
                     <div className="flex items-center gap-1.5 h-11 w-full rounded-xl border border-violet-200 bg-white px-3 shadow-sm transition-all hover:shadow-md focus-within:ring-2 focus-within:ring-violet-100 focus-within:border-violet-500">
-                      <DollarSign size={14} className="text-violet-400 shrink-0" />
                       <span className="text-sm text-violet-400 shrink-0">R$</span>
                       <input
                         type="text"
