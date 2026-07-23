@@ -27,6 +27,76 @@ type Props = {
   onRestoreExisting: (id: number) => void;
 };
 
+// ── Comprime e normaliza fotos tiradas na hora ────────────
+// Fotos de câmera saem gigantes (3-8MB, 4000x3000+) e guardam a
+// orientação real num metadado EXIF em vez de nos pixels — cada
+// navegador aplica essa rotação de um jeito, o que causa o efeito
+// de "piscar/girar" que só aparece com fotos recém tiradas.
+// createImageBitmap com imageOrientation:"from-image" já desenha os
+// pixels na orientação correta, e o canvas reduz o tamanho — o
+// arquivo final decodifica quase instantaneamente e nunca precisa
+// re-rotacionar depois de renderizado.
+async function normalizeAndCompressImage(
+  file: File,
+  maxDimension = 1920,
+  quality = 0.82
+): Promise<File> {
+  const isImage =
+    file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+
+  // não mexe em PDF/DOC/etc — só imagens precisam desse tratamento
+  if (!isImage) return file;
+
+  // GIF perde a animação se for pro canvas — mantém como está
+  if (file.type === "image/gif" || /\.gif$/i.test(file.name)) return file;
+
+  try {
+    if (typeof createImageBitmap !== "function") return file;
+
+    const bitmap = await createImageBitmap(file, {
+      imageOrientation: "from-image",
+    });
+
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const targetW = Math.max(1, Math.round(bitmap.width * scale));
+    const targetH = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+
+    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+    bitmap.close();
+
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality)
+    );
+
+    if (!blob) return file;
+
+    // se por acaso a compressão saiu maior que o original (raro,
+    // acontece com imagens já muito pequenas), fica com o original
+    if (blob.size >= file.size) return file;
+
+    const newName = file.name.replace(/\.[^./\\]+$/, "") + ".jpg";
+    return new File([blob], newName, {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch (err) {
+    // se der qualquer erro na compressão, segue com o arquivo original
+    // em vez de travar o envio
+    console.error("[AttachmentUploader] erro ao normalizar imagem:", err);
+    return file;
+  }
+}
+
 // ── Thumbnail ou ícone emoji dependendo do tipo ──────────
 function FileThumb({
   src,
@@ -243,19 +313,31 @@ export function AttachmentUploader({
   }
 
   // ── adicionar arquivos ───────────────────────────────────
-  function addFiles(selected: File[]) {
+  const [processingFiles, setProcessingFiles] = useState(false);
+
+  async function addFiles(selected: File[]) {
     if (!selected.length) return;
-    onChangeNewFiles([...newFiles, ...selected]);
+
+    setProcessingFiles(true);
+    try {
+      const processed = await Promise.all(
+        selected.map((f) => normalizeAndCompressImage(f))
+      );
+      onChangeNewFiles([...newFiles, ...processed]);
+    } finally {
+      setProcessingFiles(false);
+    }
   }
 
   function handleSelectFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    addFiles(Array.from(e.target.files || []));
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
+    void addFiles(files);
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault(); setDragging(false);
-    addFiles(Array.from(e.dataTransfer.files));
+    void addFiles(Array.from(e.dataTransfer.files));
   }
 
   function handleRemoveNew(index: number) {
@@ -281,19 +363,42 @@ export function AttachmentUploader({
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
-        onClick={() => inputRef.current?.click()}
-        className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all ${
-          dragging ? "border-blue-500 bg-blue-50 scale-[1.01]" : "border-slate-300 hover:border-blue-400 hover:bg-blue-50"
+        onClick={() => !processingFiles && inputRef.current?.click()}
+        className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-8 transition-all ${
+          processingFiles
+            ? "border-blue-300 bg-blue-50/60 cursor-wait"
+            : dragging
+              ? "border-blue-500 bg-blue-50 scale-[1.01] cursor-pointer"
+              : "border-slate-300 hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
         }`}
       >
-        <Upload size={32} className={dragging ? "text-blue-500" : "text-slate-400"} />
-        <div className="text-center">
-          <p className="font-medium text-slate-700">
-            {dragging ? "Solte os arquivos aqui" : "Clique ou arraste arquivos"}
-          </p>
-          <p className="text-sm text-slate-500 mt-1">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, WEBP</p>
-        </div>
-        <input ref={inputRef} type="file" multiple className="hidden" onChange={handleSelectFiles} />
+        {processingFiles ? (
+          <>
+            <div className="h-8 w-8 rounded-full border-2 border-blue-200 border-t-blue-500 animate-spin" />
+            <div className="text-center">
+              <p className="font-medium text-slate-700">Otimizando imagem...</p>
+              <p className="text-sm text-slate-500 mt-1">Reduzindo tamanho pra um envio mais rápido</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <Upload size={32} className={dragging ? "text-blue-500" : "text-slate-400"} />
+            <div className="text-center">
+              <p className="font-medium text-slate-700">
+                {dragging ? "Solte os arquivos aqui" : "Clique ou arraste arquivos"}
+              </p>
+              <p className="text-sm text-slate-500 mt-1">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, WEBP</p>
+            </div>
+          </>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          disabled={processingFiles}
+          className="hidden"
+          onChange={handleSelectFiles}
+        />
       </div>
 
       {/* HEADER */}
