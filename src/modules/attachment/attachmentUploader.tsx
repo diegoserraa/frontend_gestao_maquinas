@@ -80,14 +80,35 @@ export function AttachmentUploader({
 
   // ── trava o scroll do body enquanto o preview está aberto ─
   // Evita que a barra de endereço do celular esconder/aparecer
-  // dispare um resize/reflow no meio da animação (outra causa
-  // comum de tela piscando em overlay fixo no mobile).
+  // dispare um resize/reflow no meio da animação, e evita o
+  // "rubber-band"/bounce do Safari iOS quando a página por trás
+  // ainda pode ser arrastada — outra causa clássica de tremor em
+  // overlay fixed no mobile.
   useEffect(() => {
     if (!preview) return;
-    const original = document.body.style.overflow;
+
+    const original = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+      overscrollBehavior: document.body.style.overscrollBehavior,
+    };
+    const scrollY = window.scrollY;
+
     document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overscrollBehavior = "contain";
+
     return () => {
-      document.body.style.overflow = original;
+      document.body.style.overflow = original.overflow;
+      document.body.style.position = original.position;
+      document.body.style.top = original.top;
+      document.body.style.width = original.width;
+      document.body.style.overscrollBehavior = original.overscrollBehavior;
+      window.scrollTo(0, scrollY);
     };
   }, [preview]);
 
@@ -137,21 +158,6 @@ export function AttachmentUploader({
       }
     };
   }, [newFiles]);
-
-  // ── trava o scroll do body enquanto o preview tá aberto ───
-  // No mobile, a página "por trás" rolando/redesenhando junto com
-  // um overlay fixed é outra causa comum desse piscar — a barra de
-  // endereço do navegador recolhe/expande e o viewport recalcula
-  // no meio da renderização da imagem.
-  useEffect(() => {
-    if (preview) {
-      const original = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = original;
-      };
-    }
-  }, [preview]);
 
   const activeExisting = existingAttachments.filter((a) => !removedIds.includes(a.id));
   const removedExisting = existingAttachments.filter((a) => removedIds.includes(a.id));
@@ -434,7 +440,11 @@ export function AttachmentUploader({
           ser fixo à tela de verdade — no celular isso aparece como a
           tela inteira tremendo quando a barra de endereço recolhe/expande) */}
       {preview && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 transform-gpu" onClick={closePreview}>
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 transform-gpu"
+          style={{ overscrollBehavior: "contain" }}
+          onClick={closePreview}
+        >
           <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-3xl w-full max-h-[85vh] flex flex-col transform-gpu" onClick={(e) => e.stopPropagation()}>
 
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
