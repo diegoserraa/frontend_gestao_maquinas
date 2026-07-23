@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Upload, X, Eye, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Download,
 } from "lucide-react";
@@ -73,8 +74,27 @@ export function AttachmentUploader({
   onRestoreExisting,
 }: Props) {
   const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [previewLoaded, setPreviewLoaded] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // ── trava o scroll do body enquanto o preview está aberto ─
+  // Evita que a barra de endereço do celular esconder/aparecer
+  // dispare um resize/reflow no meio da animação (outra causa
+  // comum de tela piscando em overlay fixo no mobile).
+  useEffect(() => {
+    if (!preview) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [preview]);
+
+  // reseta o estado de "carregado" sempre que a URL do preview muda
+  useEffect(() => {
+    setPreviewLoaded(false);
+  }, [preview?.url]);
 
   // ── cache de object URLs pra thumbnails ───────────────────
   // Sem isso, toda re-renderização criava uma blob URL NOVA pro
@@ -117,6 +137,21 @@ export function AttachmentUploader({
       }
     };
   }, [newFiles]);
+
+  // ── trava o scroll do body enquanto o preview tá aberto ───
+  // No mobile, a página "por trás" rolando/redesenhando junto com
+  // um overlay fixed é outra causa comum desse piscar — a barra de
+  // endereço do navegador recolhe/expande e o viewport recalcula
+  // no meio da renderização da imagem.
+  useEffect(() => {
+    if (preview) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+  }, [preview]);
 
   const activeExisting = existingAttachments.filter((a) => !removedIds.includes(a.id));
   const removedExisting = existingAttachments.filter((a) => removedIds.includes(a.id));
@@ -393,10 +428,14 @@ export function AttachmentUploader({
         Os arquivos serão enviados automaticamente após salvar a máquina.
       </p>
 
-      {/* MODAL DE PREVIEW */}
-      {preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={closePreview}>
-          <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      {/* MODAL DE PREVIEW — via portal, pra sair da árvore do Dialog
+          (o DialogContent do shadcn tem "transform" pra centralizar,
+          e isso faz qualquer "position: fixed" dentro dele deixar de
+          ser fixo à tela de verdade — no celular isso aparece como a
+          tela inteira tremendo quando a barra de endereço recolhe/expande) */}
+      {preview && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 transform-gpu" onClick={closePreview}>
+          <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-3xl w-full max-h-[85vh] flex flex-col transform-gpu" onClick={(e) => e.stopPropagation()}>
 
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
               <div className="min-w-0 flex-1">
@@ -420,17 +459,37 @@ export function AttachmentUploader({
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto flex items-center justify-center bg-slate-50 min-h-0">
+            {/* altura fixa reservada ANTES da imagem carregar — isso impede
+                o layout de "pular"/piscar enquanto o conteúdo é decodificado */}
+            <div className="relative flex-1 min-h-[50vh] overflow-auto flex items-center justify-center bg-slate-50">
+              {!previewLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
+                </div>
+              )}
+
               {preview.type === "image" && (
                 <img
                   key={preview.url}
                   src={preview.url}
                   alt="preview"
-                  className="max-w-full max-h-full object-contain p-4"
+                  decoding="async"
+                  onLoad={() => setPreviewLoaded(true)}
+                  className={`max-w-full max-h-full object-contain p-4 transition-opacity duration-200 ${
+                    previewLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                 />
               )}
               {preview.type === "pdf" && (
-                <iframe key={preview.url} src={preview.url} className="w-full h-full min-h-[60vh]" title="preview pdf" />
+                <iframe
+                  key={preview.url}
+                  src={preview.url}
+                  onLoad={() => setPreviewLoaded(true)}
+                  className={`w-full h-full min-h-[60vh] transition-opacity duration-200 ${
+                    previewLoaded ? "opacity-100" : "opacity-0"
+                  }`}
+                  title="preview pdf"
+                />
               )}
             </div>
 
@@ -448,7 +507,8 @@ export function AttachmentUploader({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
