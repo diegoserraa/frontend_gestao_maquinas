@@ -231,19 +231,20 @@ export default function MachineDetails() {
 
   // 👇 CREATE OS HANDLER
   async function handleCreateOS(data: OrdemServicoFormData) {
-    try {
-      await createOrdemServico(data);
+  try {
+    const createdOS = await createOrdemServico(data); // 👈 guarda o retorno
 
-      const updated = await getOrdensByMachineId(machineId);
-      setOsList(updated ?? []);
+    const updated = await getOrdensByMachineId(machineId);
+    setOsList(updated ?? []);
 
-      setOpenCreateOS(false);
-      notify.success("Ordem de serviço criada com sucesso");
-    } catch (error) {
-      notify.error("Erro ao criar OS");
-      console.error("Erro ao criar OS:", error);
-    }
+    notify.success("Ordem de serviço criada com sucesso");
+    return createdOS; // 👈 devolve pro modal poder subir os anexos
+  } catch (error) {
+    notify.error("Erro ao criar OS");
+    console.error("Erro ao criar OS:", error);
+    throw error; // 👈 propaga o erro (senão o modal fecha achando que deu certo)
   }
+}
 
   if (!loading && !machine) {
     return (

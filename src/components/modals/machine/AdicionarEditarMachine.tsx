@@ -20,7 +20,7 @@ import {
   type MachineFormData,
 } from "@/components/forms/MachineForm";
 
-import { AttachmentUploader } from "@/modules/attachment/attachmentUploader.";
+import { AttachmentUploader } from "@/modules/attachment/attachmentUploader";
 
 type Sector = {
   id: number;

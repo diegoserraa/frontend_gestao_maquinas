@@ -20,8 +20,10 @@ import {
   type OrdemServicoFormData,
 } from "@/components/forms/OrdemServicoForm";
 
-import { AttachmentUploader } from "@/modules/attachment/attachmentUploader.";
+import { AttachmentUploader } from "@/modules/attachment/attachmentUploader";
 import type { ExistingAttachment } from "@/components/modals/machine/AdicionarEditarMachine";
+import { uploadOSAberturaAttachment } from "@/modules/attachment/attachmentService";
+import { notify } from "@/lib/notify";
 
 type Tecnico = {
   id: number;
@@ -35,11 +37,8 @@ type Props = {
   tecnicos: Tecnico[];
   // Anexos já existentes (útil se esse modal futuramente também editar uma OS já aberta)
   existingAttachments?: ExistingAttachment[];
-  onSave: (
-    data: OrdemServicoFormData,
-    newFiles: File[],
-    removedAttachmentIds: number[]
-  ) => Promise<void>;
+  // 👇 Precisa retornar a OS criada (com o id) — é o que permite subir os anexos de abertura depois
+  onSave: (data: OrdemServicoFormData) => Promise<{ id: number }>;
 };
 
 export function OrdemServicoModal({
@@ -69,12 +68,25 @@ export function OrdemServicoModal({
   async function handleSubmit(data: OrdemServicoFormData) {
     try {
       setLoading(true);
-      await onSave(data, newFiles, removedIds);
+
+      // 1) cria a OS e recebe o id de volta
+      const createdOS = await onSave(data);
+
+      // 2) só então sobe os anexos, já vinculados ao id da OS recém-criada
+      if (newFiles.length > 0 && createdOS?.id) {
+        await Promise.all(
+          newFiles.map((file) =>
+            uploadOSAberturaAttachment(createdOS.id, file)
+          )
+        );
+      }
+
       setNewFiles([]);
       setRemovedIds([]);
       onClose();
     } catch (err) {
-      console.error(err);
+      notify.error("Erro ao criar ordem de serviço");
+      console.error("[CriarOS] erro:", err);
     } finally {
       setLoading(false);
     }

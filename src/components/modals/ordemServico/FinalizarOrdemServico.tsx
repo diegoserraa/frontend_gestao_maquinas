@@ -15,7 +15,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { AttachmentUploader } from "@/modules/attachment/attachmentUploader.";
+import { AttachmentUploader } from "@/modules/attachment/attachmentUploader";
 import type { ExistingAttachment } from "@/components/modals/machine/AdicionarEditarMachine";
 import {
   getOSAttachments,
