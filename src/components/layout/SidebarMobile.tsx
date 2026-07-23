@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Cpu,
@@ -7,6 +7,7 @@ import {
   Building2,
   Handshake,
   X,
+  LogOut,
 } from "lucide-react";
 
 interface Props {
@@ -18,6 +19,14 @@ export default function SidebarMobile({
   isOpen,
   closeSidebar,
 }: Props) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    closeSidebar();
+    navigate("/login");
+  };
+
   const items = [
     {
       label: "Dashboard",
@@ -131,10 +140,34 @@ export default function SidebarMobile({
         </nav>
 
         {/* FOOTER */}
-        <div className="h-12 flex items-center justify-center border-t border-blue-100">
-          <span className="text-xs text-slate-500">
-            v1.0 SaaS
-          </span>
+        <div className="border-t border-white/60 p-3 space-y-2">
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "group w-full flex items-center gap-3 px-4 py-3 rounded-xl",
+              "transition-all duration-200",
+              "text-slate-500 hover:text-slate-900",
+              "hover:bg-white/80 backdrop-blur-sm",
+              "hover:shadow-sm"
+            )}
+          >
+            <div className="w-8 h-8 flex items-center justify-center">
+              <LogOut
+                size={18}
+                className="transition-transform duration-200 group-hover:-translate-x-0.5"
+              />
+            </div>
+
+            <span className="text-sm font-medium">
+              Sair
+            </span>
+          </button>
+
+          <div className="h-10 flex items-center justify-center">
+            <span className="text-xs text-slate-500">
+              v1.0 SaaS
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Cpu,
@@ -7,6 +7,7 @@ import {
   Building2,
   Handshake,
   Menu,
+  LogOut,
 } from "lucide-react";
 
 interface Props {
@@ -18,6 +19,13 @@ export default function Sidebar({
   isCollapsed,
   toggleCollapse,
 }: Props) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
+
   const items = [
     {
       label: "Dashboard",
@@ -54,7 +62,7 @@ export default function Sidebar({
         isCollapsed ? "w-20" : "w-64"
       )}
     >
-      {/* TOP BAR FIXADO NO MESMO GRID DOS ITENS */}
+      {/* TOP BAR */}
       <div className="h-16 flex items-center justify-center border-b border-blue-100">
         <div
           className={cn(
@@ -124,14 +132,43 @@ export default function Sidebar({
       </nav>
 
       {/* FOOTER */}
-      <div className="h-12 flex items-center justify-center border-t border-blue-100">
-        {!isCollapsed ? (
-          <span className="text-xs text-slate-500">
-            v1.0 SaaS
-          </span>
-        ) : (
-          <div className="w-2 h-2 bg-blue-500 rounded-full" />
-        )}
+      <div className="border-t border-blue-100 p-2 space-y-2">
+        <button
+          onClick={handleLogout}
+          className={cn(
+            "group w-full flex items-center rounded-xl",
+            "transition-all duration-200",
+            "text-slate-500 hover:text-slate-900",
+            "hover:bg-white/80 backdrop-blur-sm",
+            "hover:shadow-sm",
+            isCollapsed
+              ? "justify-center p-3"
+              : "gap-3 px-3 py-2"
+          )}
+        >
+          <div className="w-8 h-8 flex items-center justify-center">
+            <LogOut
+              size={18}
+              className="transition-transform duration-200 group-hover:-translate-x-0.5"
+            />
+          </div>
+
+          {!isCollapsed && (
+            <span className="text-sm font-medium">
+              Sair
+            </span>
+          )}
+        </button>
+
+        <div className="h-10 flex items-center justify-center">
+          {!isCollapsed ? (
+            <span className="text-xs text-slate-500">
+              v1.0 SaaS
+            </span>
+          ) : (
+            <div className="w-2 h-2 bg-blue-500 rounded-full" />
+          )}
+        </div>
       </div>
     </aside>
   );
