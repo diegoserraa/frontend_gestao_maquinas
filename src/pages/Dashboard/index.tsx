@@ -34,7 +34,7 @@ export default function Dashboard() {
               scannerRef.current = null;
               setScannerAberto(false);
 
-              navigate(`/maquinas/${decodedText}`);
+              navigate(`/machines/${decodedText}`);
             } catch (error) {
               console.error(error);
             }
