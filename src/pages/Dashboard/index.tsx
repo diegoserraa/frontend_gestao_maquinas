@@ -26,19 +26,27 @@ export default function Dashboard() {
             fps: 10,
             qrbox: 250,
           },
-          async (decodedText) => {
-            try {
-              await scannerRef.current?.stop();
-              await scannerRef.current?.clear();
+        async (decodedText) => {
+  try {
+    await scannerRef.current?.stop();
+    await scannerRef.current?.clear();
 
-              scannerRef.current = null;
-              setScannerAberto(false);
+    scannerRef.current = null;
+    setScannerAberto(false);
 
-              navigate(`${decodedText}`);
-            } catch (error) {
-              console.error(error);
-            }
-          },
+    console.log("QR Lido:", decodedText);
+
+    if (decodedText.startsWith("http://") || decodedText.startsWith("https://")) {
+      window.location.href = decodedText;
+      return;
+    }
+
+    navigate(`/machines/${decodedText}`);
+  } catch (error) {
+    console.error(error);
+  }
+},
+
           () => {}
         );
       }, 100);
