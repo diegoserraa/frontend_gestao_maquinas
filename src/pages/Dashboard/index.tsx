@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,7 @@ export default function Dashboard() {
   const [scannerAberto, setScannerAberto] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const navigate = useNavigate();
 
   const iniciarScanner = async () => {
     try {
@@ -25,13 +27,17 @@ export default function Dashboard() {
             qrbox: 250,
           },
           async (decodedText) => {
-            alert(`QR Lido: ${decodedText}`);
+            try {
+              await scannerRef.current?.stop();
+              await scannerRef.current?.clear();
 
-            await scannerRef.current?.stop();
-            await scannerRef.current?.clear();
+              scannerRef.current = null;
+              setScannerAberto(false);
 
-            scannerRef.current = null;
-            setScannerAberto(false);
+              navigate(`/maquinas/${decodedText}`);
+            } catch (error) {
+              console.error(error);
+            }
           },
           () => {}
         );
