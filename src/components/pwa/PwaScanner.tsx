@@ -13,6 +13,8 @@ export default function PwaScanner({
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(true);
+
 
   useEffect(() => {
     iniciarScanner();
@@ -26,6 +28,7 @@ export default function PwaScanner({
   const iniciarScanner = async () => {
     try {
       setErro("");
+      setCarregando(true);
 
       scannerRef.current = new Html5Qrcode(
         "qr-reader"
@@ -38,12 +41,10 @@ export default function PwaScanner({
         },
         {
           fps: 10,
-
           qrbox: {
             width: 260,
             height: 260,
           },
-
           aspectRatio: 1,
         },
 
@@ -57,8 +58,15 @@ export default function PwaScanner({
       );
 
 
+      setCarregando(false);
+
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Erro ao iniciar câmera:",
+        error
+      );
+
+      setCarregando(false);
 
       setErro(
         "Não foi possível acessar a câmera. Verifique a permissão."
@@ -69,7 +77,6 @@ export default function PwaScanner({
 
   const pararScanner = async () => {
     try {
-
       if (scannerRef.current) {
 
         await scannerRef.current.stop();
@@ -165,36 +172,57 @@ export default function PwaScanner({
           "
         >
 
+          {carregando && (
+            <div
+              className="
+                h-80
+                flex
+                items-center
+                justify-center
+                text-white
+                text-sm
+              "
+            >
+              Abrindo câmera...
+            </div>
+          )}
+
+
           <div
             id="qr-reader"
-            className="w-full"
+            className={
+              carregando
+                ? "hidden"
+                : "w-full"
+            }
           />
 
 
-          {/* MOLDURA */}
-          <div
-            className="
-              pointer-events-none
-              absolute
-              inset-0
-              flex
-              items-center
-              justify-center
-            "
-          >
-
+          {!carregando && (
             <div
               className="
-                h-64
-                w-64
-                rounded-3xl
-                border-4
-                border-white
-                shadow-lg
+                pointer-events-none
+                absolute
+                inset-0
+                flex
+                items-center
+                justify-center
               "
-            />
+            >
 
-          </div>
+              <div
+                className="
+                  h-64
+                  w-64
+                  rounded-3xl
+                  border-4
+                  border-white
+                  shadow-lg
+                "
+              />
+
+            </div>
+          )}
 
         </div>
 
@@ -230,11 +258,7 @@ export default function PwaScanner({
           text-white/70
         "
       >
-
-        <p>
-          Posicione o QR Code dentro da área de leitura
-        </p>
-
+        Posicione o QR Code dentro da área de leitura
       </div>
 
     </div>
