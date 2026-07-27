@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 
+import { Button } from "@/components/ui/button";
+
 interface PwaScannerProps {
   onScan: (value: string) => void;
   onClose: () => void;
@@ -12,88 +14,76 @@ export default function PwaScanner({
 }: PwaScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const [erro, setErro] = useState("");
-  const [carregando, setCarregando] = useState(true);
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    iniciarScanner();
+    startScanner();
 
     return () => {
-      pararScanner();
+      stopScanner();
     };
   }, []);
 
 
-  const iniciarScanner = async () => {
+  const startScanner = async () => {
     try {
-      setErro("");
-      setCarregando(true);
+      setLoading(true);
+      setError("");
 
-      scannerRef.current = new Html5Qrcode(
-        "qr-reader"
-      );
+      const scanner = new Html5Qrcode("qr-reader");
+
+      scannerRef.current = scanner;
 
 
-      await scannerRef.current.start(
+      await scanner.start(
         {
           facingMode: "environment",
         },
         {
           fps: 10,
-          qrbox: {
-            width: 260,
-            height: 260,
-          },
-          aspectRatio: 1,
+          qrbox: 250,
         },
-
         async (decodedText) => {
-          await pararScanner();
+          await stopScanner();
 
           onScan(decodedText);
         },
-
         () => {}
       );
 
 
-      setCarregando(false);
+      setLoading(false);
 
-    } catch (error) {
-      console.error(
-        "Erro ao iniciar câmera:",
-        error
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        "Não foi possível abrir a câmera."
       );
 
-      setCarregando(false);
-
-      setErro(
-        "Não foi possível acessar a câmera. Verifique a permissão."
-      );
+      setLoading(false);
     }
   };
 
 
-  const pararScanner = async () => {
+  const stopScanner = async () => {
     try {
       if (scannerRef.current) {
-
         await scannerRef.current.stop();
 
         await scannerRef.current.clear();
 
         scannerRef.current = null;
       }
-
     } catch (error) {
       console.error(error);
     }
   };
 
 
-  const fechar = async () => {
-    await pararScanner();
+  const handleClose = async () => {
+    await stopScanner();
 
     onClose();
   };
@@ -104,10 +94,13 @@ export default function PwaScanner({
       className="
         fixed
         inset-0
-        z-50
-        bg-black/90
+        z-[999]
         flex
+        h-screen
+        w-screen
         flex-col
+        overflow-hidden
+        bg-black
       "
     >
 
@@ -122,31 +115,27 @@ export default function PwaScanner({
           text-white
         "
       >
-
         <div>
           <h2 className="text-lg font-semibold">
-            Escanear máquina
+            Escanear QR Code
           </h2>
 
-          <p className="text-sm text-white/70">
-            Aponte para o QR Code
+          <p className="text-sm text-white/60">
+            Aponte para a etiqueta da máquina
           </p>
         </div>
 
 
-        <button
-          onClick={fechar}
+        <Button
+          variant="secondary"
+          size="icon"
+          onClick={handleClose}
           className="
-            h-10
-            w-10
             rounded-full
-            bg-white/10
-            text-xl
-            hover:bg-white/20
           "
         >
-          ×
-        </button>
+          ✕
+        </Button>
 
       </div>
 
@@ -154,112 +143,99 @@ export default function PwaScanner({
       {/* CAMERA */}
       <div
         className="
+          relative
           flex-1
-          flex
-          items-center
-          justify-center
-          px-5
+          overflow-hidden
         "
       >
 
-        <div
-          className="
-            relative
-            w-full
-            max-w-md
-            rounded-3xl
-            overflow-hidden
-          "
-        >
-
-          {carregando && (
-            <div
-              className="
-                h-80
-                flex
-                items-center
-                justify-center
-                text-white
-                text-sm
-              "
-            >
-              Abrindo câmera...
-            </div>
-          )}
-
-
+        {loading && (
           <div
-            id="qr-reader"
-            className={
-              carregando
-                ? "hidden"
-                : "w-full"
-            }
-          />
+            className="
+              absolute
+              inset-0
+              z-10
+              flex
+              items-center
+              justify-center
+              text-sm
+              text-white
+            "
+          >
+            Abrindo câmera...
+          </div>
+        )}
 
 
-          {!carregando && (
+        <div
+          id="qr-reader"
+          className="
+            h-full
+            w-full
+          "
+        />
+
+
+        {/* MARCAÇÃO DO QR */}
+        {!loading && (
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              flex
+              items-center
+              justify-center
+            "
+          >
             <div
               className="
-                pointer-events-none
-                absolute
-                inset-0
-                flex
-                items-center
-                justify-center
+                h-64
+                w-64
+                rounded-2xl
+                border-4
+                border-white
+                shadow-2xl
               "
-            >
-
-              <div
-                className="
-                  h-64
-                  w-64
-                  rounded-3xl
-                  border-4
-                  border-white
-                  shadow-lg
-                "
-              />
-
-            </div>
-          )}
-
-        </div>
+            />
+          </div>
+        )}
 
       </div>
-
-
-      {/* ERRO */}
-      {erro && (
-        <div
-          className="
-            mx-5
-            mb-4
-            rounded-xl
-            bg-red-500/20
-            p-4
-            text-center
-            text-sm
-            text-white
-          "
-        >
-          {erro}
-        </div>
-      )}
 
 
       {/* FOOTER */}
       <div
         className="
           px-5
-          pb-8
+          py-5
           text-center
           text-sm
           text-white/70
         "
       >
-        Posicione o QR Code dentro da área de leitura
+        Centralize o QR Code dentro do quadrado
       </div>
+
+
+      {error && (
+        <div
+          className="
+            absolute
+            bottom-20
+            left-5
+            right-5
+            rounded-xl
+            bg-destructive
+            p-4
+            text-center
+            text-sm
+            text-white
+          "
+        >
+          {error}
+        </div>
+      )}
 
     </div>
   );
