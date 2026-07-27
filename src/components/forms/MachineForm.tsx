@@ -23,6 +23,7 @@ export type MachineFormData = {
   status: string;
   setor_id: number;
   intervalo_manutencao_dias: number;
+  ultima_manutencao: string | null;
   imagem?: File | null;
   imagem_url?: string | null;
 };
@@ -50,7 +51,10 @@ function validate(form: MachineFormData, sectors: Sector[]): FormErrors {
   if (!form.status) errors.status = "Selecione um status.";
   if (!form.intervalo_manutencao_dias || form.intervalo_manutencao_dias < 1)
     errors.intervalo_manutencao_dias = "Intervalo deve ser maior que 0.";
+  if (!form.ultima_manutencao)
+  errors.ultima_manutencao = "Informe a última manutenção.";
   return errors;
+  
 }
 
 export function MachineForm({ sectors, loading, initialData, onSubmit }: Props) {
@@ -62,6 +66,9 @@ export function MachineForm({ sectors, loading, initialData, onSubmit }: Props) 
     status: initialData?.status ?? "ativa",
     setor_id: initialData?.setor_id ?? 0,
     intervalo_manutencao_dias: initialData?.intervalo_manutencao_dias ?? 90,
+   ultima_manutencao: initialData?.ultima_manutencao
+  ? String(initialData.ultima_manutencao).split("T")[0]
+  : null,
   });
 
   const [previewImagem, setPreviewImagem] = useState<string | null>(
@@ -304,25 +311,54 @@ export function MachineForm({ sectors, loading, initialData, onSubmit }: Props) 
           </div>
 
           {/* INTERVALO */}
-          <div className="col-span-2 space-y-1">
-            <label className="text-xs font-medium text-slate-600">
-              Intervalo de manutenção (dias) <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <Wrench size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <Input
-                type="number"
-                min={1}
-                value={form.intervalo_manutencao_dias}
-                className={`${inputClass("intervalo_manutencao_dias")} pl-9`}
-                onChange={(e) => handleChange("intervalo_manutencao_dias", Number(e.target.value))}
-                onBlur={() => touch("intervalo_manutencao_dias")}
-              />
-            </div>
-            {touched.intervalo_manutencao_dias && errors.intervalo_manutencao_dias && (
-              <p className="text-xs text-red-500">{errors.intervalo_manutencao_dias}</p>
-            )}
-          </div>
+          {/* ÚLTIMA MANUTENÇÃO */}
+<div className="space-y-1">
+  <label className="text-xs font-medium text-slate-600">
+    Última manutenção
+  </label>
+
+  <Input
+    type="date"
+    value={form.ultima_manutencao ?? "jndej"}
+    className={inputClass("ultima_manutencao")}
+    onChange={(e) =>
+      handleChange("ultima_manutencao", e.target.value)
+    }
+    onBlur={() => touch("ultima_manutencao")}
+  />
+</div>
+
+{/* INTERVALO */}
+<div className="space-y-1">
+  <label className="text-xs font-medium text-slate-600">
+    Intervalo de manutenção (dias) <span className="text-red-400">*</span>
+  </label>
+
+  <div className="relative">
+    <Wrench
+      size={14}
+      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+    />
+
+    <Input
+      type="number"
+      min={1}
+      value={form.intervalo_manutencao_dias}
+      className={`${inputClass("intervalo_manutencao_dias")} pl-9`}
+      onChange={(e) =>
+        handleChange("intervalo_manutencao_dias", Number(e.target.value))
+      }
+      onBlur={() => touch("intervalo_manutencao_dias")}
+    />
+  </div>
+
+  {touched.intervalo_manutencao_dias &&
+    errors.intervalo_manutencao_dias && (
+      <p className="text-xs text-red-500">
+        {errors.intervalo_manutencao_dias}
+      </p>
+    )}
+</div>
         </div>
 
         {/* FOOTER */}

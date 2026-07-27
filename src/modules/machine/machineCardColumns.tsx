@@ -1,6 +1,18 @@
 import type { CardColumn } from "@/components/data/DataCard";
 import type { Machine } from "@/modules/machine/machineTypes";
-import { ImageOff, Pencil, Power, Trash2, History, ClipboardCheck } from "lucide-react";
+import {
+  ImageOff,
+  Pencil,
+  Power,
+  Trash2,
+  ClipboardCheck,
+} from "lucide-react";
+
+import {
+  formatMaintenanceDate,
+  getMaintenanceDaysRemaining,
+  getMaintenanceStatus,
+} from "@/lib/helperMachine";
 
 export function getMachineCardColumns(
   onEdit: (machine: Machine) => void,
@@ -13,9 +25,18 @@ export function getMachineCardColumns(
       render: (m) => {
         const active = m.status === "ativa";
 
+        const maintenanceStatus =
+          getMaintenanceStatus(
+            m.proxima_manutencao
+          );
+
+        const diasRestantes =
+          getMaintenanceDaysRemaining(
+            m.proxima_manutencao
+          );
+
         return (
           <div className="w-full border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-
             {/* FOTO */}
             {m.imagem_url ? (
               <div className="w-full h-32 bg-slate-100">
@@ -27,17 +48,24 @@ export function getMachineCardColumns(
               </div>
             ) : (
               <div className="w-full h-20 bg-slate-50 flex items-center justify-center border-b border-slate-100">
-                <ImageOff size={22} className="text-slate-300" />
+                <ImageOff
+                  size={22}
+                  className="text-slate-300"
+                />
               </div>
             )}
 
-            <div className="p-4 space-y-3">
-
+            <div className="p-4 space-y-4">
               {/* HEADER */}
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0">
-                  <p className="font-medium text-slate-900 truncate">{m.nome}</p>
-                  <p className="text-xs text-slate-500">ID #{m.id}</p>
+                  <p className="font-medium text-slate-900 truncate">
+                    {m.nome}
+                  </p>
+
+                  <p className="text-xs text-slate-500">
+                    ID #{m.id}
+                  </p>
                 </div>
 
                 <span
@@ -47,38 +75,106 @@ export function getMachineCardColumns(
                       : "bg-red-50 text-red-700"
                   }`}
                 >
-                  {active ? "Ativa" : "Inativa"}
+                  {active
+                    ? "Ativa"
+                    : "Inativa"}
                 </span>
               </div>
 
               {/* DADOS */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div>
-                  <p className="text-xs text-slate-500">Modelo</p>
-                  <p className="text-sm text-slate-700">{m.modelo}</p>
+                  <p className="text-xs text-slate-500">
+                    Modelo
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    {m.modelo}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-slate-500">Ano</p>
-                  <p className="text-sm text-slate-700">{m.ano}</p>
+                  <p className="text-xs text-slate-500">
+                    Ano
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    {m.ano}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-slate-500">Fabricante</p>
-                  <p className="text-sm text-slate-700 truncate">{m.fabricante}</p>
+                  <p className="text-xs text-slate-500">
+                    Fabricante
+                  </p>
+                  <p className="text-sm text-slate-700 truncate">
+                    {m.fabricante}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-slate-500">Setor</p>
+                  <p className="text-xs text-slate-500">
+                    Setor
+                  </p>
                   <p className="text-sm text-slate-700 truncate">
                     {m.setor?.nome ?? "—"}
                   </p>
                 </div>
               </div>
 
+              {/* MANUTENÇÃO */}
+              <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                    Manutenção
+                  </p>
+
+                  <span
+                    className={`text-xs px-2 py-1 rounded-md font-medium ${maintenanceStatus.className}`}
+                  >
+                    {maintenanceStatus.label}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-slate-500">
+                      Última
+                    </p>
+
+                    <p className="text-sm font-medium text-slate-800">
+                      {formatMaintenanceDate(
+                        m.ultima_manutencao
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-500">
+                      Próxima
+                    </p>
+
+                    <p className="text-sm font-medium text-slate-800">
+                      {formatMaintenanceDate(
+                        m.proxima_manutencao
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {diasRestantes !== null && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-slate-500">
+                      {diasRestantes < 0
+                        ? `${Math.abs(
+                            diasRestantes
+                          )} dias atrasada`
+                        : `${diasRestantes} dias restantes`}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* FOOTER */}
               <div className="flex justify-between items-center border-t border-slate-100 pt-3">
-                
                 {/* QR */}
                 <div>
                   {m.qr_code ? (
@@ -96,14 +192,16 @@ export function getMachineCardColumns(
 
                 {/* ACTIONS */}
                 <div className="flex gap-1 flex-wrap justify-end">
+                  <button
+                    onClick={() =>
+                      onHistory?.(m)
+                    }
+                    className="p-2 rounded-md border border-slate-200 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                    title="Histórico de manutenção"
+                  >
+                    <ClipboardCheck size={14} />
+                  </button>
 
-  <button
-            onClick={() => onHistory?.(m)}
-            className="p-2 rounded-md border border-slate-200 text-indigo-600 hover:bg-indigo-50 transition-colors"
-            title="Histórico de manutenção"
-          >
-            <ClipboardCheck size={14} />
-          </button>
                   <button
                     onClick={() => onEdit(m)}
                     className="p-2 rounded-md border border-slate-200 text-blue-600 hover:bg-blue-50 transition-colors"
@@ -112,21 +210,24 @@ export function getMachineCardColumns(
                   </button>
 
                   <button
-                    onClick={() => onToggle(m.id)}
+                    onClick={() =>
+                      onToggle(m.id)
+                    }
                     className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     <Power size={14} />
                   </button>
+
                   <button
-                    onClick={() => onDelete(m)}
+                    onClick={() =>
+                      onDelete(m)
+                    }
                     className="p-2 rounded-md border border-slate-200 text-red-500 hover:bg-red-50 transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
-
                 </div>
               </div>
-
             </div>
           </div>
         );

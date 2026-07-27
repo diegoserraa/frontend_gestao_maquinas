@@ -22,6 +22,7 @@ export async function createMachine(payload: any): Promise<Machine> {
   formData.append("status", payload.status);
   formData.append("setor_id", String(payload.setor_id));
   formData.append("intervalo_manutencao_dias", String(payload.intervalo_manutencao_dias));
+  formData.append("ultima_manutencao", payload.ultima_manutencao);
 
   if (payload.imagem) {
     formData.append("imagem", payload.imagem);
@@ -47,6 +48,8 @@ export async function updateMachine(id: number, payload: any): Promise<Machine> 
   formData.append("status", payload.status);
   formData.append("setor_id", String(payload.setor_id));
   formData.append("intervalo_manutencao_dias", String(payload.intervalo_manutencao_dias));
+  formData.append("ultima_manutencao", payload.ultima_manutencao);
+
 
   if (payload.imagem) {
     formData.append("imagem", payload.imagem);

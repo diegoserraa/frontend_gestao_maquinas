@@ -36,6 +36,8 @@ type Machine = {
   status: string;
   setor_id: number;
   intervalo_manutencao_dias: number;
+  ultima_manutencao?: string | null;
+  proxima_manutencao?: string | null;
   imagem_url?: string | null;
 };
 

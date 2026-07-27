@@ -7,6 +7,11 @@ import {
 
 import type { Column } from "@/components/data/DataTable";
 import type { Machine } from "./machineTypes";
+import {
+  formatMaintenanceDate,
+  getMaintenanceDaysRemaining,
+  getMaintenanceStatus,
+} from "@/lib/helperMachine";
 
 type Props = {
   onEdit: (machine: Machine) => void;
@@ -155,7 +160,77 @@ export function getMachineTableColumns({
         </span>
       ),
     },
+{
+  key: "ultima_manutencao",
+  label: "Últ. Manutenção",
+  render: (_, row) => (
+    <span
+      className="text-sm text-slate-700 cursor-pointer"
+      onClick={() => onRowClick(row.id)}
+    >
+      {formatMaintenanceDate(row.ultima_manutencao)}
+    </span>
+  ),
+},
 
+{
+  key: "proxima_manutencao",
+  label: "Próx. Manutenção",
+  render: (_, row) => {
+
+    const dias = getMaintenanceDaysRemaining(
+      row.proxima_manutencao
+    );
+
+    let badgeClass =
+      "bg-slate-100 text-slate-700";
+
+    if (dias !== null) {
+      if (dias < 0) {
+        badgeClass =
+          "bg-red-100 text-red-700";
+      } else if (dias <= 7) {
+        badgeClass =
+          "bg-amber-100 text-amber-700";
+      } else {
+        badgeClass =
+          "bg-emerald-100 text-emerald-700";
+      }
+    }
+
+    return (
+      <div
+        className="flex flex-col cursor-pointer"
+        onClick={() => onRowClick(row.id)}
+      >
+        <span
+          className={`
+            inline-flex
+            w-fit
+            px-2
+            py-1
+            rounded-md
+            text-xs
+            font-medium
+            ${badgeClass}
+          `}
+        >
+          {formatMaintenanceDate(
+            row.proxima_manutencao
+          )}
+        </span>
+
+        {dias !== null && (
+          <span className="text-[11px] text-slate-400 mt-1">
+            {dias < 0
+              ? `${Math.abs(dias)} dias atrasada`
+              : `${dias} dias restantes`}
+          </span>
+        )}
+      </div>
+    );
+  },
+},
     {
       key: "status",
       label: "Status",
