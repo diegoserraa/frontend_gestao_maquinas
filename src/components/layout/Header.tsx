@@ -1,4 +1,6 @@
-import { Menu, Bell } from "lucide-react";
+import { Menu } from "lucide-react";
+
+import { NotificationBell } from "@/modules/notificacao/notificacaoBell";
 
 interface Props {
   openSidebar: () => void;
@@ -20,7 +22,12 @@ export default function Header({ openSidebar }: Props) {
       <div className="flex items-center gap-3">
         <button
           onClick={openSidebar}
-          className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-blue-100 transition"
+          className="
+            md:hidden
+            w-9 h-9
+            flex items-center justify-center
+            rounded-lg hover:bg-blue-100
+          "
         >
           <Menu size={18} className="text-slate-700" />
         </button>
@@ -36,20 +43,21 @@ export default function Header({ openSidebar }: Props) {
       </div>
 
       {/* RIGHT */}
-      <div className="flex items-center gap-2 sm:gap-3">
-
-        {/* NOTIFICATION */}
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-blue-100 hover:bg-blue-100 transition shadow-sm">
-          <Bell size={18} className="text-slate-600" />
-
-          <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-        </button>
+      <div className="flex items-center gap-3">
+        <NotificationBell />
 
         {/* AVATAR */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-medium shadow-md border border-white">
+        <div
+          className="
+            w-9 h-9 rounded-full
+            bg-gradient-to-br from-blue-500 to-blue-700
+            flex items-center justify-center
+            text-white text-sm font-medium
+            shadow-md border border-white
+          "
+        >
           D
         </div>
-
       </div>
     </header>
   );

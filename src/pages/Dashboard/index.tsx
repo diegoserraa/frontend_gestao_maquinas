@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,122 +6,315 @@ import { Button } from "@/components/ui/button";
 
 import PwaScanner from "@/components/pwa/PwaScanner";
 
+import { getUser } from "@/modules/login/loginStorage";
+import { registrarPush } from "@/modules/push/pushService";
+
+
 export default function Dashboard() {
+
   const [scannerAberto, setScannerAberto] = useState(false);
 
   const navigate = useNavigate();
 
+
+
+  useEffect(() => {
+
+    async function registrarDispositivo() {
+
+      try {
+
+        const usuario = getUser();
+
+
+        if (!usuario?.id) {
+
+          console.log(
+            "Usuário não encontrado para registrar push"
+          );
+
+          return;
+        }
+
+
+        await registrarPush(
+          usuario.id
+        );
+
+
+        console.log(
+          "✅ Push registrado com sucesso"
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Erro ao registrar push:",
+          error
+        );
+
+      }
+
+    }
+
+
+    registrarDispositivo();
+
+
+  }, []);
+
+
+
+
   return (
     <div className="space-y-6">
 
+
       {/* SCANNER PWA */}
+
       {scannerAberto && (
+
         <PwaScanner
-          onClose={() => setScannerAberto(false)}
+
+          onClose={() =>
+            setScannerAberto(false)
+          }
+
+
           onScan={(value) => {
-            console.log("QR lido:", value);
+
+
+            console.log(
+              "QR lido:",
+              value
+            );
+
 
             setScannerAberto(false);
+
+
 
             if (
               value.startsWith("http://") ||
               value.startsWith("https://")
             ) {
+
               window.location.href = value;
+
               return;
+
             }
 
-            navigate(`/machines/${value}`);
+
+            navigate(
+              `/machines/${value}`
+            );
+
+
           }}
+
         />
+
       )}
 
 
+
+
+
       {/* HEADER */}
+
       <div>
-        <h1 className="text-2xl font-semibold text-slate-800">
+
+        <h1
+          className="
+            text-2xl 
+            font-semibold 
+            text-slate-800
+          "
+        >
           Dashboard
         </h1>
 
-        <p className="text-sm text-slate-500">
+
+        <p
+          className="
+            text-sm 
+            text-slate-500
+          "
+        >
           Visão geral do seu sistema
         </p>
+
+
       </div>
+
+
+
 
 
       {/* BOTÃO QR */}
+
       <div>
+
         <Button
-          onClick={() => setScannerAberto(true)}
+          onClick={() =>
+            setScannerAberto(true)
+          }
         >
           📷 Escanear QR
         </Button>
+
+
       </div>
 
 
+
+
+
       {/* CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div
+        className="
+          grid 
+          grid-cols-1 
+          md:grid-cols-3 
+          gap-4
+        "
+      >
+
 
         <Card>
-          <CardContent className="p-5">
+
+          <CardContent
+            className="p-5"
+          >
+
             <p className="text-sm text-slate-500">
               Máquinas ativas
             </p>
 
-            <h2 className="text-2xl font-bold text-slate-800">
+
+            <h2
+              className="
+                text-2xl 
+                font-bold 
+                text-slate-800
+              "
+            >
               12
             </h2>
+
+
           </CardContent>
+
         </Card>
 
 
+
+
         <Card>
-          <CardContent className="p-5">
+
+          <CardContent
+            className="p-5"
+          >
+
             <p className="text-sm text-slate-500">
               Clientes
             </p>
 
-            <h2 className="text-2xl font-bold text-slate-800">
+
+            <h2
+              className="
+                text-2xl 
+                font-bold 
+                text-slate-800
+              "
+            >
               48
             </h2>
+
+
           </CardContent>
+
         </Card>
 
 
+
+
+
         <Card>
-          <CardContent className="p-5">
+
+          <CardContent
+            className="p-5"
+          >
+
             <p className="text-sm text-slate-500">
               Chamados abertos
             </p>
 
-            <h2 className="text-2xl font-bold text-slate-800">
+
+            <h2
+              className="
+                text-2xl 
+                font-bold 
+                text-slate-800
+              "
+            >
               3
             </h2>
+
+
           </CardContent>
+
         </Card>
+
 
       </div>
 
 
+
+
+
       {/* AREA PRINCIPAL */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <div
+        className="
+          grid 
+          grid-cols-1 
+          lg:grid-cols-2 
+          gap-4
+        "
+      >
+
 
 
         {/* LISTA */}
-        <div className="bg-white border rounded-xl p-5">
+
+        <div
+          className="
+            bg-white 
+            border 
+            rounded-xl 
+            p-5
+          "
+        >
 
           <h3 className="font-semibold mb-4">
             Últimas máquinas
           </h3>
 
 
+
           <div className="space-y-3">
+
 
             {[
               "Máquina 01",
               "Máquina 02",
               "Máquina 03",
             ].map((item, index) => (
+
 
               <div
                 key={index}
@@ -140,47 +333,76 @@ export default function Dashboard() {
                 </span>
 
 
-                <span className="text-xs text-green-600">
+                <span
+                  className="
+                    text-xs 
+                    text-green-600
+                  "
+                >
                   Online
                 </span>
 
+
               </div>
+
 
             ))}
 
+
           </div>
+
 
         </div>
 
 
+
+
+
         {/* ATIVIDADES */}
-        <div className="bg-white border rounded-xl p-5">
+
+        <div
+          className="
+            bg-white 
+            border 
+            rounded-xl 
+            p-5
+          "
+        >
 
           <h3 className="font-semibold mb-4">
             Atividades recentes
           </h3>
 
 
+
           <div className="space-y-3">
+
 
             <p className="text-sm text-slate-600">
               ✔ Máquina 01 conectada
             </p>
 
+
             <p className="text-sm text-slate-600">
               ✔ Cliente novo cadastrado
             </p>
+
 
             <p className="text-sm text-slate-600">
               ✔ Manutenção concluída
             </p>
 
+
           </div>
+
 
         </div>
 
 
+
       </div>
+
+
 
     </div>
   );

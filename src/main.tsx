@@ -6,14 +6,37 @@ import { registerSW } from "virtual:pwa-register";
 
 import "./index.css";
 
-// Registra o Service Worker do PWA
-registerSW({
+let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
+
+updateSW = registerSW({
+  immediate: true,
+
   onNeedRefresh() {
-    console.log("Nova versão disponível. Atualize o aplicativo.");
+    const atualizar = window.confirm(
+      "Uma nova versão do sistema está disponível. Deseja atualizar agora?"
+    );
+
+    if (atualizar && updateSW) {
+      updateSW(true);
+    }
   },
 
   onOfflineReady() {
     console.log("Aplicação pronta para funcionar offline.");
+  },
+
+  onRegisteredSW(swUrl, registration) {
+    console.log("Service Worker registrado:", swUrl);
+
+    if (registration) {
+      setInterval(() => {
+        registration.update();
+      }, 60 * 1000);
+    }
+  },
+
+  onRegisterError(error) {
+    console.error("Erro ao registrar Service Worker:", error);
   },
 });
 
