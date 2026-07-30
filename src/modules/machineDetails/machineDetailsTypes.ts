@@ -64,6 +64,7 @@ export interface OrdemServico {
 }
 
 export type OrdemServicoFormData = {
+  id_solicitante?: number;
   maquina_id: number;
   descricao: string;
   status: "ABERTA";

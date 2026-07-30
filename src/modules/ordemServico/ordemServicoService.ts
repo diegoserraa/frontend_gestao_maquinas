@@ -62,6 +62,7 @@ export async function updateOSStatus(id: number, status: string) {
 ========================= */
 
 export async function createOrdemServico(data: {
+  id_solicitante?: number;
   maquina_id: number;
   descricao: string;
   status: "ABERTA";

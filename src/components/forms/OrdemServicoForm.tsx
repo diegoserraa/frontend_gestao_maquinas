@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 export type OrdemServicoFormData = {
+  id_solicitante?: number;
   maquina_id: number;
   descricao: string;
   status: "ABERTA";
@@ -54,13 +55,19 @@ function validate(form: OrdemServicoFormData): FormErrors {
   return errors;
 }
 
+
 export function OrdemServicoForm({
   machineId,
   tecnicos,
   loading,
   onSubmit,
 }: Props) {
+
+   const usuarioLogado = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
   const [form, setForm] = useState<OrdemServicoFormData>({
+    id_solicitante: usuarioLogado.id, // 👈 adicionando o id do usuário logado como solicitante
     maquina_id: machineId,
     descricao: "",
     status: "ABERTA",
