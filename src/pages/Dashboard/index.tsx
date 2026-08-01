@@ -1,409 +1,67 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-import PwaScanner from "@/components/pwa/PwaScanner";
-
 import { getUser } from "@/modules/login/loginStorage";
 import { registrarPush } from "@/modules/push/pushService";
 
+import { DashboardGestorDesktop } from "@/modules/dashboardGestor/DashBoardGestorDesktop";
+import { DashboardGestorMobile } from "@/modules/dashboardGestor/DashboardGestorMobile";
+import { getDefaultPeriodo } from "@/modules/dashboardGestor/DashboardGestorParts";
+import type { FiltroPeriodo } from "@/modules/dashboardGestor/DashboardGestorTypes";
 
-export default function Dashboard() {
+// mesmo breakpoint usado em outras telas do sistema (ex: MachineDetails)
+const MOBILE_BREAKPOINT = 768;
 
-  const [scannerAberto, setScannerAberto] = useState(false);
-
-  const navigate = useNavigate();
-
-
+function useIsMobile(breakpoint = MOBILE_BREAKPOINT) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < breakpoint
+  );
 
   useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth < breakpoint);
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [breakpoint]);
 
+  return isMobile;
+}
+
+export default function Dashboard() {
+  const [periodo, setPeriodo] = useState<FiltroPeriodo>(getDefaultPeriodo());
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
     async function registrarDispositivo() {
-
       try {
-
         const usuario = getUser();
 
-
         if (!usuario?.id) {
-
-          console.log(
-            "Usuário não encontrado para registrar push"
-          );
-
+          console.log("Usuário não encontrado para registrar push");
           return;
         }
 
-
-        await registrarPush(
-          usuario.id
-        );
-
-
-        console.log(
-          "✅ Push registrado com sucesso"
-        );
-
-
+        await registrarPush(usuario.id);
+        console.log("✅ Push registrado com sucesso");
       } catch (error) {
-
-        console.error(
-          "Erro ao registrar push:",
-          error
-        );
-
+        console.error("Erro ao registrar push:", error);
       }
-
     }
 
-
     registrarDispositivo();
-
-
   }, []);
 
-
-
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+      
 
-
-      {/* SCANNER PWA */}
-
-      {scannerAberto && (
-
-        <PwaScanner
-
-          onClose={() =>
-            setScannerAberto(false)
-          }
-
-
-          onScan={(value) => {
-
-
-            console.log(
-              "QR lido:",
-              value
-            );
-
-
-            setScannerAberto(false);
-
-
-
-            if (
-              value.startsWith("http://") ||
-              value.startsWith("https://")
-            ) {
-
-              window.location.href = value;
-
-              return;
-
-            }
-
-
-            navigate(
-              `/machines/${value}`
-            );
-
-
-          }}
-
-        />
-
+      {/* DASHBOARD DO GESTOR */}
+      {isMobile ? (
+        <DashboardGestorMobile periodo={periodo} onPeriodoChange={setPeriodo} />
+      ) : (
+        <DashboardGestorDesktop periodo={periodo} onPeriodoChange={setPeriodo} />
       )}
-
-
-
-
-
-      {/* HEADER */}
-
-      <div>
-
-        <h1
-          className="
-            text-2xl 
-            font-semibold 
-            text-slate-800
-          "
-        >
-          Dashboard
-        </h1>
-
-
-        <p
-          className="
-            text-sm 
-            text-slate-500
-          "
-        >
-          Visão geral do seu sistema
-        </p>
-
-
-      </div>
-
-
-
-
-
-      {/* BOTÃO QR */}
-
-      <div>
-
-        <Button
-          onClick={() =>
-            setScannerAberto(true)
-          }
-        >
-          📷 Escanear QR
-        </Button>
-
-
-      </div>
-
-
-
-
-
-      {/* CARDS */}
-
-      <div
-        className="
-          grid 
-          grid-cols-1 
-          md:grid-cols-3 
-          gap-4
-        "
-      >
-
-
-        <Card>
-
-          <CardContent
-            className="p-5"
-          >
-
-            <p className="text-sm text-slate-500">
-              Máquinas ativas
-            </p>
-
-
-            <h2
-              className="
-                text-2xl 
-                font-bold 
-                text-slate-800
-              "
-            >
-              12
-            </h2>
-
-
-          </CardContent>
-
-        </Card>
-
-
-
-
-        <Card>
-
-          <CardContent
-            className="p-5"
-          >
-
-            <p className="text-sm text-slate-500">
-              Clientes
-            </p>
-
-
-            <h2
-              className="
-                text-2xl 
-                font-bold 
-                text-slate-800
-              "
-            >
-              48
-            </h2>
-
-
-          </CardContent>
-
-        </Card>
-
-
-
-
-
-        <Card>
-
-          <CardContent
-            className="p-5"
-          >
-
-            <p className="text-sm text-slate-500">
-              Chamados abertos
-            </p>
-
-
-            <h2
-              className="
-                text-2xl 
-                font-bold 
-                text-slate-800
-              "
-            >
-              3
-            </h2>
-
-
-          </CardContent>
-
-        </Card>
-
-
-      </div>
-
-
-
-
-
-      {/* AREA PRINCIPAL */}
-
-      <div
-        className="
-          grid 
-          grid-cols-1 
-          lg:grid-cols-2 
-          gap-4
-        "
-      >
-
-
-
-        {/* LISTA */}
-
-        <div
-          className="
-            bg-white 
-            border 
-            rounded-xl 
-            p-5
-          "
-        >
-
-          <h3 className="font-semibold mb-4">
-            Últimas máquinas
-          </h3>
-
-
-
-          <div className="space-y-3">
-
-
-            {[
-              "Máquina 01",
-              "Máquina 02",
-              "Máquina 03",
-            ].map((item, index) => (
-
-
-              <div
-                key={index}
-                className="
-                  flex 
-                  justify-between 
-                  items-center 
-                  p-3 
-                  rounded-lg 
-                  hover:bg-slate-50
-                "
-              >
-
-                <span>
-                  {item}
-                </span>
-
-
-                <span
-                  className="
-                    text-xs 
-                    text-green-600
-                  "
-                >
-                  Online
-                </span>
-
-
-              </div>
-
-
-            ))}
-
-
-          </div>
-
-
-        </div>
-
-
-
-
-
-        {/* ATIVIDADES */}
-
-        <div
-          className="
-            bg-white 
-            border 
-            rounded-xl 
-            p-5
-          "
-        >
-
-          <h3 className="font-semibold mb-4">
-            Atividades recentes
-          </h3>
-
-
-
-          <div className="space-y-3">
-
-
-            <p className="text-sm text-slate-600">
-              ✔ Máquina 01 conectada
-            </p>
-
-
-            <p className="text-sm text-slate-600">
-              ✔ Cliente novo cadastrado
-            </p>
-
-
-            <p className="text-sm text-slate-600">
-              ✔ Manutenção concluída
-            </p>
-
-
-          </div>
-
-
-        </div>
-
-
-
-      </div>
-
-
-
     </div>
   );
 }
