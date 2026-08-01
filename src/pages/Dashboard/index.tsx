@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { getUser } from "@/modules/login/loginStorage";
 import { registrarPush } from "@/modules/push/pushService";
 

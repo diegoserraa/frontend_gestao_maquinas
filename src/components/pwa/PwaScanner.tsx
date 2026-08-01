@@ -19,99 +19,195 @@ export default function PwaScanner({
   useEffect(() => {
     iniciarScanner();
 
+
     return () => {
       pararScanner();
     };
+
   }, []);
 
 
+
   const iniciarScanner = async () => {
+
     try {
+
       setErro("");
       setCarregando(true);
 
-      scannerRef.current = new Html5Qrcode(
-        "qr-reader"
+
+      const cameras =
+        await Html5Qrcode.getCameras();
+
+
+      if (!cameras.length) {
+        throw new Error(
+          "Nenhuma câmera encontrada"
+        );
+      }
+
+
+
+      // aguarda o DOM calcular tamanho
+      await new Promise(resolve =>
+        setTimeout(resolve, 500)
       );
 
 
-      await scannerRef.current.start(
+
+      const scanner =
+        new Html5Qrcode(
+          "qr-reader"
+        );
+
+
+      scannerRef.current = scanner;
+
+
+
+      await scanner.start(
+
         {
           facingMode: "environment",
         },
+
+
         {
           fps: 10,
+
           qrbox: {
-            width: 260,
-            height: 260,
+            width: 250,
+            height: 250,
           },
-          aspectRatio: 1,
+
+          disableFlip: false,
         },
+
 
         async (decodedText) => {
+
+
+
           await pararScanner();
 
+
           onScan(decodedText);
+
         },
 
-        () => {}
+
+        () => {
+          // ignora erros normais de leitura
+        }
+
       );
+
+
+
 
 
       setCarregando(false);
 
-    } catch (error) {
+
+
+    } catch(error:any) {
+
+
       console.error(
-        "Erro ao iniciar câmera:",
+        "ERRO SCANNER:",
         error
       );
 
+
       setCarregando(false);
+
 
       setErro(
         "Não foi possível acessar a câmera. Verifique a permissão."
       );
+
     }
+
   };
+
+
 
 
   const pararScanner = async () => {
+
+
+    if (!scannerRef.current) {
+      return;
+    }
+
+
+
     try {
-      if (scannerRef.current) {
+
+
+      const state =
+        scannerRef.current.getState();
+
+
+      if (state === 2) {
 
         await scannerRef.current.stop();
 
-        await scannerRef.current.clear();
-
-        scannerRef.current = null;
       }
 
-    } catch (error) {
-      console.error(error);
+
+
+      await scannerRef.current.clear();
+
+
+
+    } catch(error) {
+
+      console.log(
+        "Erro ao parar:",
+        error
+      );
+
     }
+
+
+
+    scannerRef.current = null;
+
   };
+
+
 
 
   const fechar = async () => {
+
     await pararScanner();
 
     onClose();
+
   };
 
 
+
+
   return (
+
     <div
       className="
         fixed
         inset-0
-        z-50
+        z-[9999]
         bg-black/90
         flex
         flex-col
       "
+      style={{
+        width:"100vw",
+        height:"100dvh",
+      }}
     >
 
-      {/* HEADER */}
+
       <div
         className="
           flex
@@ -120,18 +216,23 @@ export default function PwaScanner({
           px-5
           py-4
           text-white
+          shrink-0
         "
       >
 
         <div>
+
           <h2 className="text-lg font-semibold">
             Escanear máquina
           </h2>
 
+
           <p className="text-sm text-white/70">
             Aponte para o QR Code
           </p>
+
         </div>
+
 
 
         <button
@@ -142,16 +243,17 @@ export default function PwaScanner({
             rounded-full
             bg-white/10
             text-xl
-            hover:bg-white/20
           "
         >
           ×
         </button>
 
+
       </div>
 
 
-      {/* CAMERA */}
+
+
       <div
         className="
           flex-1
@@ -159,6 +261,7 @@ export default function PwaScanner({
           items-center
           justify-center
           px-5
+          overflow-hidden
         "
       >
 
@@ -170,9 +273,15 @@ export default function PwaScanner({
             rounded-3xl
             overflow-hidden
           "
+          style={{
+            minHeight:"300px"
+          }}
         >
 
+
+
           {carregando && (
+
             <div
               className="
                 h-80
@@ -185,20 +294,22 @@ export default function PwaScanner({
             >
               Abrindo câmera...
             </div>
+
           )}
+
+
 
 
           <div
             id="qr-reader"
-            className={
-              carregando
-                ? "hidden"
-                : "w-full"
-            }
+            className="w-full"
           />
 
 
+
+
           {!carregando && (
+
             <div
               className="
                 pointer-events-none
@@ -222,15 +333,20 @@ export default function PwaScanner({
               />
 
             </div>
+
           )}
 
+
         </div>
+
 
       </div>
 
 
-      {/* ERRO */}
+
+
       {erro && (
+
         <div
           className="
             mx-5
@@ -241,14 +357,19 @@ export default function PwaScanner({
             text-center
             text-sm
             text-white
+            shrink-0
           "
         >
           {erro}
+
         </div>
+
       )}
 
 
-      {/* FOOTER */}
+
+
+
       <div
         className="
           px-5
@@ -256,11 +377,16 @@ export default function PwaScanner({
           text-center
           text-sm
           text-white/70
+          shrink-0
         "
       >
         Posicione o QR Code dentro da área de leitura
       </div>
 
+
+
     </div>
+
   );
+
 }
