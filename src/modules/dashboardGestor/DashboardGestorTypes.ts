@@ -7,7 +7,7 @@
 export interface DashboardKpis {
   os_abertas: string;
   os_andamento: string;
-  os_criticas: string;
+  os_atribuidas: string;
   os_finalizadas: string;
   preventivas: string;
   corretivas: string;

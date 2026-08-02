@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Wrench,
   Wallet,
+  User
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
@@ -156,13 +157,13 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
     total: toNumber(p.total),
   }));
 
-  const criticas = toNumber(kpis.os_criticas);
+  const atribuidas = toNumber(kpis.os_atribuidas);
 
   const maxTecnicoTotal = Math.max(...rankingTecnicos.map((t) => toNumber(t.total)), 1);
 
   const evolucaoWidth = chartScrollWidth(evolucaoData.length, 42, 480);
   const tempoMedioWidth = chartScrollWidth(tempoMedioData.length, 42, 480);
-  const custosWidth = chartScrollWidth(custosEvolucaoData.length, 90, 560);
+  const custosWidth = chartScrollWidth(custosEvolucaoData.length, 70, 320);
 
   // ── PREVENTIVAS VENCIDAS — dados derivados ────────────────
   const preventivasMaquinas = preventivasVencidas?.maquinas ?? [];
@@ -189,18 +190,34 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* estilo local: remove o contorno de foco preto que o Recharts
+          desenha ao clicar no gráfico (accessibilityLayer) e estiliza a
+          scrollbar horizontal dos cards com scroll */}
+      <style>{`
+        .chart-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+        .chart-scroll::-webkit-scrollbar { height: 6px; }
+        .chart-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chart-scroll::-webkit-scrollbar-thumb {
+          background-color: #cbd5e1;
+          border-radius: 9999px;
+        }
+        .chart-scroll::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        .recharts-wrapper:focus,
+        .recharts-wrapper *:focus,
+        .recharts-surface:focus,
+        .recharts-surface *:focus {
+          outline: none !important;
+        }
+      `}</style>
+
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
           <p className="text-sm text-slate-500">
-            Visão geral do seu sistema
-            {atualizadoEm && (
-              <span className="text-slate-400">
-                {" "}
-                · atualizado às{" "}
-                {atualizadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            )}
+            Visão geral 
           </p>
         </div>
 
@@ -222,11 +239,10 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
           colorClass="bg-amber-50 text-amber-600"
         />
         <KpiCard
-          label="Críticas"
-          value={formatCompactNumber(kpis.os_criticas)}
-          icon={<AlertTriangle size={20} />}
-          colorClass="bg-red-50 text-red-600"
-          highlight={criticas > 0}
+          label="Atribuídas"
+          value={formatCompactNumber(kpis.os_atribuidas)}
+          icon={<User size={20} />}
+          colorClass="bg-gradient-to-br from-cyan-50 to-sky-100 text-cyan-700"
         />
         <KpiCard
           label="Finalizadas"
@@ -249,33 +265,62 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
       </div>
 
       {/* EVOLUÇÃO + TEMPO MÉDIO — 50/50 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <SectionCard
           title="Evolução de Ordens de Serviço"
           subtitle="Total de OS abertas por dia, no período"
-          className="border-t-4 border-t-blue-400"
+          className="border-t-4 border-t-blue-400 min-w-0"
         >
           {evolucaoData.length === 0 ? (
             <ChartEmptyState />
           ) : (
-            <div className="overflow-x-auto -mx-1 px-1">
+            <div className="chart-scroll overflow-x-auto -mx-1 px-1">
               <div style={{ minWidth: evolucaoWidth }}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={evolucaoData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart
+                    data={evolucaoData}
+                    margin={{ top: 0, right: 10, left: -20, bottom: 0 }}
+                    accessibilityLayer={false}
+                  >
                     <defs>
                       <linearGradient id="evolucaoGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.azul} stopOpacity={0.35} />
                         <stop offset="95%" stopColor={CHART_COLORS.azul} stopOpacity={0} />
                       </linearGradient>
                     </defs>
+
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
-                      labelStyle={{ color: "#334155", fontWeight: 600 }}
+
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
                     />
-                    <Area type="monotone" dataKey="total" name="OS" stroke={CHART_COLORS.azul} fill="url(#evolucaoGrad)" strokeWidth={2} />
+
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                        fontSize: 12,
+                      }}
+                    />
+
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      name="OS"
+                      stroke={CHART_COLORS.azul}
+                      fill="url(#evolucaoGrad)"
+                      strokeWidth={2}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -286,34 +331,54 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         <SectionCard
           title="Tempo Médio de Resolução"
           subtitle={`Média geral: ${tempoMedioResolucao?.resumo?.formatado ?? "0min"}`}
-          className="border-t-4 border-t-violet-400"
+          className="border-t-4 border-t-violet-400 min-w-0"
         >
           {tempoMedioData.length === 0 ? (
             <ChartEmptyState />
           ) : (
-            <div className="overflow-x-auto -mx-1 px-1">
+            <div className="chart-scroll overflow-x-auto -mx-1 px-1">
               <div style={{ minWidth: tempoMedioWidth }}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={tempoMedioData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart
+                    data={tempoMedioData}
+                    margin={{ top: 0, right: 10, left: -20, bottom: 0 }}
+                    accessibilityLayer={false}
+                  >
                     <defs>
                       <linearGradient id="tempoMedioGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.violeta} stopOpacity={0.35} />
                         <stop offset="95%" stopColor={CHART_COLORS.violeta} stopOpacity={0} />
                       </linearGradient>
                     </defs>
+
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="dia" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+
+                    <XAxis
+                      dataKey="dia"
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+
                     <YAxis
-                      tick={{ fontSize: 12, fill: "#94a3b8" }}
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v) => `${v}h`}
                     />
+
                     <Tooltip
-                      formatter={(_value, _name, props) => [props?.payload?.formatado ?? "", "Tempo médio"]}
-                      labelStyle={{ color: "#334155", fontWeight: 600 }}
-                      contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
+                      formatter={(_value, _name, props) => [
+                        props?.payload?.formatado ?? "",
+                        "Tempo médio",
+                      ]}
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                        fontSize: 12,
+                      }}
                     />
+
                     <Area
                       type="monotone"
                       dataKey="tempo"
@@ -471,7 +536,12 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
             <ChartEmptyState />
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={maquinasData} layout="vertical" margin={{ top: 0, right: 24, left: 0, bottom: 0 }}>
+              <BarChart
+                data={maquinasData}
+                layout="vertical"
+                margin={{ top: 0, right: 24, left: 0, bottom: 0 }}
+                accessibilityLayer={false}
+              >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
                 <YAxis
@@ -492,72 +562,84 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         </SectionCard>
       </div>
 
-      {/* CUSTOS */}
+      {/* CUSTOS — gráfico e lista lado a lado, em vez de empilhados,
+          pra ocupar bem menos altura na tela */}
       {custos && (
         <SectionCard
           title="Custos de Manutenção"
           subtitle="Material, terceirizado e evolução mensal"
           className="border-t-4 border-t-slate-300"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 lg:col-span-1">
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                <p className="text-xs text-slate-500">Material</p>
-                <p className="text-base sm:text-lg font-bold text-slate-800">{formatCurrency(custos.resumo.material)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                <p className="text-xs text-slate-500">Terceirizado</p>
-                <p className="text-base sm:text-lg font-bold text-slate-800">{formatCurrency(custos.resumo.terceirizado)}</p>
-              </div>
-              <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 flex items-start gap-2">
-                <Wallet size={16} className="text-blue-500 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-blue-500">Total</p>
-                  <p className="text-base sm:text-lg font-bold text-blue-700">{formatCurrency(custos.resumo.total)}</p>
-                </div>
-              </div>
+          {/* resumo — linha única e compacta */}
+          <div className="grid grid-cols-3 gap-2.5 mb-4">
+            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+              <p className="text-[11px] text-slate-500">Material</p>
+              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.material)}</p>
             </div>
+            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+              <p className="text-[11px] text-slate-500">Terceirizado</p>
+              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.terceirizado)}</p>
+            </div>
+            <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
+              <p className="text-[11px] text-blue-500">Total</p>
+              <p className="text-sm font-bold text-blue-700 truncate">{formatCurrency(custos.resumo.total)}</p>
+            </div>
+          </div>
 
-            <div className="lg:col-span-2">
+          {/* evolução mensal + custo por máquina, lado a lado */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-3 min-w-0">
+              <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1.5">
+                Evolução mensal
+              </p>
               {custosEvolucaoData.length === 0 ? (
                 <ChartEmptyState />
               ) : (
-                <div className="overflow-x-auto -mx-1 px-1">
+                <div className="chart-scroll overflow-x-auto -mx-1 px-1">
                   <div style={{ minWidth: custosWidth }}>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <BarChart data={custosEvolucaoData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart
+                        data={custosEvolucaoData}
+                        margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
+                        accessibilityLayer={false}
+                      >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                        <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v}`} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v}`} />
                         <Tooltip
                           formatter={(value) => formatCurrency(Number(value))}
                           contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
+                          cursor={{ fill: "#f8fafc" }}
                         />
-                        <Bar dataKey="total" name="Custo" fill={CHART_COLORS.violeta} radius={[4, 4, 0, 0]} barSize={28} />
+                        <Bar dataKey="total" name="Custo" fill={CHART_COLORS.violeta} radius={[4, 4, 0, 0]} barSize={24} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {custos.maquinas.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-slate-100">
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Custo por máquina</p>
-              <div className="divide-y divide-slate-100">
-                {[...custos.maquinas]
-                  .sort((a, b) => toNumber(b.total) - toNumber(a.total))
-                  .slice(0, 6)
-                  .map((m) => (
-                    <div key={m.nome} className="flex items-center justify-between py-2 text-sm">
-                      <span className="text-slate-700 truncate">{m.nome}</span>
-                      <span className="font-semibold text-slate-800 tabular-nums">{formatCurrency(m.total)}</span>
-                    </div>
-                  ))}
+            {custos.maquinas.length > 0 && (
+              <div className="lg:col-span-2 min-w-0">
+                <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1.5">
+                  Custo por máquina
+                </p>
+                <div className="divide-y divide-slate-100 max-h-[150px] overflow-y-auto pr-1">
+                  {[...custos.maquinas]
+                    .sort((a, b) => toNumber(b.total) - toNumber(a.total))
+                    .slice(0, 6)
+                    .map((m) => (
+                      <div key={m.nome} className="flex items-center justify-between py-1.5 text-sm">
+                        <span className="text-slate-700 truncate">{m.nome}</span>
+                        <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">
+                          {formatCurrency(m.total)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </SectionCard>
       )}
     </div>
