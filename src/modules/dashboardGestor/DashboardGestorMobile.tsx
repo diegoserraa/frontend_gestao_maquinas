@@ -118,26 +118,17 @@ const preventivasRestantes = Math.max(
            {scannerAberto && (
              <PwaScanner
                onClose={() => setScannerAberto(false)}
-              onScan={(value) => {
-  setScannerAberto(false);
-
-  alert(value);
-
-  const qr = value.trim();
-
-  alert(qr);
-
-  if (qr.startsWith("http")) {
-    const path = new URL(qr).pathname;
-
-    alert(path);
-
-    navigate(path);
-    return;
-  }
-
-  navigate(`/machines/${qr}`);
-}}
+               onScan={(value) => {
+                 console.log("QR lido:", value);
+                 setScannerAberto(false);
+     
+                 if (value.startsWith("http://") || value.startsWith("https://")) {
+                   window.location.href = value;
+                   return;
+                 }
+     
+                 navigate(`/machines/${value}`);
+               }}
              />
            )}
      
