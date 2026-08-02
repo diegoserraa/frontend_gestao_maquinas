@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   RefreshCw,
+  Wrench,
   Wallet,
   QrCode
 } from "lucide-react";
@@ -194,39 +195,50 @@ const preventivasRestantes = Math.max(
       </div>
 
       {/* KPIs — 2 colunas no mobile */}
-      <div className="grid grid-cols-2 gap-3">
-        <KpiCard
-          label="OS Abertas"
-          value={formatCompactNumber(kpis.os_abertas)}
-          icon={<Inbox size={18} />}
-          colorClass="bg-blue-50 text-blue-600"
-        />
-        <KpiCard
-          label="Em Andamento"
-          value={formatCompactNumber(kpis.os_andamento)}
-          icon={<Clock size={18} />}
-          colorClass="bg-amber-50 text-amber-600"
-        />
-        <KpiCard
-          label="Críticas"
-          value={formatCompactNumber(kpis.os_criticas)}
-          icon={<AlertTriangle size={18} />}
-          colorClass="bg-red-50 text-red-600"
-          highlight={criticas > 0}
-        />
-        <KpiCard
-          label="Finalizadas"
-          value={formatCompactNumber(kpis.os_finalizadas)}
-          icon={<CheckCircle2 size={18} />}
-          colorClass="bg-emerald-50 text-emerald-600"
-        />
-        <KpiCard
-          label="Preventivas"
-          value={formatCompactNumber(kpis.preventivas)}
-          icon={<ShieldCheck size={18} />}
-          colorClass="bg-violet-50 text-violet-600"
-        />
-      </div>
+     <div className="grid grid-cols-3 gap-2.5">
+  <KpiCard
+    label="OS Abertas"
+    value={formatCompactNumber(kpis.os_abertas)}
+    icon={<Inbox size={17} />}
+    colorClass="bg-blue-50 text-blue-600"
+  />
+
+  <KpiCard
+    label="Em Andamento"
+    value={formatCompactNumber(kpis.os_andamento)}
+    icon={<Clock size={17} />}
+    colorClass="bg-amber-50 text-amber-600"
+  />
+
+  <KpiCard
+    label="Críticas"
+    value={formatCompactNumber(kpis.os_criticas)}
+    icon={<AlertTriangle size={17} />}
+    colorClass="bg-red-50 text-red-600"
+    highlight={criticas > 0}
+  />
+
+  <KpiCard
+    label="Finalizadas"
+    value={formatCompactNumber(kpis.os_finalizadas)}
+    icon={<CheckCircle2 size={17} />}
+    colorClass="bg-emerald-50 text-emerald-600"
+  />
+
+  <KpiCard
+    label="Preventivas"
+    value={formatCompactNumber(kpis.preventivas)}
+    icon={<ShieldCheck size={17} />}
+    colorClass="bg-violet-50 text-violet-600"
+  />
+
+  <KpiCard
+    label="Corretivas"
+    value={formatCompactNumber(kpis.corretivas)}
+    icon={<Wrench size={17} />}
+    colorClass="bg-rose-50 text-rose-600"
+  />
+</div>
 
       {/* EVOLUÇÃO */}
       <SectionCard title="Evolução de OS" subtitle="Por dia, no período">
