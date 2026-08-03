@@ -12,6 +12,7 @@ import {
   ListChecks,
   X,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import type { Notificacao } from "@/modules/notificacao/notificacaoType";
 import {
@@ -83,6 +84,7 @@ export function NotificationBell() {
   const [isMobile, setIsMobile] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const [contador, setContador] = useState(0);
 
@@ -210,26 +212,48 @@ export function NotificationBell() {
   const todasSelecionadas =
     listaOrdenada.length > 0 && selecionados.size === listaOrdenada.length;
 
-  async function handleClicarNotificacao(notificacao: Notificacao) {
-    if (notificacao.lida) return;
+async function handleClicarNotificacao(notificacao: Notificacao) {
 
-    // otimista: só troca a cor no lugar, sem sumir da lista
-    setLista((atual) =>
-      atual.map((n) => (n.id === notificacao.id ? { ...n, lida: true } : n))
-    );
-    setContador((valor) => Math.max(0, valor - 1));
+  console.log("🔔 CLICOU:", notificacao);
+  console.log("➡️ URL:", notificacao.url);
 
-    try {
-      await marcarNotificacaoComoLida(notificacao.id);
-    } catch (error) {
-      // Não desfazemos a troca de cor aqui de propósito: marcar como lida é
-      // uma ação de baixo risco, e reverter visualmente confunde o usuário
-      // (parece que o clique "não fez nada"). Só registramos o erro pra
-      // investigação — se o backend estiver falhando nessa rota, o problema
-      // fica visível no console em vez de quebrar a experiência.
-      console.error("Erro ao marcar notificação como lida no servidor", error);
-    }
+  // marca visualmente como lida
+  setLista((atual) =>
+    atual.map((n) =>
+      n.id === notificacao.id
+        ? { ...n, lida: true }
+        : n
+    )
+  );
+
+  setContador((valor) =>
+    Math.max(0, valor - 1)
+  );
+
+  // REDIRECIONA IMEDIATAMENTE
+  if (notificacao.url) {
+
+    const url = notificacao.url.startsWith("/")
+      ? notificacao.url
+      : `/${notificacao.url}`;
+
+    console.log("🚀 Navegando para:", url);
+
+    navigate(url);
+    handleClose();
+
+  } else {
+    console.warn("⚠️ Notificação sem URL");
   }
+
+  // marca como lida em segundo plano
+  try {
+    await marcarNotificacaoComoLida(notificacao.id);
+    console.log("✅ Marcada como lida");
+  } catch (error) {
+    console.error("Erro ao marcar como lida:", error);
+  }
+}
 
   async function handleMarcarTodas() {
     if (!usuarioId || naoLidasCount === 0) return;

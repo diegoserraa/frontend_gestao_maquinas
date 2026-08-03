@@ -29,6 +29,7 @@ export interface OrdemServico {
   prioridade?: string;
   id_tecnico?: number;
   valor_gasto?: number;
+  
 
   // campos novos
   id_solicitante?: number;

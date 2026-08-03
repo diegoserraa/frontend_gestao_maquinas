@@ -170,3 +170,13 @@ export async function listarTecnicos() {
   }
   return res.json();
 }
+
+export async function getOrdemServicoById(id: number) {
+  const res = await fetch(`${API_URL}/ordens-servico/${id}`);
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar ordem de serviço");
+  }
+
+  return res.json();
+}

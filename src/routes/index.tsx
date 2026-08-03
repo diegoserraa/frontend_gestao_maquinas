@@ -14,10 +14,11 @@ import Partner from "@/pages/Partner";
 import MachineDetails from "@/pages/Mantenance";
 import Login from "@/pages/Login";
 
+import OrdemServicoDetails from "@/pages/OrdemServico";
+
 
 
 export const router = createBrowserRouter([
-
 
 
   // 🔐 ROTA PÚBLICA
@@ -25,7 +26,6 @@ export const router = createBrowserRouter([
     path: "/login",
     element: <Login />,
   },
-
 
 
   // 🔒 ROTAS PROTEGIDAS
@@ -56,6 +56,12 @@ export const router = createBrowserRouter([
       {
         path: "machines/:id",
         element: <MachineDetails />,
+      },
+
+
+      {
+        path: "ordens-servico/:id",
+        element: <OrdemServicoDetails />,
       },
 
 
