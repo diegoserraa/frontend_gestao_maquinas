@@ -229,7 +229,7 @@ export function OSPhotosGallery({ osId }: Props) {
   }, [previewIndex]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
+    <div className="bg-white p-5 sm:p-6">
       <div className="flex items-center gap-2 mb-4">
         <ImageIcon size={17} className="text-slate-400" />
         <h2 className="font-semibold text-slate-800 text-sm">Fotos da manutenção</h2>

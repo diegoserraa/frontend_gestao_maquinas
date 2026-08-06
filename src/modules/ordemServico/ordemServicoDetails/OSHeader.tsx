@@ -83,24 +83,7 @@ return (
       >
 
         {/* Voltar */}
-        <button
-          onClick={onBack}
-          aria-label="Voltar"
-          className="
-            h-9 w-9
-            shrink-0
-            rounded-xl
-            border border-slate-200
-            bg-white/80
-            backdrop-blur
-            flex items-center justify-center
-            text-slate-600
-            hover:bg-white
-            transition
-          "
-        >
-          <ArrowLeft size={17} />
-        </button>
+  
 
 
 

@@ -12,8 +12,6 @@ import {
 import { getUser } from "@/modules/login/loginStorage";
 import type { UserRole } from "@/modules/login/loginType";
 
-import { OrdemServicoTimeline } from "@/modules/ordemServico/ordemDeServicoTimeline";
-
 import { OSHeader } from "./../../modules/ordemServico/ordemServicoDetails/OSHeader";
 import { OSSummaryCards } from "../../modules/ordemServico/ordemServicoDetails/OSSummaryCards";
 import { OSActions } from "../../modules/ordemServico/ordemServicoDetails/OSActions";
@@ -25,11 +23,7 @@ type Tecnico = { id: number; nome: string };
 function DetailsSkeleton() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6 space-y-4 animate-pulse">
-      <div className="h-52 bg-white rounded-2xl border border-slate-200" />
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="h-40 bg-white rounded-2xl border border-slate-200" />
-        <div className="xl:col-span-2 h-64 bg-white rounded-2xl border border-slate-200" />
-      </div>
+      <div className="h-72 bg-white rounded-2xl border border-slate-200" />
       <div className="h-40 bg-white rounded-2xl border border-slate-200" />
     </div>
   );
@@ -59,8 +53,6 @@ export default function OrdemServicoDetails() {
       const osData = await getOrdemServicoById(Number(id));
       setOs(osData);
 
-      // busca nome da máquina e lista de técnicos em paralelo — nenhum
-      // dos dois é crítico o suficiente pra travar a tela se falhar
       const [maquina, listaTecnicos] = await Promise.allSettled([
         osData?.maquina_id ? getMachineById(osData.maquina_id) : Promise.resolve(null),
         listarTecnicos(),
@@ -86,8 +78,6 @@ export default function OrdemServicoDetails() {
   }, [carregar]);
 
   function handleRefresh(nextStatus?: string) {
-    // atualiza o status na hora (feedback imediato), e busca os dados
-    // completos e corretos do servidor logo em seguida
     if (nextStatus) {
       setOs((atual) => (atual ? { ...atual, status: nextStatus } : atual));
     }
@@ -123,8 +113,27 @@ export default function OrdemServicoDetails() {
   const statusStyle = getStatusStyle(os.status);
 
  return (
-  <div className="min-h-screen bg-slate-50 p-3 sm:p-4 md:p-6 space-y-4">
-    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+<div className="
+  min-h-screen
+  bg-gradient-to-br
+  from-slate-50
+  via-blue-50/40
+  to-indigo-50/40
+  pt-0
+  px-2 sm:px-3 md:px-4
+  pb-6
+">
+    <div
+      className="
+        max-w-7xl mx-auto
+        rounded-3xl
+        border border-slate-200/70
+        bg-white/95
+        backdrop-blur-sm
+        overflow-hidden
+        shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+      "
+    >
       <OSHeader
         os={os}
         maquinaNome={maquinaNome}
@@ -138,7 +147,16 @@ export default function OrdemServicoDetails() {
         />
       </div>
 
-      <div className={`border-t border-slate-100 ${statusStyle.tint}`}>
+      <div
+        className={`
+          border-t border-slate-100
+          bg-gradient-to-r
+          from-blue-50/50
+          via-white
+          to-indigo-50/40
+          ${statusStyle.tint}
+        `}
+      >
         <OSActions
           os={os}
           userRole={userRole}
@@ -147,72 +165,92 @@ export default function OrdemServicoDetails() {
           onRefresh={handleRefresh}
         />
       </div>
-    </div>
 
-    {/* DESCRIÇÃO + RESOLUÇÃO */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* DESCRIÇÃO + RESOLUÇÃO */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 border-t border-slate-100 items-stretch">
+        <div className="p-5 sm:p-6 bg-gradient-to-br from-blue-50/60 to-transparent">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="h-10 w-10 rounded-2xl bg-blue-100 flex items-center justify-center shadow-sm">
+              <FileText size={18} className="text-blue-600" />
+            </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-blue-400 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <FileText size={16} className="text-blue-500" />
-          <h2 className="font-semibold text-slate-800 text-sm">
-            Descrição da solicitação
-          </h2>
-        </div>
-
-        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-          {os.descricao || "Nenhuma descrição informada."}
-        </p>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <ListChecks size={16} className="text-emerald-500" />
-          <h2 className="font-semibold text-slate-800 text-sm">
-            Resolução aplicada
-          </h2>
-        </div>
-
-        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-          {os.resolucao || "Ainda não finalizada."}
-        </p>
-
-        {os.data_resolucao && (
-          <p className="text-xs text-slate-400 mt-3">
-            Finalizada em {formatDateTime(os.data_resolucao)}
-          </p>
-        )}
-      </div>
-
-    </div>
-
-    {statusUpper === "CANCELADA" &&
-      os.motivo_cancelamento && (
-        <div className="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-red-400 p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <FileText size={16} className="text-red-500" />
-            <h2 className="font-semibold text-slate-800 text-sm">
-              Motivo do cancelamento
-            </h2>
+            <div>
+              <h2 className="font-semibold text-slate-800">
+                Descrição da Solicitação
+              </h2>
+              <p className="text-xs text-slate-500">
+                Informações registradas pelo operador
+              </p>
+            </div>
           </div>
 
-          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+          <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">
+            {os.descricao || "Nenhuma descrição informada."}
+          </p>
+        </div>
+
+        <div className="border-t xl:border-t-0 xl:border-l border-slate-100 p-5 sm:p-6 bg-gradient-to-br from-emerald-50/50 to-transparent">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-100 flex items-center justify-center shadow-sm">
+              <ListChecks size={18} className="text-emerald-600" />
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-slate-800">
+                Resolução Aplicada
+              </h2>
+              <p className="text-xs text-slate-500">
+                Informações registradas pelo técnico
+              </p>
+            </div>
+          </div>
+
+          <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">
+            {os.resolucao || "Ainda não finalizada."}
+          </p>
+
+          {os.data_resolucao && (
+            <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+              Finalizada em {formatDateTime(os.data_resolucao)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* CANCELAMENTO */}
+      {statusUpper === "CANCELADA" && os.motivo_cancelamento && (
+        <div className="border-t border-slate-100 p-5 sm:p-6 bg-gradient-to-r from-red-50/50 to-transparent">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="h-10 w-10 rounded-2xl bg-red-100 flex items-center justify-center shadow-sm">
+              <FileText size={18} className="text-red-600" />
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-slate-800">
+                Motivo do Cancelamento
+              </h2>
+              <p className="text-xs text-slate-500">
+                Justificativa registrada pelo gestor
+              </p>
+            </div>
+          </div>
+
+          <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">
             {os.motivo_cancelamento}
           </p>
 
           {os.data_cancelamento && (
-            <p className="text-xs text-slate-400 mt-3">
+            <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
               Cancelada em {formatDateTime(os.data_cancelamento)}
-            </p>
+            </div>
           )}
         </div>
       )}
 
-    {/* FOTOS */}
-    <OSPhotosGallery osId={os.id} />
-
-    {/* TIMELINE */}
-    <OrdemServicoTimeline os={os} />
+      <div className="border-t border-slate-100 bg-slate-50/50">
+        <OSPhotosGallery osId={os.id} />
+      </div>
+    </div>
   </div>
 );
 }

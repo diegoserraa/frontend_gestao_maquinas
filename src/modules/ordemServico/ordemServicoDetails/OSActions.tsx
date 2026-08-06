@@ -7,11 +7,10 @@ import {
   HardHat,
   UserPlus,
   Bell,
-  BellRing,
-  ChevronDown,
   Loader2,
   X,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 
 import {
   atribuirTecnicoOS,
@@ -23,6 +22,7 @@ import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
 
 import { FinalizarOrdemServicoModal } from "@/components/modals/ordemServico/FinalizarOrdemServico";
+import { OrdemServicoTimeline } from "@/modules/ordemServico/ordemDeServicoTimeline";
 
 type Tecnico = {
   id: number;
@@ -37,34 +37,26 @@ type Props = {
   onRefresh: (nextStatus?: string) => void;
 };
 
-// ── botão compacto estilo "pill" — mesma linguagem visual dos badges
-// de status/prioridade do resto da tela (fundo clarinho + borda +
-// texto colorido), em vez de blocos sólidos grandes. Cor com
-// intenção: quem é destrutivo (cancelar) fica sutil e à parte, quem
-// é a ação principal do momento tem o tom mais "cheio" dos três.
-const PILL_VARIANTS = {
-  blue: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
-  amber: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
-  emerald: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
-  violet: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100",
-  red: "bg-white text-red-600 border-red-200 hover:bg-red-50",
-  neutral: "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
-  active: "bg-blue-50 text-blue-700 border-blue-200",
+const BUTTON_COLORS = {
+  slate: "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700",
+  blue: "bg-blue-600 hover:bg-blue-700 text-white",
+  amber: "bg-amber-500 hover:bg-amber-600 text-white",
+  emerald: "bg-emerald-600 hover:bg-emerald-700 text-white",
+  red: "bg-red-600 hover:bg-red-700 text-white",
+  violet: "border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-700",
 } as const;
 
-function PillButton({
-  variant = "neutral",
+function ActionButton({
+  color,
   icon,
   loading,
   onClick,
-  className = "",
   children,
 }: {
-  variant?: keyof typeof PILL_VARIANTS;
-  icon?: React.ReactNode;
+  color: keyof typeof BUTTON_COLORS;
+  icon: React.ReactNode;
   loading?: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  className?: string;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   children: React.ReactNode;
 }) {
   return (
@@ -73,14 +65,14 @@ function PillButton({
       onClick={onClick}
       disabled={loading}
       className={`
-        h-9 px-3.5 rounded-lg border inline-flex items-center gap-1.5 shrink-0
-        text-sm font-medium transition-all
+        h-11 flex-1 min-w-[150px] rounded-xl flex items-center justify-center gap-1.5
+        text-sm font-semibold whitespace-nowrap transition-all
         disabled:opacity-60 disabled:cursor-not-allowed
-        active:scale-[0.97]
-        ${PILL_VARIANTS[variant]} ${className}
+        active:scale-[0.98]
+        ${BUTTON_COLORS[color]}
       `}
     >
-      {loading ? <Loader2 size={14} className="animate-spin" /> : icon}
+      {loading ? <Loader2 size={15} className="animate-spin" /> : icon}
       {children}
     </button>
   );
@@ -90,21 +82,16 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
   const [assumindo, setAssumindo] = useState(false);
   const [iniciando, setIniciando] = useState(false);
   const [definindoExterno, setDefinindoExterno] = useState(false);
-  const [atribuindoId, setAtribuindoId] = useState<number | null>(null);
+  const [atribuindo, setAtribuindo] = useState(false);
 
   const [openFinalizar, setOpenFinalizar] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [cancelando, setCancelando] = useState(false);
 
-  // "Acompanhar OS" — visível pra todos os perfis. Ainda não existe
-  // endpoint pra persistir isso, então por enquanto é só um estado
-  // visual local (otimista). Assim que houver um service pra
-  // seguir/deixar de seguir, é só trocar o setSeguindo por uma chamada
-  // real dentro de handleToggleSeguir.
-  const [seguindo, setSeguindo] = useState(false);
+  const [timelineAberta, setTimelineAberta] = useState(false);
 
-  // ── mesmas regras de sempre ──────────────────────────────
+  // ── mesmas regras de sempre, copiadas 1:1 do OrdemServicoActions ──
   const isAdmin = userRole === "ADMIN";
   const isGestor = userRole === "GESTOR" || isAdmin;
   const isTecnico = userRole === "TECNICO";
@@ -132,12 +119,10 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
 
   const podeCancelar = isGestor && status !== "FINALIZADA";
 
-  // ── handlers ──────────────────────────────────────────────
-  function handleToggleSeguir(e: React.MouseEvent) {
-    e.stopPropagation();
-    setSeguindo((v) => !v);
-  }
+  const semNenhumaAcao =
+    !podeAssumir && !podeIniciar && !podeFinalizar && !podeCancelar && !podeAtribuir && !podeDefinirExterno;
 
+  // ── handlers — mesma sequência de chamadas do componente original ──
   async function handleAssumir(e: React.MouseEvent) {
     e.stopPropagation();
     setAssumindo(true);
@@ -178,9 +163,6 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     e.stopPropagation();
     setDefinindoExterno(true);
     try {
-      // reaproveita o endpoint de atribuir técnico com o id fixo do
-      // placeholder, e já pula direto pra EM_ANDAMENTO (não existe
-      // etapa intermediária visível pra técnico externo)
       await atribuirTecnicoOS(os.id, ID_TECNICO_EXTERNO, userId);
       await iniciarAtendimentoOS(os.id);
       onRefresh("EM_ANDAMENTO");
@@ -191,16 +173,19 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     }
   }
 
-  async function handleAtribuirTecnico(tecnicoId: number) {
+  async function handleAtribuirTecnico(e: React.ChangeEvent<HTMLSelectElement>) {
+    const tecnicoId = Number(e.target.value);
     if (!tecnicoId) return;
-    setAtribuindoId(tecnicoId);
+
+    setAtribuindo(true);
     try {
       await atribuirTecnicoOS(os.id, tecnicoId, userId);
       onRefresh();
     } catch (err) {
       console.error(err);
     } finally {
-      setAtribuindoId(null);
+      setAtribuindo(false);
+      e.target.value = "";
     }
   }
 
@@ -219,14 +204,24 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     }
   }
 
+  function handleAbrirTimeline(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setTimelineAberta(true);
+  }
+
+  function handleFecharTimeline() {
+    setTimelineAberta(false);
+  }
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
-      <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+    <div className="bg-white p-5 sm:p-6">
+      <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
         Ações
       </h2>
 
       {isExterno && (
-        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-violet-50 border border-violet-100 mb-3">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-violet-50 border border-violet-100">
           <HardHat size={15} className="text-violet-500 shrink-0" />
           <span className="text-xs font-medium text-violet-700">
             Execução por técnico externo
@@ -234,62 +229,55 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
         </div>
       )}
 
-      {/* TUDO NUMA LINHA SÓ — quebra naturalmente em telas estreitas */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* ação principal do status atual — a mais "cheia" das três,
-            já que é o próximo passo óbvio */}
+      {semNenhumaAcao && (
+        <p className="text-sm text-slate-400">
+          Nenhuma ação disponível para o seu perfil neste momento.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleAbrirTimeline}
+          className="
+            h-11 flex-1 min-w-[150px] rounded-xl flex items-center justify-center gap-1.5
+            text-sm font-semibold whitespace-nowrap transition-all active:scale-[0.98]
+            border border-slate-200 bg-white hover:bg-slate-50 text-slate-700
+          "
+        >
+          <Bell size={16} />
+          Acompanhar OS
+        </button>
+
         {podeAssumir && (
-          <PillButton variant="blue" icon={<CheckCircle2 size={15} />} loading={assumindo} onClick={handleAssumir}>
+          <ActionButton color="blue" icon={<CheckCircle2 size={16} />} loading={assumindo} onClick={handleAssumir}>
             Assumir atendimento
-          </PillButton>
+          </ActionButton>
         )}
 
         {podeIniciar && (
-          <PillButton variant="amber" icon={<PlayCircle size={15} />} loading={iniciando} onClick={handleIniciar}>
+          <ActionButton color="amber" icon={<PlayCircle size={16} />} loading={iniciando} onClick={handleIniciar}>
             Iniciar atendimento
-          </PillButton>
+          </ActionButton>
         )}
-
-        {podeFinalizar && (
-          <PillButton
-            variant="emerald"
-            icon={<ClipboardCheck size={15} />}
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpenFinalizar(true);
-            }}
-          >
-            Finalizar atendimento
-          </PillButton>
-        )}
-
-        {/* sempre visível, em qualquer perfil */}
-        <PillButton
-          variant={seguindo ? "active" : "neutral"}
-          icon={seguindo ? <BellRing size={15} /> : <Bell size={15} />}
-          onClick={handleToggleSeguir}
-        >
-          {seguindo ? "Acompanhando" : "Acompanhar OS"}
-        </PillButton>
 
         {podeDefinirExterno && (
-          <PillButton variant="violet" icon={<HardHat size={15} />} loading={definindoExterno} onClick={handleDefinirExterno}>
+          <ActionButton color="violet" icon={<HardHat size={16} />} loading={definindoExterno} onClick={handleDefinirExterno}>
             Definir técnico externo
-          </PillButton>
+          </ActionButton>
         )}
 
         {podeAtribuir && (
-          <div className="relative shrink-0">
-            <UserPlus size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none" />
+          <div className="relative flex-1 min-w-[150px]">
             <select
               defaultValue=""
-              disabled={atribuindoId !== null}
-              onChange={(e) => handleAtribuirTecnico(Number(e.target.value))}
+              disabled={atribuindo}
+              onChange={handleAtribuirTecnico}
               className="
-                h-9 pl-9 pr-8 rounded-lg border border-slate-200 bg-white
-                text-sm font-medium text-slate-700 appearance-none
-                hover:bg-slate-50 transition-all cursor-pointer
-                disabled:opacity-60 disabled:cursor-not-allowed
+                w-full h-11 rounded-xl border border-slate-200 bg-white
+                pl-9 pr-3 text-sm font-semibold text-slate-700
+                outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400
+                disabled:opacity-60 appearance-none cursor-pointer
               "
             >
               <option value="" disabled>
@@ -301,28 +289,36 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
                 </option>
               ))}
             </select>
-            {atribuindoId !== null ? (
-              <Loader2 size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none" />
-            ) : (
-              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            )}
+            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-blue-600">
+              {atribuindo ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
+            </div>
           </div>
         )}
 
-        {/* destrutivo — sutil (não sólido) e separado à direita quando
-            há espaço, pra não competir visualmente com o resto */}
+        {podeFinalizar && (
+          <ActionButton
+            color="emerald"
+            icon={<ClipboardCheck size={16} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenFinalizar(true);
+            }}
+          >
+            Finalizar atendimento
+          </ActionButton>
+        )}
+
         {podeCancelar && (
-          <PillButton
-            variant="red"
-            icon={<Ban size={15} />}
+          <ActionButton
+            color="red"
+            icon={<Ban size={16} />}
             onClick={(e) => {
               e.stopPropagation();
               setOpenCancelar(true);
             }}
-            className="sm:ml-auto"
           >
             Cancelar OS
-          </PillButton>
+          </ActionButton>
         )}
       </div>
 
@@ -335,10 +331,29 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
         onConfirm={handleFinalizar}
       />
 
-      {/* MODAL CANCELAR */}
+      {/* MODAL TIMELINE — "Acompanhar OS". z-index bem alto de propósito,
+          pra nunca ficar escondido atrás de outro elemento com z-index
+          alto no resto do app (header fixo, sidebar, etc). */}
+      {timelineAberta &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+            onClick={handleFecharTimeline}
+          >
+            <div
+              className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <OrdemServicoTimeline os={os} onClose={handleFecharTimeline} />
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* MODAL CANCELAR — substitui o window.prompt por um formulário de verdade */}
       {openCancelar && (
         <div
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
           onClick={() => !cancelando && setOpenCancelar(false)}
         >
           <div
