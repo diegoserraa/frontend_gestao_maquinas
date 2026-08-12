@@ -3,65 +3,85 @@ import {
   AlertTriangle,
   RotateCcw,
   Search,
-  CalendarIcon,
 } from "lucide-react";
 
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
+import { DateInput } from "@/components/ui/date-input";
 
 // ── helpers de número/formatação ──────────────────────────
-export function toNumber(v: string | number | undefined | null): number {
+
+export function toNumber(
+  v: string | number | undefined | null
+): number {
   if (v === undefined || v === null) return 0;
+
   const n = typeof v === "number" ? v : parseFloat(v);
+
   return Number.isNaN(n) ? 0 : n;
 }
 
-export function formatCurrency(v: string | number): string {
+export function formatCurrency(
+  v: string | number
+): string {
   return toNumber(v).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
 }
 
-export function formatCompactNumber(v: string | number): string {
+export function formatCompactNumber(
+  v: string | number
+): string {
   return toNumber(v).toLocaleString("pt-BR");
 }
 
 // "2026-07-23T03:00:00.000Z" -> "23/07"
 export function formatDiaCurto(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+
+  return d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
 // "2026-07" -> "jul/26"
 export function formatMesCurto(mes: string): string {
   const [ano, m] = mes.split("-");
-  const d = new Date(Number(ano), Number(m) - 1, 1);
-  const label = d.toLocaleDateString("pt-BR", { month: "short" });
+
+  const d = new Date(
+    Number(ano),
+    Number(m) - 1,
+    1
+  );
+
+  const label = d.toLocaleDateString("pt-BR", {
+    month: "short",
+  });
+
   return `${label.replace(".", "")}/${ano.slice(2)}`;
 }
 
-// intervalo padrão: últimos 30 dias, formato YYYY-MM-DD (input date)
+// intervalo padrão: últimos 30 dias
 export function getDefaultPeriodo() {
   const fim = new Date();
   const inicio = new Date();
+
   inicio.setDate(inicio.getDate() - 30);
 
-  const toInput = (d: Date) => d.toISOString().slice(0, 10);
+  const toInput = (d: Date) =>
+    d.toISOString().slice(0, 10);
 
-  return { dataInicio: toInput(inicio), dataFim: toInput(fim) };
+  return {
+    dataInicio: toInput(inicio),
+    dataFim: toInput(fim),
+  };
 }
 
 // ── paleta consistente pros gráficos ──────────────────────
+
 export const CHART_COLORS = {
   azul: "#2563eb",
   verde: "#10b981",
@@ -72,12 +92,13 @@ export const CHART_COLORS = {
 };
 
 // ── card de KPI ────────────────────────────────────────────
+
 type KpiCardProps = {
   label: string;
   value: string | number;
   icon: ReactNode;
-  colorClass: string; // ex: "bg-blue-50 text-blue-600"
-  highlight?: boolean; // ex: críticas > 0
+  colorClass: string;
+  highlight?: boolean;
 };
 
 export function KpiCard({
@@ -141,6 +162,7 @@ export function KpiCard({
 }
 
 // ── wrapper padrão pras seções com gráfico ───────────────
+
 export function SectionCard({
   title,
   subtitle,
@@ -154,27 +176,39 @@ export function SectionCard({
 }) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 ${className}`}
+      className={`
+        bg-white
+        rounded-2xl
+        border
+        border-slate-200
+        shadow-sm
+        p-4
+        sm:p-5
+        ${className}
+      `}
     >
       <div className="mb-3 sm:mb-4">
         <h3 className="font-semibold text-sm sm:text-base text-slate-800">
           {title}
         </h3>
+
         {subtitle && (
-          <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {subtitle}
+          </p>
         )}
       </div>
+
       {children}
     </div>
   );
 }
 
+// ── skeleton do dashboard ─────────────────────────────────
 
 export function DashboardSkeleton() {
   return (
     <div className="space-y-5">
-
-      {/* efeito de brilho */}
       <style>
         {`
           @keyframes shimmer {
@@ -205,25 +239,27 @@ export function DashboardSkeleton() {
         `}
       </style>
 
-
       {/* HEADER */}
+
       <div className="space-y-2">
         <div className="skeleton h-7 w-40 rounded-lg" />
         <div className="skeleton h-4 w-64 rounded-lg" />
       </div>
 
-
       {/* BOTÃO QR */}
+
       <div className="skeleton h-12 w-full rounded-xl" />
 
-
       {/* KPIS */}
-      <div className="
-        grid
-        grid-cols-2
-        sm:grid-cols-5
-        gap-3
-      ">
+
+      <div
+        className="
+          grid
+          grid-cols-2
+          sm:grid-cols-5
+          gap-3
+        "
+      >
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
@@ -236,15 +272,16 @@ export function DashboardSkeleton() {
         ))}
       </div>
 
-
       {/* GRÁFICOS */}
-      <div className="
-        grid
-        grid-cols-1
-        lg:grid-cols-2
-        gap-4
-      ">
 
+      <div
+        className="
+          grid
+          grid-cols-1
+          lg:grid-cols-2
+          gap-4
+        "
+      >
         <div
           className="
             skeleton
@@ -260,11 +297,10 @@ export function DashboardSkeleton() {
             rounded-2xl
           "
         />
-
       </div>
 
-
       {/* LISTA */}
+
       <div
         className="
           skeleton
@@ -272,28 +308,50 @@ export function DashboardSkeleton() {
           rounded-2xl
         "
       />
-
     </div>
   );
 }
 
-export function DashboardErrorState({ onRetry }: { onRetry: () => void }) {
+// ── estado de erro ────────────────────────────────────────
+
+export function DashboardErrorState({
+  onRetry,
+}: {
+  onRetry: () => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
       <div className="h-14 w-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
         <AlertTriangle size={26} />
       </div>
+
       <div>
         <p className="font-medium text-slate-700">
           Não deu pra carregar o dashboard agora
         </p>
+
         <p className="text-sm text-slate-400 mt-1">
           Verifique sua conexão e tente novamente
         </p>
       </div>
+
       <button
         onClick={onRetry}
-        className="flex items-center gap-2 mt-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+        className="
+          flex
+          items-center
+          gap-2
+          mt-2
+          px-4
+          py-2
+          rounded-lg
+          bg-blue-600
+          text-white
+          text-sm
+          font-medium
+          hover:bg-blue-700
+          transition
+        "
       >
         <RotateCcw size={14} />
         Tentar de novo
@@ -302,28 +360,33 @@ export function DashboardErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-export function ChartEmptyState({ label = "Sem dados no período" }: { label?: string }) {
+// ── estado vazio de gráfico ───────────────────────────────
+
+export function ChartEmptyState({
+  label = "Sem dados no período",
+}: {
+  label?: string;
+}) {
   return (
     <div className="h-full min-h-[180px] flex items-center justify-center">
-      <p className="text-sm text-slate-400">{label}</p>
+      <p className="text-sm text-slate-400">
+        {label}
+      </p>
     </div>
   );
 }
 
-// ── filtro de período ──────────────────────────────────────
-// Usa <input type="date"> nativo de propósito: em mobile/PWA isso
-// abre o seletor de data nativo do sistema (muito melhor UX do que
-// um calendar picker customizado), e evita depender de mais um
-// componente shadcn (Popover+Calendar) numa área onde já tivemos
-// dor de cabeça com CSS de outros componentes do projeto.
+// ── filtro de período ─────────────────────────────────────
 //
-// Importante: os inputs trabalham sobre um estado LOCAL (rascunho),
-// separado do período que de fato é aplicado (prop `dataInicio`/
-// `dataFim`). Antes, cada input chamava `onChange` direto, então ao
-// preencher "De" já dispararia uma busca com a data "Até" ainda
-// antiga/incompleta — daí a sensação de "não deixa eu terminar de
-// preencher". Agora só aplica (e busca) quando o usuário confirma
-// clicando em "Buscar" ou aperta Enter em algum dos campos.
+// O DateInput agora é um componente genérico reutilizável.
+// Ele permite:
+// - digitar a data manualmente
+// - selecionar pelo calendário
+// - limpar a data
+//
+// Este componente mantém um rascunho local.
+// O período só é aplicado quando o usuário clicar em Buscar.
+
 export function PeriodoFilter({
   dataInicio,
   dataFim,
@@ -331,167 +394,94 @@ export function PeriodoFilter({
 }: {
   dataInicio: string;
   dataFim: string;
-  onChange: (periodo: { dataInicio: string; dataFim: string }) => void;
+  onChange: (periodo: {
+    dataInicio: string;
+    dataFim: string;
+  }) => void;
 }) {
-  const [inicio, setInicio] = useState<Date | undefined>();
-  const [fim, setFim] = useState<Date | undefined>();
+  const [inicio, setInicio] = useState<
+    string
+  >(dataInicio);
 
+  const [fim, setFim] = useState<string>(
+    dataFim
+  );
+
+  // Sincroniza quando o período externo mudar
   useEffect(() => {
-    if (dataInicio) {
-      setInicio(new Date(`${dataInicio}T00:00:00`));
-    }
+    setInicio(dataInicio);
   }, [dataInicio]);
 
   useEffect(() => {
-    if (dataFim) {
-      setFim(new Date(`${dataFim}T00:00:00`));
-    }
+    setFim(dataFim);
   }, [dataFim]);
 
   const alterado =
-    inicio &&
-    fim &&
-    (
-      format(inicio, "yyyy-MM-dd") !== dataInicio ||
-      format(fim, "yyyy-MM-dd") !== dataFim
-    );
+    inicio !== dataInicio ||
+    fim !== dataFim;
 
   function aplicar() {
     if (!inicio || !fim) return;
 
     onChange({
-      dataInicio: format(inicio, "yyyy-MM-dd"),
-      dataFim: format(fim, "yyyy-MM-dd"),
+      dataInicio: inicio,
+      dataFim: fim,
     });
   }
 
   return (
-  <div
-    className="
-      flex flex-col
-      lg:flex-row
-      lg:items-center
-      lg:justify-end
-      gap-2
-      w-full
-    "
-  >
-    {/* DATA INICIAL */}
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="
-            w-full
-            lg:w-[180px]
-            h-11
-            justify-between
-            bg-white
-            border-slate-200
-            text-slate-700
-            hover:bg-slate-50
-          "
-        >
-          {inicio
-            ? format(inicio, "dd/MM/yyyy")
-            : "Data inicial"}
-
-          <CalendarIcon size={16} className="text-slate-400" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent
-        align="end"
-        className="
-          w-auto
-          p-3
-          bg-white
-          !border-slate-200
-          border
-          rounded-2xl
-          shadow-lg
-          outline-none
-          ring-0
-        "
-      >
-        <Calendar
-          mode="single"
-          locale={ptBR}
-          selected={inicio}
-          onSelect={setInicio}
-        />
-      </PopoverContent>
-    </Popover>
-
-
-    {/* DATA FINAL */}
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="
-            w-full
-            lg:w-[180px]
-            h-11
-            justify-between
-            bg-white
-            border-slate-200
-            text-slate-700
-            hover:bg-slate-50
-          "
-        >
-          {fim
-            ? format(fim, "dd/MM/yyyy")
-            : "Data final"}
-
-          <CalendarIcon size={16} className="text-slate-400" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent
-        align="end"
-        className="
-          w-auto
-          p-3
-          bg-white
-          !border-slate-200
-          border
-          rounded-2xl
-          shadow-lg
-          outline-none
-          ring-0
-        "
-      >
-        <Calendar
-          mode="single"
-          locale={ptBR}
-          selected={fim}
-          onSelect={setFim}
-        />
-      </PopoverContent>
-    </Popover>
-
-
-    {/* BUSCAR */}
-    <Button
-      type="button"
-      onClick={aplicar}
-      disabled={!inicio || !fim}
+    <div
       className="
-        w-full
-        lg:w-[140px]
-        h-11
+        flex
+        flex-col
+        lg:flex-row
+        lg:items-center
+        lg:justify-end
         gap-2
-        bg-blue-600
-        hover:bg-blue-700
-        text-white
-        font-semibold
-        shadow-sm
+        w-full
       "
     >
-      <Search size={16} />
-      Buscar
-    </Button>
-  </div>
-);
+      {/* DATA INICIAL */}
+
+      <div className="w-full lg:w-[220px]">
+        <DateInput
+          value={inicio}
+          onChange={setInicio}
+          placeholder="Data inicial"
+        />
+      </div>
+
+      {/* DATA FINAL */}
+
+      <div className="w-full lg:w-[220px]">
+        <DateInput
+          value={fim}
+          onChange={setFim}
+          placeholder="Data final"
+        />
+      </div>
+
+      {/* BUSCAR */}
+
+      <Button
+        type="button"
+        onClick={aplicar}
+        disabled={!inicio || !fim}
+        className="
+          w-full
+          lg:w-[140px]
+          h-11
+          gap-2
+          bg-blue-600
+          hover:bg-blue-700
+          text-white
+          font-semibold
+          shadow-sm
+        "
+      >
+        <Search size={16} />
+        Buscar
+      </Button>
+    </div>
+  );
 }
