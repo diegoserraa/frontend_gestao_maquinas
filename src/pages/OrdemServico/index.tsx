@@ -22,9 +22,113 @@ type Tecnico = { id: number; nome: string };
 
 function DetailsSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-6 space-y-4 animate-pulse">
-      <div className="h-72 bg-white rounded-2xl border border-slate-200" />
-      <div className="h-40 bg-white rounded-2xl border border-slate-200" />
+    <div
+      className="
+        min-h-screen
+        bg-gradient-to-br
+        from-slate-50
+        via-blue-50/40
+        to-indigo-50/40
+        px-2 sm:px-3 md:px-4
+        pb-6
+      "
+    >
+      <div
+        className="
+          max-w-7xl mx-auto
+          rounded-3xl
+          border border-slate-200/70
+          bg-white/95
+          overflow-hidden
+          shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+        "
+      >
+        {/* HEADER */}
+        <div className="p-6 sm:p-8 animate-pulse">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-3 flex-1">
+              <div className="h-4 w-24 rounded-full bg-slate-200" />
+              <div className="h-8 w-80 max-w-full rounded-xl bg-slate-200" />
+              <div className="h-4 w-56 rounded-xl bg-slate-100" />
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-10 w-28 rounded-xl bg-slate-200" />
+              <div className="h-10 w-28 rounded-xl bg-slate-200" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPIS */}
+        <div className="border-t border-slate-100 p-5 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-slate-200 p-4 animate-pulse"
+              >
+                <div className="h-4 w-24 bg-slate-200 rounded mb-3" />
+                <div className="h-8 w-20 bg-slate-300 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* AÇÕES */}
+        <div className="border-t border-slate-100 p-5 sm:p-6">
+          <div className="flex flex-wrap gap-3 animate-pulse">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-10 w-32 rounded-xl bg-slate-200"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* DESCRIÇÃO + RESOLUÇÃO */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 border-t border-slate-100">
+          {[1, 2].map((item) => (
+            <div
+              key={item}
+              className={`
+                p-6 animate-pulse
+                ${item === 2 ? "border-t xl:border-t-0 xl:border-l border-slate-100" : ""}
+              `}
+            >
+              <div className="flex items-start gap-3 mb-5">
+                <div className="h-10 w-10 rounded-2xl bg-slate-200" />
+
+                <div className="space-y-2 flex-1">
+                  <div className="h-5 w-48 bg-slate-200 rounded" />
+                  <div className="h-3 w-32 bg-slate-100 rounded" />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="h-4 w-full bg-slate-100 rounded" />
+                <div className="h-4 w-full bg-slate-100 rounded" />
+                <div className="h-4 w-5/6 bg-slate-100 rounded" />
+                <div className="h-4 w-4/6 bg-slate-100 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* GALERIA */}
+        <div className="border-t border-slate-100 p-5 sm:p-6 animate-pulse">
+          <div className="h-6 w-40 bg-slate-200 rounded mb-5" />
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="aspect-square rounded-2xl bg-slate-200"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
