@@ -8,7 +8,6 @@ import {
   UserPlus,
   Bell,
   Loader2,
-  X,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -22,6 +21,7 @@ import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
 
 import { FinalizarOrdemServicoModal } from "@/components/modals/ordemServico/FinalizarOrdemServico";
+import { CancelarOrdemServicoModal } from "@/components/modals/ordemServico/CancelarOrdemServico";
 import { OrdemServicoTimeline } from "@/modules/ordemServico/ordemDeServicoTimeline";
 
 type Tecnico = {
@@ -86,8 +86,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
 
   const [openFinalizar, setOpenFinalizar] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
-  const [motivoCancelamento, setMotivoCancelamento] = useState("");
-  const [cancelando, setCancelando] = useState(false);
+
 
   const [timelineAberta, setTimelineAberta] = useState(false);
 
@@ -98,6 +97,10 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
 
   const status = String(os.status ?? "").toUpperCase();
   const isExterno = os.id_tecnico === ID_TECNICO_EXTERNO;
+
+ const tecnicoAtual = tecnicos.find(
+  (t) => Number(t.id) === Number(os.id_tecnico)
+);
 
   const podeAssumir = isTecnico && status === "ABERTA" && !isExterno;
 
@@ -117,7 +120,9 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
   const podeDefinirExterno =
     isGestor && !tecnicoJaDefinido && !["FINALIZADA", "CANCELADA"].includes(status);
 
-  const podeCancelar = isGestor && status !== "FINALIZADA";
+  const podeCancelar =
+  isGestor &&
+  !["FINALIZADA", "CANCELADA"].includes(status);
 
   const semNenhumaAcao =
     !podeAssumir && !podeIniciar && !podeFinalizar && !podeCancelar && !podeAtribuir && !podeDefinirExterno;
@@ -189,20 +194,16 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     }
   }
 
-  async function handleConfirmarCancelamento() {
-    if (!motivoCancelamento.trim()) return;
-    setCancelando(true);
-    try {
-      await cancelarOS(os.id, motivoCancelamento.trim());
-      setOpenCancelar(false);
-      setMotivoCancelamento("");
-      onRefresh();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCancelando(false);
-    }
+async function handleConfirmarCancelamento(motivo: string) {
+  try {
+    await cancelarOS(os.id, motivo);
+    setOpenCancelar(false);
+    onRefresh("CANCELADA");
+  } catch (err) {
+    console.error("[OSActions] Erro ao cancelar OS:", err);
+    throw err;
   }
+}
 
   function handleAbrirTimeline(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
@@ -344,7 +345,11 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
               className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <OrdemServicoTimeline os={os} onClose={handleFecharTimeline} />
+              <OrdemServicoTimeline
+                os={os}
+                tecnicoNome={tecnicoAtual?.nome}
+                onClose={handleFecharTimeline}
+              />
             </div>
           </div>,
           document.body
@@ -352,56 +357,11 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
 
       {/* MODAL CANCELAR — substitui o window.prompt por um formulário de verdade */}
       {openCancelar && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
-          onClick={() => !cancelando && setOpenCancelar(false)}
-        >
-          <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-5 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800">Cancelar ordem de serviço</h3>
-              <button
-                onClick={() => setOpenCancelar(false)}
-                disabled={cancelando}
-                className="h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Motivo do cancelamento</label>
-              <textarea
-                autoFocus
-                value={motivoCancelamento}
-                onChange={(e) => setMotivoCancelamento(e.target.value)}
-                placeholder="Descreva o motivo..."
-                rows={3}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                onClick={() => setOpenCancelar(false)}
-                disabled={cancelando}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={handleConfirmarCancelamento}
-                disabled={cancelando || !motivoCancelamento.trim()}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {cancelando && <Loader2 size={14} className="animate-spin" />}
-                Confirmar cancelamento
-              </button>
-            </div>
-          </div>
-        </div>
+<CancelarOrdemServicoModal
+  open={openCancelar}
+  onClose={() => setOpenCancelar(false)}
+  onConfirm={handleConfirmarCancelamento}
+/>
       )}
     </div>
   );

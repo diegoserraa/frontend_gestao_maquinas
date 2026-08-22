@@ -293,63 +293,67 @@ export default function OrdemServicoDetails() {
           </p>
         </div>
 
-        <div className="border-t xl:border-t-0 xl:border-l border-slate-100 p-5 sm:p-6 bg-gradient-to-br from-emerald-50/50 to-transparent">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="h-10 w-10 rounded-2xl bg-emerald-100 flex items-center justify-center shadow-sm">
-              <ListChecks size={18} className="text-emerald-600" />
-            </div>
+        <div
+  className={`border-t xl:border-t-0 xl:border-l border-slate-100 p-5 sm:p-6 ${
+    statusUpper === "CANCELADA"
+      ? "bg-gradient-to-br from-red-50/70 to-transparent"
+      : "bg-gradient-to-br from-emerald-50/50 to-transparent"
+  }`}
+>
+  <div className="flex items-start gap-3 mb-4">
+    <div
+      className={`h-10 w-10 rounded-2xl flex items-center justify-center shadow-sm ${
+        statusUpper === "CANCELADA"
+          ? "bg-red-100"
+          : "bg-emerald-100"
+      }`}
+    >
+      <ListChecks
+        size={18}
+        className={
+          statusUpper === "CANCELADA"
+            ? "text-red-600"
+            : "text-emerald-600"
+        }
+      />
+    </div>
 
-            <div>
-              <h2 className="font-semibold text-slate-800">
-                Resolução Aplicada
-              </h2>
-              <p className="text-xs text-slate-500">
-                Informações registradas pelo técnico
-              </p>
-            </div>
-          </div>
+    <div>
+      <h2 className="font-semibold text-slate-800">
+        {statusUpper === "CANCELADA"
+          ? "Motivo do Cancelamento"
+          : "Resolução Aplicada"}
+      </h2>
 
-          <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">
-            {os.resolucao || "Ainda não finalizada."}
-          </p>
+      <p className="text-xs text-slate-500">
+        {statusUpper === "CANCELADA"
+          ? "Justificativa registrada pelo gestor"
+          : "Informações registradas pelo técnico"}
+      </p>
+    </div>
+  </div>
 
-          {os.data_resolucao && (
-            <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-              Finalizada em {formatDateTime(os.data_resolucao)}
-            </div>
-          )}
-        </div>
+  <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">
+    {statusUpper === "CANCELADA"
+      ? os.motivo_cancelamento || "Nenhum motivo informado."
+      : os.resolucao || "Ainda não finalizada."}
+  </p>
+
+  {statusUpper === "CANCELADA" && os.data_cancelamento && (
+    <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+      Cancelada em {formatDateTime(os.data_cancelamento)}
+    </div>
+  )}
+
+  {statusUpper !== "CANCELADA" && os.data_resolucao && (
+    <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+      Finalizada em {formatDateTime(os.data_resolucao)}
+    </div>
+  )}
+</div>
       </div>
 
-      {/* CANCELAMENTO */}
-      {statusUpper === "CANCELADA" && os.motivo_cancelamento && (
-        <div className="border-t border-slate-100 p-5 sm:p-6 bg-gradient-to-r from-red-50/50 to-transparent">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="h-10 w-10 rounded-2xl bg-red-100 flex items-center justify-center shadow-sm">
-              <FileText size={18} className="text-red-600" />
-            </div>
-
-            <div>
-              <h2 className="font-semibold text-slate-800">
-                Motivo do Cancelamento
-              </h2>
-              <p className="text-xs text-slate-500">
-                Justificativa registrada pelo gestor
-              </p>
-            </div>
-          </div>
-
-          <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">
-            {os.motivo_cancelamento}
-          </p>
-
-          {os.data_cancelamento && (
-            <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
-              Cancelada em {formatDateTime(os.data_cancelamento)}
-            </div>
-          )}
-        </div>
-      )}
+  
 
       <div className="border-t border-slate-100 bg-slate-50/50">
         <OSPhotosGallery osId={os.id} />

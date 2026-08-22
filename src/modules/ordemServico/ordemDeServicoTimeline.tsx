@@ -205,10 +205,16 @@ function AnexosEvento({
 // ── Componente principal ─────────────────────────────────
 interface Props {
   os: OrdemServico;
+  tecnicoNome?: string;
   onClose?: () => void;
 }
 
-export function OrdemServicoTimeline({ os, onClose }: Props) {
+
+  export function OrdemServicoTimeline({
+  os,
+  tecnicoNome,
+  onClose,
+}: Props) {
   const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [loadingAnexos, setLoadingAnexos] = useState(true);
   const [anexosError, setAnexosError] = useState<string | null>(null);
@@ -271,27 +277,31 @@ export function OrdemServicoTimeline({ os, onClose }: Props) {
     origemAnexo: "OS_ABERTURA",
   });
 
-  if (os.data_atribuicao) {
-    eventos.push({
-      id: 2,
-      titulo: "Atribuição ao técnico",
-      descricao: os.id_tecnico
-        ? `OS designada ao técnico #${os.id_tecnico}`
-        : "Ordem de serviço designada para um técnico responsável",
-      data: os.data_atribuicao,
-      status: "atribuida",
-    });
-  }
+ if (os.data_atribuicao) {
+  eventos.push({
+    id: 2,
+    titulo: "Atribuição ao técnico",
+    descricao: tecnicoNome
+      ? `${tecnicoNome} foi atribuído como responsável pela ordem de serviço`
+      : os.id_tecnico
+      ? `OS designada ao técnico #${os.id_tecnico}`
+      : "Ordem de serviço designada para um técnico responsável",
+    data: os.data_atribuicao,
+    status: "atribuida",
+  });
+}
 
-  if (os.data_inicio_atendimento) {
-    eventos.push({
-      id: 3,
-      titulo: "Em andamento",
-      descricao: "Técnico iniciou o atendimento",
-      data: os.data_inicio_atendimento,
-      status: "andamento",
-    });
-  }
+if (os.data_inicio_atendimento) {
+  eventos.push({
+    id: 3,
+    titulo: "Em andamento",
+    descricao: tecnicoNome
+      ? `${tecnicoNome} iniciou o atendimento`
+      : "Técnico iniciou o atendimento",
+    data: os.data_inicio_atendimento,
+    status: "andamento",
+  });
+}
 
   if (os.data_resolucao && os.status?.toUpperCase() === "FINALIZADA") {
     eventos.push({

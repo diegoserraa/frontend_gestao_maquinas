@@ -26,3 +26,19 @@ export async function updateOSStatus(id: number, status: string) {
     body: JSON.stringify({ status }),
   });
 }
+export interface IndicadoresPorMaquina {
+  osAbertas: number;
+  mttrSegundos: number | null;
+  mtbfSegundos: number | null;
+  tempoAtendimentoSegundos: number | null;
+}
+
+export async function getIndicadoresPorMaquina(
+  maquinaId: number
+): Promise<IndicadoresPorMaquina> {
+  const response = await fetch(
+    `${API_URL}/ordens-servico/maquina/${maquinaId}/indicadores`
+  );
+
+  return response.json();
+}

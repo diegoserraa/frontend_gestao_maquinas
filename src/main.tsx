@@ -2,6 +2,8 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 import { registerSW } from "virtual:pwa-register";
 
 import "./index.css";
@@ -41,5 +43,7 @@ updateSW = registerSW({
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <RouterProvider router={router} />
+  <TooltipProvider>
+    <RouterProvider router={router} />
+  </TooltipProvider>
 );

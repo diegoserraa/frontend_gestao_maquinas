@@ -49,7 +49,7 @@ export function getMachineDetailsColumns(
   onRefresh?: () => void,
   userRole: UserRole = "OPERADOR",
   userId: number = 0,
-  tecnicos: Tecnico[] = []
+  tecnicos: Tecnico[] = [],
 ): Column<OrdemServico>[] {
   return [
    {
@@ -164,7 +164,8 @@ export function getMachineDetailsColumns(
           tecnicos={tecnicos}
           onRefresh={onRefresh}
           onView={onView}
-        />
+          
+/>
       ),
     },
   ];

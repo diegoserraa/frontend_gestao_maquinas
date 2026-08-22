@@ -35,7 +35,8 @@ import { getMachineDetailsMobileColumns } from "../../modules/machineDetails/mac
 
 import { useSectors } from "@/hooks/useSector";
 import { OrdemServicoTimeline } from "../../modules/ordemServico/ordemDeServicoTimeline";
-import { OrdemServicoModal } from "../../components/modals/ordemServico/CriarOrdemServico"; // 👈 ADICIONADO
+import { OrdemServicoModal } from "../../components/modals/ordemServico/CriarOrdemServico";
+import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico"; // 👈 ADICIONADO
 
 /* ------------------------------------------------------------------ */
 /* SKELETONS — mesmo padrão visual do restante da tela (rounded-2xl,   */
@@ -127,6 +128,9 @@ export default function MachineDetails() {
 
   // 👇 MODAL CREATE OS
   const [openCreateOS, setOpenCreateOS] = useState(false);
+  const [openCancelar, setOpenCancelar] = useState(false);
+  const [osParaCancelar, setOsParaCancelar] =
+  useState<OrdemServico | null>(null);
 
   // 👇 usado no refreshOsList pra saber se acompanha o filtro automaticamente
   const isTecnico = userRole === "TECNICO";
@@ -226,7 +230,7 @@ export default function MachineDetails() {
         refreshOsList,
         userRole,
         userId,
-        tecnicos
+        tecnicos,
       ),
     [tecnicos, machineId]
   );
@@ -238,12 +242,18 @@ export default function MachineDetails() {
         refreshOsList,
         userRole,
         userId,
-        tecnicos
+        tecnicos,
       ),
     [tecnicos, machineId]
   );
-
+const tecnicoAtual = selectedOS?.id_tecnico
+  ? tecnicos.find((t) => t.id === selectedOS.id_tecnico)
+  : undefined;
   // 👇 CREATE OS HANDLER
+  function handleCancelarOS(os: OrdemServico) {
+  setOsParaCancelar(os);
+  setOpenCancelar(true);
+}
   async function handleCreateOS(data: OrdemServicoFormData) {
   try {
     const createdOS = await createOrdemServico(data); // 👈 guarda o retorno
@@ -367,6 +377,7 @@ export default function MachineDetails() {
           <div className="w-[35%] flex-shrink-0">
             <OrdemServicoTimeline
               os={selectedOS}
+              tecnicoNome={tecnicoAtual?.nome}
               onClose={() => setSelectedOS(null)}
             />
           </div>

@@ -12,6 +12,7 @@ import { ID_TECNICO_EXTERNO } from "./ordemServicoConstants";
 import type { OrdemServico } from "../machineDetails/machineDetailsTypes";
 
 import { FinalizarOrdemServicoModal } from "../../components/modals/ordemServico/FinalizarOrdemServico";
+import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico";
 
 type Tecnico = {
   id: number;
@@ -29,6 +30,7 @@ type Props = {
   onViewOS?: () => void;
   onRefresh?: (nextStatus?: string) => void; // 👈 agora aceita o hint do próximo status
   onView?: (os: OrdemServico) => void;
+
 };
 
 export function OrdemServicoActions({
@@ -42,10 +44,12 @@ export function OrdemServicoActions({
   onViewOS,
   onRefresh,
   onView,
+
 }: Props) {
   const [openFinalizar, setOpenFinalizar] = useState(false);
   const [osSelecionada, setOsSelecionada] = useState<OrdemServico | null>(null);
   const [definindoExterno, setDefinindoExterno] = useState(false);
+  const [openCancelar, setOpenCancelar] = useState(false);
    
 
   const isAdmin = userRole === "ADMIN";
@@ -163,6 +167,20 @@ const podeDefinirExterno =
   const podeCancelar =
     isGestor && status !== "FINALIZADA";
 
+    async function handleCancelar(motivo: string) {
+  if (!osSelecionada) return;
+
+  try {
+    await cancelarOS(osSelecionada.id, motivo);
+
+    setOpenCancelar(false);
+    setOsSelecionada(null);
+
+    onRefresh?.("CANCELADA");
+  } catch (err) {
+    console.error("Erro ao cancelar OS:", err);
+  }
+}
   async function handleDefinirExterno(e: React.MouseEvent) {
     e.stopPropagation();
     if (!ordem) return;
@@ -294,24 +312,18 @@ const podeDefinirExterno =
             </select>
           )}
 
-          {podeCancelar && (
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                const motivo = window.prompt("Motivo do cancelamento:");
-                if (!motivo?.trim()) return;
-                try {
-                  await cancelarOS(ordem.id, motivo);
-                  onRefresh?.();
-                } catch (err) {
-                  console.error(err);
-                }
-              }}
-              className="w-full h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700"
-            >
-              Cancelar OS
-            </button>
-          )}
+  {podeCancelar && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setOsSelecionada(ordem);
+      setOpenCancelar(true);
+    }}
+    className="w-full h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700"
+  >
+    Cancelar OS
+  </button>
+)}
 
           <button
             onClick={(e) => {
@@ -324,18 +336,31 @@ const podeDefinirExterno =
           </button>
         </div>
 
-        {osSelecionada && (
-          <FinalizarOrdemServicoModal
-            open={openFinalizar}
-            onClose={() => {
-              setOpenFinalizar(false);
-              setOsSelecionada(null);
-            }}
-            osId={osSelecionada.id}
-            isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
-            onConfirm={handleFinalizar}
-          />
-        )}
+       {/* MODAL FINALIZAR */}
+{osSelecionada && (
+  <FinalizarOrdemServicoModal
+    open={openFinalizar}
+    onClose={() => {
+      setOpenFinalizar(false);
+      setOsSelecionada(null);
+    }}
+    osId={osSelecionada.id}
+    isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
+    onConfirm={handleFinalizar}
+  />
+)}
+
+{/* MODAL CANCELAR */}
+{osSelecionada && (
+  <CancelarOrdemServicoModal
+  open={openCancelar}
+  onClose={() => {
+    setOpenCancelar(false);
+    setOsSelecionada(null);
+  }}
+  onConfirm={handleCancelar}
+/>
+)}
       </>
     );
   }
@@ -437,25 +462,18 @@ const podeDefinirExterno =
             </select>
           )}
 
-          {podeCancelar && (
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                const motivo = window.prompt("Motivo do cancelamento:");
-                if (!motivo?.trim()) return;
-                try {
-                  await cancelarOS(ordem.id, motivo);
-                  onRefresh?.();
-                } catch (err) {
-                  console.error(err);
-                }
-              }}
-              className="rounded px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-100"
-            >
-              Cancelar
-            </button>
-          )}
-
+    {podeCancelar && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setOsSelecionada(ordem);
+      setOpenCancelar(true);
+    }}
+    className="rounded px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-100"
+  >
+    Cancelar
+  </button>
+)}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -469,18 +487,29 @@ const podeDefinirExterno =
       </div>
 
       {/* MODAL FINALIZAR */}
-      {osSelecionada && (
-        <FinalizarOrdemServicoModal
-          open={openFinalizar}
-          onClose={() => {
-            setOpenFinalizar(false);
-            setOsSelecionada(null);
-          }}
-          osId={osSelecionada.id}
-          isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
-          onConfirm={handleFinalizar}
-        />
-      )}
+      {/* MODAL FINALIZAR */}
+{osSelecionada && (
+  <FinalizarOrdemServicoModal
+    open={openFinalizar}
+    onClose={() => {
+      setOpenFinalizar(false);
+      setOsSelecionada(null);
+    }}
+    osId={osSelecionada.id}
+    isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
+    onConfirm={handleFinalizar}
+  />
+)}
+
+{/* MODAL CANCELAR */}
+<CancelarOrdemServicoModal
+  open={openCancelar}
+  onClose={() => {
+    setOpenCancelar(false);
+    setOsSelecionada(null);
+  }}
+  onConfirm={handleCancelar}
+/>
     </>
   );
 }
