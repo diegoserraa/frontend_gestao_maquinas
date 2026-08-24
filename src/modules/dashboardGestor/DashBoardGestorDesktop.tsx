@@ -485,11 +485,11 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                   // preenche o espaço sobrando quando a lista é curta, em
                   // vez de deixar um vão em branco embaixo (o grid estica
                   // o card pra mesma altura dos vizinhos)
-                  <div className="flex-1 min-h-[56px] flex items-center justify-center rounded-xl border border-dashed border-slate-200">
+                  
                     <p className="text-xs text-slate-400 text-center px-4">
                       As demais máquinas estão com a preventiva em dia ✅
                     </p>
-                  </div>
+                 
                 )
               )}
             </div>

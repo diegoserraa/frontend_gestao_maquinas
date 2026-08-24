@@ -15,6 +15,7 @@ import MachineDetails from "@/pages/Mantenance";
 import Login from "@/pages/Login";
 
 import OrdemServicoDetails from "@/pages/OrdemServico";
+import Reports from "@/pages/Relatorio";
 
 
 
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
       {
         path: "user",
         element: <User />,
+      },
+       {
+        path: "reports",
+        element: <Reports />,
       },
 
 
