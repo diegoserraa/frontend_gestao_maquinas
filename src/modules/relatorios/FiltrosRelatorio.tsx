@@ -121,12 +121,13 @@ export function FiltrosRelatorio({
   }
 
   /*
-   * Altura única para TODOS os filtros.
+   * Altura única para TODOS os campos e botões.
    *
-   * O Select agora possui a mesma altura
-   * visual do DateInput.
+   * O DateInput (document 9) usa h-11 fixo no input
+   * interno — então todo o resto (Select, botões)
+   * precisa usar h-11 também pra bater certinho.
    */
-  const filterHeight = "h-10";
+  const filterHeight = "h-11";
 
   /*
    * Estilo dos SelectTriggers.
@@ -138,6 +139,7 @@ export function FiltrosRelatorio({
    * - focus-visible:ring-0
    *
    * Evita a borda preta padrão ao abrir/focar.
+   * w-full garante 100% da largura da célula do grid.
    */
   const selectClass = `
     ${filterHeight}
@@ -175,6 +177,12 @@ export function FiltrosRelatorio({
     data-[state=open]:border-blue-300
   `;
 
+  /*
+   * Classe base dos botões — mesma altura e mesma
+   * largura (100% da célula do grid) que os campos.
+   */
+  const buttonClass = `${filterHeight} w-full gap-2 rounded-xl font-semibold shadow-sm transition-all active:scale-[0.98]`;
+
   return (
     <div
       className="
@@ -202,15 +210,16 @@ export function FiltrosRelatorio({
       {/*
        * FILTROS + AÇÕES
        *
-       * Em telas menores:
-       * cada item ocupa sua linha/grid.
-       *
-       * Em telas grandes:
-       * tudo fica na mesma linha.
+       * Todos os 6 itens (2 datas, 2 selects, 2 botões)
+       * dividem o mesmo grid com colunas de largura
+       * IGUAL (xl:grid-cols-6 → repeat(6, 1fr)), então
+       * cada célula ocupa exatamente 1/6 da largura do
+       * container e todo item estica 100% da sua célula
+       * (w-full) com a mesma altura (h-11).
        */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[1.05fr_1.05fr_1.15fr_1.15fr] gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
         {/* DATA INICIAL */}
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <label
             className="
               block
@@ -225,7 +234,7 @@ export function FiltrosRelatorio({
             Data Inicial
           </label>
 
-          <div className={filterHeight}>
+          <div className={`${filterHeight} w-full`}>
             <DateInput
               value={filtros.dataInicial}
               onChange={(valor) =>
@@ -236,7 +245,7 @@ export function FiltrosRelatorio({
         </div>
 
         {/* DATA FINAL */}
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <label
             className="
               block
@@ -251,7 +260,7 @@ export function FiltrosRelatorio({
             Data Final
           </label>
 
-          <div className={filterHeight}>
+          <div className={`${filterHeight} w-full`}>
             <DateInput
               value={filtros.dataFinal}
               onChange={(valor) =>
@@ -262,7 +271,7 @@ export function FiltrosRelatorio({
         </div>
 
         {/* SETOR */}
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <label
             className="
               block
@@ -414,7 +423,7 @@ export function FiltrosRelatorio({
         </div>
 
         {/* MÁQUINA */}
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <label
             className="
               block
@@ -566,26 +575,26 @@ export function FiltrosRelatorio({
         </div>
 
         {/* BOTÃO VISUALIZAR */}
-        <div className="min-w-0">
+        <div className="min-w-0 w-full flex flex-col justify-end">
+          {/* espaçador invisível — replica a altura do label acima
+              dos campos, garantindo que o botão fique alinhado na
+              mesma base que os campos ao lado. */}
+          <span
+            aria-hidden
+            className="block mb-1.5 text-[10px] font-semibold uppercase tracking-wide invisible select-none"
+          >
+            .
+          </span>
+
           <Button
             type="button"
             onClick={onVisualizar}
             disabled={loading}
-            className="
-              h-10
-              w-full
-              gap-2
-              rounded-xl
-
+            className={`
+              ${buttonClass}
               bg-blue-600
               hover:bg-blue-700
-
               text-white
-              font-semibold
-              shadow-sm
-
-              transition-all
-              active:scale-[0.98]
 
               outline-none
               focus:outline-none
@@ -594,7 +603,7 @@ export function FiltrosRelatorio({
               focus-visible:outline-none
               focus-visible:ring-2
               focus-visible:ring-blue-100
-            "
+            `}
           >
             {loading ? (
               <Loader2
@@ -612,7 +621,14 @@ export function FiltrosRelatorio({
         </div>
 
         {/* BOTÃO EXPORTAR */}
-        <div className="min-w-0">
+        <div className="min-w-0 w-full flex flex-col justify-end">
+          <span
+            aria-hidden
+            className="block mb-1.5 text-[10px] font-semibold uppercase tracking-wide invisible select-none"
+          >
+            .
+          </span>
+
           <Button
             type="button"
             variant="outline"
@@ -620,24 +636,14 @@ export function FiltrosRelatorio({
               setModalExportarAberto(true)
             }
             disabled={exportando}
-            className="
-              h-10
-              w-full
-              gap-2
-              rounded-xl
-
+            className={`
+              ${buttonClass}
               border-emerald-200
               bg-white
               text-emerald-700
 
               hover:bg-emerald-50
               hover:border-emerald-300
-
-              font-semibold
-              shadow-sm
-
-              transition-all
-              active:scale-[0.98]
 
               outline-none
               focus:outline-none
@@ -646,7 +652,7 @@ export function FiltrosRelatorio({
               focus-visible:outline-none
               focus-visible:ring-2
               focus-visible:ring-emerald-100
-            "
+            `}
           >
             {exportando ? (
               <Loader2
