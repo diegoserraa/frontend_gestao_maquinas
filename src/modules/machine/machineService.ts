@@ -1,81 +1,57 @@
+import { apiGet, apiUpload, apiDelete, apiPatch } from "@/lib/apiClient";
 import type { Machine } from "./machineTypes";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export async function getMachines(): Promise<Machine[]> {
-  const response = await fetch(`${API_URL}/maquinas`);
-  return response.json();
+  return apiGet<Machine[]>("/maquinas");
 }
 
 export async function getSectors() {
-  const response = await fetch(`${API_URL}/setores`);
-  return response.json();
+  return apiGet("/setores");
+}
+
+function montarFormData(payload: any): FormData {
+  const formData = new FormData();
+
+  formData.append("nome", payload.nome);
+  formData.append("modelo", payload.modelo);
+  formData.append("fabricante", payload.fabricante);
+  formData.append("ano", String(payload.ano));
+  formData.append("status", payload.status);
+  formData.append("setor_id", String(payload.setor_id));
+  formData.append("intervalo_manutencao_dias", String(payload.intervalo_manutencao_dias));
+  formData.append("ultima_manutencao", payload.ultima_manutencao);
+
+  if (payload.imagem) {
+    formData.append("imagem", payload.imagem);
+  }
+
+  return formData;
 }
 
 export async function createMachine(payload: any): Promise<Machine> {
-  const formData = new FormData();
-
-  formData.append("nome", payload.nome);
-  formData.append("modelo", payload.modelo);
-  formData.append("fabricante", payload.fabricante);
-  formData.append("ano", String(payload.ano));
-  formData.append("status", payload.status);
-  formData.append("setor_id", String(payload.setor_id));
-  formData.append("intervalo_manutencao_dias", String(payload.intervalo_manutencao_dias));
-  formData.append("ultima_manutencao", payload.ultima_manutencao);
-
-  if (payload.imagem) {
-    formData.append("imagem", payload.imagem);
+  try {
+    return await apiUpload<Machine>("/maquinas", montarFormData(payload), "POST");
+  } catch {
+    throw new Error("Erro ao criar máquina");
   }
-
-  const res = await fetch(`${API_URL}/maquinas`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) throw new Error("Erro ao criar máquina");
-
-  return res.json();
 }
 
 export async function updateMachine(id: number, payload: any): Promise<Machine> {
-  const formData = new FormData();
-
-  formData.append("nome", payload.nome);
-  formData.append("modelo", payload.modelo);
-  formData.append("fabricante", payload.fabricante);
-  formData.append("ano", String(payload.ano));
-  formData.append("status", payload.status);
-  formData.append("setor_id", String(payload.setor_id));
-  formData.append("intervalo_manutencao_dias", String(payload.intervalo_manutencao_dias));
-  formData.append("ultima_manutencao", payload.ultima_manutencao);
-
-
-  if (payload.imagem) {
-    formData.append("imagem", payload.imagem);
+  try {
+    return await apiUpload<Machine>(`/maquinas/${id}`, montarFormData(payload), "PUT");
+  } catch {
+    throw new Error("Erro ao atualizar máquina");
   }
-
-  const res = await fetch(`${API_URL}/maquinas/${id}`, {
-    method: "PUT",
-    body: formData,
-  });
-
-  if (!res.ok) throw new Error("Erro ao atualizar máquina");
-
-  return res.json();
 }
 
 export async function deleteMachine(id: number) {
-  return fetch(`${API_URL}/maquinas/${id}`, { method: "DELETE" });
+  return apiDelete(`/maquinas/${id}`);
 }
 
 export async function toggleMachineStatus(id: number) {
-  const response = await fetch(`${API_URL}/maquinas/${id}/status`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) throw new Error("Erro ao alterar status da máquina");
-
-  return response.json();
+  try {
+    return await apiPatch(`/maquinas/${id}/status`);
+  } catch {
+    throw new Error("Erro ao alterar status da máquina");
+  }
 }

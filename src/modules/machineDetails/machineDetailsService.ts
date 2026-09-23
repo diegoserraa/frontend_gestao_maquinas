@@ -1,31 +1,23 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiGet, apiPatch } from "@/lib/apiClient";
 
 /* MACHINE */
 export async function getMachineById(id: number) {
-  const res = await fetch(`${API_URL}/maquinas/${id}`);
-  return res.json();
+  return apiGet(`/maquinas/${id}`);
 }
 
 /* OS */
 export async function getOrdensByMachineId(id: number) {
-  const res = await fetch(
-    `${API_URL}/maquinas/${id}/os`
-  );
-
-  if (!res.ok) {
+  try {
+    return await apiGet(`/maquinas/${id}/os`);
+  } catch {
     throw new Error("Erro ao buscar ordens de serviço");
   }
-
-  return res.json();
 }
 
 export async function updateOSStatus(id: number, status: string) {
-  return fetch(`${API_URL}/ordens-servico/${id}/status`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
-  });
+  return apiPatch(`/ordens-servico/${id}/status`, { status });
 }
+
 export interface IndicadoresPorMaquina {
   osAbertas: number;
   mttrSegundos: number | null;
@@ -36,9 +28,5 @@ export interface IndicadoresPorMaquina {
 export async function getIndicadoresPorMaquina(
   maquinaId: number
 ): Promise<IndicadoresPorMaquina> {
-  const response = await fetch(
-    `${API_URL}/ordens-servico/maquina/${maquinaId}/indicadores`
-  );
-
-  return response.json();
+  return apiGet<IndicadoresPorMaquina>(`/ordens-servico/maquina/${maquinaId}/indicadores`);
 }

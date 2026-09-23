@@ -8,7 +8,8 @@ import {
   Handshake,
   Menu,
   LogOut,
-  FileBarChart
+  FileBarChart,
+  Activity
 } from "lucide-react";
 
 interface Props {
@@ -37,6 +38,11 @@ export default function Sidebar({
       label: "Máquinas",
       path: "/machines",
       icon: Cpu,
+    },
+    {
+      label: "Monitoramento",
+      path: "/monitoring",
+      icon: Activity,
     },
     {
       label: "Setores",

@@ -1,46 +1,21 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from "@/lib/apiClient";
 
 export async function getUsers() {
-  const res = await fetch(`${API_URL}/usuarios`);
-  return res.json();
+  return apiGet("/usuarios");
 }
 
 export async function createUser(payload: unknown) {
-  return fetch(`${API_URL}/usuarios`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  return apiPost("/usuarios", payload);
 }
 
-export async function updateUser(
-  id: number,
-  payload: unknown
-) {
-  return fetch(`${API_URL}/usuarios/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+export async function updateUser(id: number, payload: unknown) {
+  return apiPut(`/usuarios/${id}`, payload);
 }
 
-export async function toggleUserStatus(
-  id: number
-) {
-  return fetch(
-    `${API_URL}/usuarios/${id}/toggle-status`,
-    {
-      method: "PATCH",
-    }
-  );
+export async function toggleUserStatus(id: number) {
+  return apiPatch(`/usuarios/${id}/toggle-status`);
 }
 
 export async function deleteUser(id: number) {
-  return fetch(`${API_URL}/usuarios/${id}`, {
-    method: "DELETE",
-  });
+  return apiDelete(`/usuarios/${id}`);
 }

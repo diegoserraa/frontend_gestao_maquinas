@@ -8,7 +8,8 @@ import {
   Handshake,
   X,
   LogOut,
-  FileBarChart
+  FileBarChart,
+  Activity
 } from "lucide-react";
 
 interface Props {
@@ -38,6 +39,11 @@ export default function SidebarMobile({
       label: "Máquinas",
       path: "/machines",
       icon: Cpu,
+    },
+    {
+      label: "Monitoramento",
+      path: "/monitoring",
+      icon: Activity,
     },
     {
       label: "Setores",

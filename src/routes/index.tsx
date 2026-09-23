@@ -16,6 +16,7 @@ import Login from "@/pages/Login";
 
 import OrdemServicoDetails from "@/pages/OrdemServico";
 import Reports from "@/pages/Relatorio";
+import Monitoring from "@/pages/Monitoring";
 
 
 
@@ -51,6 +52,12 @@ export const router = createBrowserRouter([
       {
         path: "machines",
         element: <Machines />,
+      },
+
+
+      {
+        path: "monitoring",
+        element: <Monitoring />,
       },
 
 

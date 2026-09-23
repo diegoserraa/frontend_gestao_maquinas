@@ -1,12 +1,11 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiGet, apiPost, apiPatch } from "@/lib/apiClient";
 
 /* =========================
    MACHINE
 ========================= */
 
 export async function getMachineById(id: number) {
-  const res = await fetch(`${API_URL}/maquinas/${id}`);
-  return res.json();
+  return apiGet(`/maquinas/${id}`);
 }
 
 /* =========================
@@ -14,13 +13,11 @@ export async function getMachineById(id: number) {
 ========================= */
 
 export async function getOrdensByMachineId(id: number) {
-  const res = await fetch(`${API_URL}/maquinas/${id}/os`);
-
-  if (!res.ok) {
+  try {
+    return await apiGet(`/maquinas/${id}/os`);
+  } catch {
     throw new Error("Erro ao buscar ordens de serviço");
   }
-
-  return res.json();
 }
 
 /* =========================
@@ -42,19 +39,11 @@ export type OrdemServicoFormData = {
 ========================= */
 
 export async function updateOSStatus(id: number, status: string) {
-  const res = await fetch(`${API_URL}/ordens-servico/${id}/status`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  });
-
-  if (!res.ok) {
+  try {
+    return await apiPatch(`/ordens-servico/${id}/status`, { status });
+  } catch {
     throw new Error("Erro ao atualizar status da OS");
   }
-
-  return res.json();
 }
 
 /* =========================
@@ -71,19 +60,11 @@ export async function createOrdemServico(data: {
   id_tecnico?: number | null;
   resolucao?: string;
 }) {
-  const res = await fetch(`${API_URL}/ordens-servico`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
+  try {
+    return await apiPost("/ordens-servico", data);
+  } catch {
     throw new Error("Erro ao criar ordem de serviço");
   }
-
-  return res.json();
 }
 
 /* =========================
@@ -96,27 +77,22 @@ export async function atribuirTecnicoOS(
   id_tecnico: number,
   id_atribuido_por: number
 ) {
-  const res = await fetch(`${API_URL}/ordens-servico/${osId}/atribuir`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id_tecnico, id_atribuido_por }),
-  });
-
-  if (!res.ok) throw new Error("Erro ao atribuir técnico");
-  return res.json();
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/atribuir`, { id_tecnico, id_atribuido_por });
+  } catch {
+    throw new Error("Erro ao atribuir técnico");
+  }
 }
 
 /* =========================
    INICIAR ATENDIMENTO
 ========================= */
 export async function iniciarAtendimentoOS(osId: number) {
-  const res = await fetch(`${API_URL}/ordens-servico/${osId}/iniciar`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!res.ok) throw new Error("Erro ao iniciar atendimento");
-  return res.json();
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/iniciar`);
+  } catch {
+    throw new Error("Erro ao iniciar atendimento");
+  }
 }
 
 /* =========================
@@ -130,10 +106,8 @@ export async function finalizarOS(
   valorGasto?: number,
   parceiro?: { id_parceiro: number; valor_parceiro: number } | null
 ) {
-  const res = await fetch(`${API_URL}/ordens-servico/${osId}/finalizar`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/finalizar`, {
       resolucao,
       valor_gasto: valorGasto ?? null,
       ...(parceiro
@@ -142,41 +116,35 @@ export async function finalizarOS(
             valor_parceiro: parceiro.valor_parceiro,
           }
         : {}),
-    }),
-  });
-
-  if (!res.ok) throw new Error("Erro ao finalizar OS");
-  return res.json();
+    });
+  } catch {
+    throw new Error("Erro ao finalizar OS");
+  }
 }
 
 /* =========================
    CANCELAR OS
 ========================= */
 export async function cancelarOS(osId: number, motivo_cancelamento: string) {
-  const res = await fetch(`${API_URL}/ordens-servico/${osId}/cancelar`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ motivo_cancelamento }),
-  });
-
-  if (!res.ok) throw new Error("Erro ao cancelar OS");
-  return res.json();
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/cancelar`, { motivo_cancelamento });
+  } catch {
+    throw new Error("Erro ao cancelar OS");
+  }
 }
 
 export async function listarTecnicos() {
-  const res = await fetch(`${API_URL}/usuarios/tecnicos`);
-  if (!res.ok) {
+  try {
+    return await apiGet("/usuarios/tecnicos");
+  } catch {
     throw new Error("Erro ao buscar técnicos");
   }
-  return res.json();
 }
 
 export async function getOrdemServicoById(id: number) {
-  const res = await fetch(`${API_URL}/ordens-servico/${id}`);
-
-  if (!res.ok) {
+  try {
+    return await apiGet(`/ordens-servico/${id}`);
+  } catch {
     throw new Error("Erro ao buscar ordem de serviço");
   }
-
-  return res.json();
 }

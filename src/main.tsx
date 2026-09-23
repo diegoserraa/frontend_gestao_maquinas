@@ -1,3 +1,5 @@
+import "./lib/authFetch"; // anexa o token em toda chamada pra API — ver o arquivo
+
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";

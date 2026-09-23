@@ -1,3 +1,4 @@
+import { apiGet } from "@/lib/apiClient";
 import type {
   DashboardKpis,
   EvolucaoPonto,
@@ -9,8 +10,6 @@ import type {
 } from "./DashboardGestorTypes";
 
 import type { OrdemServicoResumo } from "@/modules/dashboardGestor/OrdemServicoCard";
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 /* =========================================================
    TIPOS
@@ -57,26 +56,12 @@ function buildQuery(
   return qs ? `?${qs}` : "";
 }
 
-async function fetchJson<T>(
-  path: string
-): Promise<T> {
-  const response = await fetch(
-    `${API_URL}${path}`,
-    {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Erro ao buscar ${path} (${response.status})`
-    );
+async function fetchJson<T>(path: string): Promise<T> {
+  try {
+    return await apiGet<T>(path);
+  } catch {
+    throw new Error(`Erro ao buscar ${path}`);
   }
-
-  return response.json() as Promise<T>;
 }
 
 /* =========================================================

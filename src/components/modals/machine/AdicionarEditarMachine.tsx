@@ -21,6 +21,7 @@ import {
 } from "@/components/forms/MachineForm";
 
 import { AttachmentUploader } from "@/modules/attachment/attachmentUploader";
+import { ParametrosMaquina } from "@/modules/monitoramento/ParametrosMaquina";
 
 type Sector = {
   id: number;
@@ -145,12 +146,18 @@ export function MachineModal({
 
         <Tabs defaultValue="dados" className="flex flex-col flex-1 overflow-hidden">
           <div className="px-4 sm:px-6">
-<TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-xl h-10">
+<TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1 rounded-xl h-10">
   <TabsTrigger
     value="dados"
     className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
   >
     Dados
+  </TabsTrigger>
+  <TabsTrigger
+    value="parametros"
+    className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
+  >
+    Parâmetros
   </TabsTrigger>
   <TabsTrigger
     value="anexos"
@@ -172,6 +179,13 @@ export function MachineModal({
               initialData={machine}
               onSubmit={handleSubmit}
             />
+          </TabsContent>
+
+          <TabsContent
+            value="parametros"
+            className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 mt-4 data-[state=inactive]:hidden"
+          >
+            <ParametrosMaquina maquinaId={machine?.id} />
           </TabsContent>
 
           <TabsContent

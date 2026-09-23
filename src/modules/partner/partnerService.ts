@@ -1,57 +1,17 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/apiClient";
 
 export async function getPartners() {
-  const res = await fetch(
-    `${API_URL}/parceiros`
-  );
-
-  return res.json();
+  return apiGet("/parceiros");
 }
 
-export async function createPartner(
-  payload: unknown
-) {
-  return fetch(
-    `${API_URL}/parceiros`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify(
-        payload
-      ),
-    }
-  );
+export async function createPartner(payload: unknown) {
+  return apiPost("/parceiros", payload);
 }
 
-export async function updatePartner(
-  id: number,
-  payload: unknown
-) {
-  return fetch(
-    `${API_URL}/parceiros/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify(
-        payload
-      ),
-    }
-  );
+export async function updatePartner(id: number, payload: unknown) {
+  return apiPut(`/parceiros/${id}`, payload);
 }
 
-export async function deletePartner(
-  id: number
-) {
-  return fetch(
-    `${API_URL}/parceiros/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
+export async function deletePartner(id: number) {
+  return apiDelete(`/parceiros/${id}`);
 }

@@ -1,9 +1,15 @@
+import { apiGet } from "@/lib/apiClient";
 import type { FiltrosRelatorio } from "../../modules/relatorios/types";
 import type {
   MaquinaOption,
   SetorOption,
 } from "../../modules/relatorios/types";
 
+// visualizarRelatorio/exportarRelatorio precisam de acesso cru ao fetch
+// (querystring própria, blob de download, header Accept diferente por
+// caso) — não encaixam no apiClient genérico, então continuam com fetch
+// direto aqui. O header de autenticação ainda é anexado normalmente,
+// via o interceptor global em src/lib/authFetch.ts.
 const API_URL = import.meta.env.VITE_API_URL;
 
 function montarQueryString(filtros: FiltrosRelatorio): string {
@@ -150,33 +156,17 @@ export async function exportarRelatorio(
   window.URL.revokeObjectURL(url);
 }
 export async function getSetoresRelatorio(): Promise<SetorOption[]> {
-  const response = await fetch(`${API_URL}/setores`, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Falha ao consultar setores (${response.status})`
-    );
+  try {
+    return await apiGet<SetorOption[]>("/setores");
+  } catch {
+    throw new Error("Falha ao consultar setores");
   }
-
-  return response.json();
 }
 
 export async function getMaquinasRelatorio(): Promise<MaquinaOption[]> {
-  const response = await fetch(`${API_URL}/maquinas`, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Falha ao consultar máquinas (${response.status})`
-    );
+  try {
+    return await apiGet<MaquinaOption[]>("/maquinas");
+  } catch {
+    throw new Error("Falha ao consultar máquinas");
   }
-
-  return response.json();
 }
