@@ -27,7 +27,9 @@ export interface OrdemServico {
   resolucao?: string;
   data_resolucao?: string;
   prioridade?: string;
-  id_tecnico?: number;
+  id_tecnico?: number | null;
+  // true quando foi executada por parceiro externo (nesse caso não há técnico)
+  execucao_externa?: boolean;
   valor_gasto?: number;
   
 

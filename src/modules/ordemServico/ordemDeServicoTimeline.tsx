@@ -281,7 +281,9 @@ interface Props {
   eventos.push({
     id: 2,
     titulo: "Atribuição ao técnico",
-    descricao: tecnicoNome
+    descricao: os.execucao_externa
+      ? "Ordem de serviço designada para execução externa (parceiro)"
+      : tecnicoNome
       ? `${tecnicoNome} foi atribuído como responsável pela ordem de serviço`
       : os.id_tecnico
       ? `OS designada ao técnico #${os.id_tecnico}`

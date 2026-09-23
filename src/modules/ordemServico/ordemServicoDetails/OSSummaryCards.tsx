@@ -1,7 +1,6 @@
 import { Clock, Timer, UserCog, User, Wrench, Flag } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
-import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants";
 
 import { formatDuration } from "./osDetailsHelpers";
 
@@ -98,7 +97,7 @@ export function OSSummaryCards({ os, tecnicoNome }: Props) {
   );
 
 
-  const isExterno = os.id_tecnico === ID_TECNICO_EXTERNO;
+  const isExterno = os.execucao_externa === true;
 
 
   const tecnicoLabel = isExterno

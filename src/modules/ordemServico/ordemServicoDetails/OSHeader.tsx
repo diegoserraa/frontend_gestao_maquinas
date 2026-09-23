@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
-import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants";
 
 import {
   formatDateTime,
@@ -33,7 +32,7 @@ export function OSHeader({
     getPrioridadeAccent(os.prioridade);
 
   const isExterno =
-    os.id_tecnico === ID_TECNICO_EXTERNO;
+    os.execucao_externa === true;
 
 return (
   <div className="relative overflow-hidden">

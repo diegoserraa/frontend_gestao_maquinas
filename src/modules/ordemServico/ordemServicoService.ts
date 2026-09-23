@@ -69,18 +69,25 @@ export async function createOrdemServico(data: {
 
 /* =========================
    ATRIBUIR TÉCNICO
-   Usado tanto pra técnico interno quanto pra marcar "técnico externo"
-   (nesse caso, id_tecnico = ID_TECNICO_EXTERNO, ver ordemServicoConstants.ts)
+   Quem atribuiu é identificado pelo backend a partir do token.
 ========================= */
-export async function atribuirTecnicoOS(
-  osId: number,
-  id_tecnico: number,
-  id_atribuido_por: number
-) {
+export async function atribuirTecnicoOS(osId: number, id_tecnico: number) {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/atribuir`, { id_tecnico, id_atribuido_por });
+    return await apiPatch(`/ordens-servico/${osId}/atribuir`, { id_tecnico });
   } catch {
     throw new Error("Erro ao atribuir técnico");
+  }
+}
+
+/* =========================
+   MARCAR COMO EXECUÇÃO EXTERNA (parceiro)
+   Não há técnico: a O.S. é marcada com execucao_externa no backend.
+========================= */
+export async function atribuirExternoOS(osId: number) {
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/atribuir`, { externo: true });
+  } catch {
+    throw new Error("Erro ao definir técnico externo");
   }
 }
 

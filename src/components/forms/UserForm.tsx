@@ -68,6 +68,12 @@ function validate(
     !form.senha?.trim()
   ) {
     errors.senha = "Senha é obrigatória.";
+  } else if (
+    mode === "create" &&
+    (form.senha?.length ?? 0) < 6
+  ) {
+    errors.senha =
+      "A senha precisa ter pelo menos 6 caracteres.";
   }
 
   return errors;

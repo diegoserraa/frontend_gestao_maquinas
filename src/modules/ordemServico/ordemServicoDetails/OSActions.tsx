@@ -13,11 +13,11 @@ import { createPortal } from "react-dom";
 
 import {
   atribuirTecnicoOS,
+  atribuirExternoOS,
   iniciarAtendimentoOS,
   finalizarOS,
   cancelarOS,
 } from "@/modules/ordemServico/ordemServicoService";
-import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants";
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
 
 import { FinalizarOrdemServicoModal } from "@/components/modals/ordemServico/FinalizarOrdemServico";
@@ -96,7 +96,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
   const isTecnico = userRole === "TECNICO";
 
   const status = String(os.status ?? "").toUpperCase();
-  const isExterno = os.id_tecnico === ID_TECNICO_EXTERNO;
+  const isExterno = os.execucao_externa === true;
 
  const tecnicoAtual = tecnicos.find(
   (t) => Number(t.id) === Number(os.id_tecnico)
@@ -132,7 +132,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     e.stopPropagation();
     setAssumindo(true);
     try {
-      await atribuirTecnicoOS(os.id, userId, userId);
+      await atribuirTecnicoOS(os.id, userId);
       onRefresh("ATRIBUIDA");
     } catch (err) {
       console.error(err);
@@ -168,7 +168,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     e.stopPropagation();
     setDefinindoExterno(true);
     try {
-      await atribuirTecnicoOS(os.id, ID_TECNICO_EXTERNO, userId);
+      await atribuirExternoOS(os.id);
       await iniciarAtendimentoOS(os.id);
       onRefresh("EM_ANDAMENTO");
     } catch (err) {
@@ -184,7 +184,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
 
     setAtribuindo(true);
     try {
-      await atribuirTecnicoOS(os.id, tecnicoId, userId);
+      await atribuirTecnicoOS(os.id, tecnicoId);
       onRefresh();
     } catch (err) {
       console.error(err);

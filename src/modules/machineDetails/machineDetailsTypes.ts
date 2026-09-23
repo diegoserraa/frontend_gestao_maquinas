@@ -46,7 +46,9 @@ export interface OrdemServico {
   resolucao?: string;
   data_resolucao?: string;
   prioridade?: string;
-  id_tecnico?: number;
+  id_tecnico?: number | null;
+  // true quando foi executada por parceiro externo (nesse caso não há técnico)
+  execucao_externa?: boolean;
   valor_gasto?: number;
 
   // campos novos
@@ -57,8 +59,8 @@ export interface OrdemServico {
   motivo_cancelamento?: string;
   data_cancelamento?: string;
 
-  // ── parceiro (preenchido só na finalização, quando id_tecnico
-  //    aponta pro registro placeholder "Técnico Externo") ──────
+  // ── parceiro (preenchido só na finalização, quando a O.S. é
+  //    de execução externa) ──────────────────────────────────
   id_parceiro?: number | null;
   valor_parceiro?: number | null;
 }

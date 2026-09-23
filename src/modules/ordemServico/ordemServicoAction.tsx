@@ -3,11 +3,11 @@ import { useState } from "react";
 
 import {
   atribuirTecnicoOS,
+  atribuirExternoOS,
   iniciarAtendimentoOS,
   finalizarOS,
   cancelarOS,
 } from "./ordemServicoService";
-import { ID_TECNICO_EXTERNO } from "./ordemServicoConstants";
 
 import type { OrdemServico } from "../machineDetails/machineDetailsTypes";
 
@@ -122,7 +122,7 @@ const isOperador =
   if (!ordem) return null;
 
   const status = String(ordem.status ?? "").toUpperCase();
-  const isExterno = ordem.id_tecnico === ID_TECNICO_EXTERNO;
+  const isExterno = ordem.execucao_externa === true;
  
 
   // ── Técnico ──────────────────────────────────────────────
@@ -188,7 +188,7 @@ const podeDefinirExterno =
     try {
       setDefinindoExterno(true);
       // Reaproveita o endpoint de atribuir técnico, com o id fixo do placeholder
-      await atribuirTecnicoOS(ordem.id, ID_TECNICO_EXTERNO, userId);
+      await atribuirExternoOS(ordem.id);
       // Pula direto pra EM_ANDAMENTO — não existe etapa intermediária visível
       // pra técnico externo, então já habilita a finalização (evita erro de
       // transição de status "ATRIBUIDA → FINALIZADA" no backend)
@@ -234,7 +234,7 @@ const podeDefinirExterno =
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  await atribuirTecnicoOS(ordem.id, userId, userId);
+                  await atribuirTecnicoOS(ordem.id, userId);
                   onRefresh?.("ATRIBUIDA"); // 👈
                 } catch (err) {
                   console.error(err);
@@ -295,7 +295,7 @@ const podeDefinirExterno =
                 const tecnicoId = Number(e.target.value);
                 if (!tecnicoId) return;
                 try {
-                  await atribuirTecnicoOS(ordem.id, tecnicoId, userId);
+                  await atribuirTecnicoOS(ordem.id, tecnicoId);
                   onRefresh?.();
                 } catch (err) {
                   console.error(err);
@@ -345,7 +345,7 @@ const podeDefinirExterno =
       setOsSelecionada(null);
     }}
     osId={osSelecionada.id}
-    isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
+    isExterno={osSelecionada.execucao_externa === true}
     onConfirm={handleFinalizar}
   />
 )}
@@ -384,7 +384,7 @@ const podeDefinirExterno =
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  await atribuirTecnicoOS(ordem.id, userId, userId);
+                  await atribuirTecnicoOS(ordem.id, userId);
                   onRefresh?.("ATRIBUIDA"); // 👈
                 } catch (err) {
                   console.error(err);
@@ -445,7 +445,7 @@ const podeDefinirExterno =
                 const tecnicoId = Number(e.target.value);
                 if (!tecnicoId) return;
                 try {
-                  await atribuirTecnicoOS(ordem.id, tecnicoId, userId);
+                  await atribuirTecnicoOS(ordem.id, tecnicoId);
                   onRefresh?.();
                 } catch (err) {
                   console.error(err);
@@ -496,7 +496,7 @@ const podeDefinirExterno =
       setOsSelecionada(null);
     }}
     osId={osSelecionada.id}
-    isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
+    isExterno={osSelecionada.execucao_externa === true}
     onConfirm={handleFinalizar}
   />
 )}
