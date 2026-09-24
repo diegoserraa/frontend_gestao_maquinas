@@ -20,6 +20,8 @@ import {
 } from "@/modules/ordemServico/ordemServicoService";
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { acoesDaOS } from "@/modules/ordemServico/regrasAcoesOS";
 import { FinalizarOrdemServicoModal } from "@/components/modals/ordemServico/FinalizarOrdemServico";
 import { CancelarOrdemServicoModal } from "@/components/modals/ordemServico/CancelarOrdemServico";
 import { OrdemServicoTimeline } from "@/modules/ordemServico/ordemDeServicoTimeline";
@@ -78,7 +80,8 @@ function ActionButton({
   );
 }
 
-export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) {
+export function OSActions({ os, userId, tecnicos, onRefresh }: Props) {
+  const { pode } = usePermissoes();
   const [assumindo, setAssumindo] = useState(false);
   const [iniciando, setIniciando] = useState(false);
   const [definindoExterno, setDefinindoExterno] = useState(false);
@@ -91,38 +94,22 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
   const [timelineAberta, setTimelineAberta] = useState(false);
 
   // ── mesmas regras de sempre, copiadas 1:1 do OrdemServicoActions ──
-  const isAdmin = userRole === "ADMIN";
-  const isGestor = userRole === "GESTOR" || isAdmin;
-  const isTecnico = userRole === "TECNICO";
 
-  const status = String(os.status ?? "").toUpperCase();
   const isExterno = os.execucao_externa === true;
 
  const tecnicoAtual = tecnicos.find(
   (t) => Number(t.id) === Number(os.id_tecnico)
 );
 
-  const podeAssumir = isTecnico && status === "ABERTA" && !isExterno;
-
-  const podeIniciar =
-    isTecnico && status === "ATRIBUIDA" && os.id_tecnico === userId && !isExterno;
-
-  const podeFinalizar =
-    (isTecnico && status === "EM_ANDAMENTO" && os.id_tecnico === userId && !isExterno) ||
-    (isGestor && status === "EM_ANDAMENTO") ||
-    (isGestor && isExterno && !["FINALIZADA", "CANCELADA"].includes(status));
-
-  const tecnicoJaDefinido = !!os.id_tecnico && os.id_tecnico !== 0;
-
-  const podeAtribuir =
-    isGestor && !["FINALIZADA", "CANCELADA"].includes(status) && !tecnicoJaDefinido;
-
-  const podeDefinirExterno =
-    isGestor && !tecnicoJaDefinido && !["FINALIZADA", "CANCELADA"].includes(status);
-
-  const podeCancelar =
-  isGestor &&
-  !["FINALIZADA", "CANCELADA"].includes(status);
+  // quais botões mostrar: permissões do usuário + estado da O.S. (ver regrasAcoesOS.ts)
+  const {
+    assumir: podeAssumir,
+    iniciar: podeIniciar,
+    finalizar: podeFinalizar,
+    atribuir: podeAtribuir,
+    definirExterno: podeDefinirExterno,
+    cancelar: podeCancelar,
+  } = acoesDaOS(os, userId, pode);
 
   const semNenhumaAcao =
     !podeAssumir && !podeIniciar && !podeFinalizar && !podeCancelar && !podeAtribuir && !podeDefinirExterno;

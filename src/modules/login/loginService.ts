@@ -9,7 +9,10 @@ export async function login(
 ): Promise<LoginResponse> {
   try {
     return await apiPost<LoginResponse>("/auth/login", payload);
-  } catch {
+  } catch (erro) {
+    // usuário desativado pelo gestor: a mensagem do servidor é útil, as outras ficam genéricas
+    if (erro instanceof Error && /inativo/i.test(erro.message)) throw erro;
+
     throw new Error("Usuário ou senha inválidos");
   }
 }

@@ -25,7 +25,12 @@ import { getPartnerCardColumns } from "@/modules/partner/partnerCardColumn";
 
 import { PartnerModal } from "@/components/modals/partner/AdicionarEditarPartner";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+
 export default function Partners() {
+  const { pode } = usePermissoes();
+  const permitir = { editar: pode("parceiros.editar"), excluir: pode("parceiros.excluir") };
+
   const [data, setData] =
     useState<Partner[]>([]);
 
@@ -190,6 +195,8 @@ export default function Partners() {
 
           onDelete:
             handleOpenDelete,
+
+          permitir,
         }),
       []
     );
@@ -206,9 +213,11 @@ export default function Partners() {
             setOpenModal(true);
           },
 
-          handleOpenDelete
+          handleOpenDelete,
+
+          permitir
         ),
-      []
+      [permitir.editar, permitir.excluir]
     );
 
   return (
@@ -226,7 +235,8 @@ export default function Partners() {
           </p>
         </div>
 
-        <button
+        {pode("parceiros.criar") && (
+<button
           onClick={() => {
             setSelectedPartner(
               undefined
@@ -249,6 +259,7 @@ export default function Partners() {
         >
           + Novo parceiro
         </button>
+)}
       </div>
 
       <div

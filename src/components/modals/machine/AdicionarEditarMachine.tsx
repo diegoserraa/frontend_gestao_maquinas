@@ -1,3 +1,4 @@
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { useState, useEffect } from "react";
 
 import {
@@ -73,6 +74,12 @@ export function MachineModal({
   existingAttachments = [],
   onSave,
 }: Props) {
+  const { pode } = usePermissoes();
+  const mostrarParametros = pode("monitoramento.configurar_limites");
+  const mostrarAnexos = pode("anexos.ver");
+  const totalAbas = 1 + (mostrarParametros ? 1 : 0) + (mostrarAnexos ? 1 : 0);
+  const colunasAbas = totalAbas === 3 ? "grid-cols-3" : totalAbas === 2 ? "grid-cols-2" : "grid-cols-1";
+
   const [loading, setLoading] = useState(false);
 
   // Novos arquivos selecionados pelo usuário
@@ -146,25 +153,29 @@ export function MachineModal({
 
         <Tabs defaultValue="dados" className="flex flex-col flex-1 overflow-hidden">
           <div className="px-4 sm:px-6">
-<TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1 rounded-xl h-10">
+<TabsList className={`grid w-full ${colunasAbas} bg-slate-100 p-1 rounded-xl h-10`}>
   <TabsTrigger
     value="dados"
     className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
   >
     Dados
   </TabsTrigger>
-  <TabsTrigger
+  {mostrarParametros && (
+<TabsTrigger
     value="parametros"
     className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
   >
     Parâmetros
   </TabsTrigger>
-  <TabsTrigger
+)}
+  {mostrarAnexos && (
+<TabsTrigger
     value="anexos"
     className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
   >
     Anexos{totalAnexos > 0 && ` (${totalAnexos})`}
   </TabsTrigger>
+)}
 </TabsList>
           </div>
 
@@ -181,14 +192,17 @@ export function MachineModal({
             />
           </TabsContent>
 
-          <TabsContent
+          {mostrarParametros && (
+<TabsContent
             value="parametros"
             className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 mt-4 data-[state=inactive]:hidden"
           >
             <ParametrosMaquina maquinaId={machine?.id} />
           </TabsContent>
+)}
 
-          <TabsContent
+          {mostrarAnexos && (
+<TabsContent
             value="anexos"
             forceMount
             className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 mt-4 data-[state=inactive]:hidden"
@@ -202,6 +216,7 @@ export function MachineModal({
               onRestoreExisting={handleRestoreExisting}
             />
           </TabsContent>
+)}
         </Tabs>
       </DialogContent>
     </Dialog>

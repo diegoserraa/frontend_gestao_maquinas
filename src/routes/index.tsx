@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 
 
 import MainLayout from "@/components/layout/MainLayout";
+import { RotaComPermissao } from "@/modules/permissoes/Pode";
 import ProtectedRoute from "@/routes/protectRoutes";
 
 
@@ -51,47 +52,79 @@ export const router = createBrowserRouter([
 
       {
         path: "machines",
-        element: <Machines />,
+        element: (
+          <RotaComPermissao permissao="maquinas.ver">
+            <Machines />
+          </RotaComPermissao>
+        ),
       },
 
 
       {
         path: "monitoring",
-        element: <Monitoring />,
+        element: (
+          <RotaComPermissao permissao="monitoramento.ver">
+            <Monitoring />
+          </RotaComPermissao>
+        ),
       },
 
 
       {
         path: "machines/:id",
-        element: <MachineDetails />,
+        element: (
+          <RotaComPermissao permissao="maquinas.ver">
+            <MachineDetails />
+          </RotaComPermissao>
+        ),
       },
 
 
       {
         path: "ordens-servico/:id",
-        element: <OrdemServicoDetails />,
+        element: (
+          <RotaComPermissao qualquer={["os.ver", "os.ver_proprias"]}>
+            <OrdemServicoDetails />
+          </RotaComPermissao>
+        ),
       },
 
 
       {
         path: "sector",
-        element: <Sector />,
+        element: (
+          <RotaComPermissao permissao="setores.ver">
+            <Sector />
+          </RotaComPermissao>
+        ),
       },
 
 
       {
         path: "partner",
-        element: <Partner />,
+        element: (
+          <RotaComPermissao permissao="parceiros.ver">
+            <Partner />
+          </RotaComPermissao>
+        ),
       },
 
 
       {
         path: "user",
-        element: <User />,
+        element: (
+          <RotaComPermissao permissao="usuarios.ver">
+            <User />
+          </RotaComPermissao>
+        ),
       },
        {
         path: "reports",
-        element: <Reports />,
+        element: (
+          <RotaComPermissao permissao="relatorios.ver">
+            <Reports />
+          </RotaComPermissao>
+        ),
       },
 
 

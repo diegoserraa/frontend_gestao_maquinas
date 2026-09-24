@@ -4,19 +4,27 @@ import type { User } from "./userType";
 import {
   Pencil,
   Power,
+  ShieldCheck,
   Trash2,
 } from "lucide-react";
+
+import type { AcoesDaLinhaUsuario } from "./userType";
 
 type Props = {
   onEdit: (user: User) => void;
   onToggle: (id: number) => void;
   onDelete: (user: User) => void;
+  onPermissoes: (user: User) => void;
+  /** o que quem está logado pode fazer com cada funcionário da lista */
+  acoesDaLinha: (user: User) => AcoesDaLinhaUsuario;
 };
 
 export function getUserTableColumns({
   onEdit,
   onToggle,
   onDelete,
+  onPermissoes,
+  acoesDaLinha,
 }: Props): Column<User>[] {
   return [
     {
@@ -71,30 +79,57 @@ export function getUserTableColumns({
     {
       key: "id",
       label: "Ações",
-      render: (_, row) => (
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => onEdit(row)}
-            className="p-2 rounded-md hover:bg-blue-50 text-blue-600"
-          >
-            <Pencil size={14} />
-          </button>
+      render: (_, row) => {
+        const acoes = acoesDaLinha(row);
 
-          <button
-            onClick={() => onToggle(row.id)}
-            className="p-2 rounded-md hover:bg-slate-50 text-slate-600"
-          >
-            <Power size={14} />
-          </button>
+        return (
+          <div className="flex items-center gap-1">
+            {acoes.permissoes && (
+              <button
+                onClick={() => onPermissoes(row)}
+                title="Permissões"
+                aria-label={`Permissões de ${row.nome}`}
+                className="p-2 rounded-md hover:bg-indigo-50 text-indigo-600"
+              >
+                <ShieldCheck size={14} />
+              </button>
+            )}
 
-          <button
-            onClick={() => onDelete(row)}
-            className="p-2 rounded-md hover:bg-red-50 text-red-500"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      ),
+            {acoes.editar && (
+              <button
+                onClick={() => onEdit(row)}
+                title="Editar"
+                aria-label={`Editar ${row.nome}`}
+                className="p-2 rounded-md hover:bg-blue-50 text-blue-600"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+
+            {acoes.alternar && (
+              <button
+                onClick={() => onToggle(row.id)}
+                title={row.ativo ? "Desativar" : "Ativar"}
+                aria-label={row.ativo ? `Desativar ${row.nome}` : `Ativar ${row.nome}`}
+                className="p-2 rounded-md hover:bg-slate-50 text-slate-600"
+              >
+                <Power size={14} />
+              </button>
+            )}
+
+            {acoes.excluir && (
+              <button
+                onClick={() => onDelete(row)}
+                title="Excluir"
+                aria-label={`Excluir ${row.nome}`}
+                className="p-2 rounded-md hover:bg-red-50 text-red-500"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 }

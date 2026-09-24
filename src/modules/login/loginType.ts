@@ -15,6 +15,8 @@ export type LoginPayload = {
 export type LoginResponse = {
   token: string;
   user: User;
+  /** o que o funcionário pode acessar e fazer (definido pelo gestor da empresa) */
+  permissoes: string[];
 };
 
 export type UserRole =

@@ -4,9 +4,13 @@ import Sidebar from "./Sidebar";
 import SidebarMobile from "./SidebarMobile";
 import Header from "./Header";
 import { Outlet } from "react-router-dom";
+import { useSincronizarPermissoes } from "@/modules/permissoes/usePermissoes";
 
 export default function MainLayout() {
   const sidebar = useSidebar();
+
+  // mantém menus e botões alinhados com o que o gestor liberou
+  useSincronizarPermissoes();
 
   return (
     <div className="h-screen flex bg-slate-50">

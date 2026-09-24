@@ -10,6 +10,8 @@ import {
 } from "./ordemServicoService";
 
 import type { OrdemServico } from "../machineDetails/machineDetailsTypes";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { acoesDaOS } from "./regrasAcoesOS";
 
 import { FinalizarOrdemServicoModal } from "../../components/modals/ordemServico/FinalizarOrdemServico";
 import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico";
@@ -22,7 +24,8 @@ type Tecnico = {
 type Props = {
   mode?: "table" | "panel" | "mobile";
   ordem?: OrdemServico;
-  userRole: "ADMIN" | "GESTOR" | "TECNICO" | "OPERADOR";
+  /** mantido por compatibilidade: as regras agora vêm das permissões do usuário */
+  userRole?: "ADMIN" | "GESTOR" | "TECNICO" | "OPERADOR";
   userId?: number;
   tecnicos?: Tecnico[];
   machineId?: number;
@@ -36,7 +39,6 @@ type Props = {
 export function OrdemServicoActions({
   mode = "table",
   ordem,
-  userRole,
   userId = 0,
   tecnicos = [],
   machineId,
@@ -52,17 +54,9 @@ export function OrdemServicoActions({
   const [openCancelar, setOpenCancelar] = useState(false);
    
 
-  const isAdmin = userRole === "ADMIN";
-
-const isGestor =
-  userRole === "GESTOR" ||
-  isAdmin;
-
-const isTecnico =
-  userRole === "TECNICO";
-
-const isOperador =
-  userRole === "OPERADOR";
+  const { pode, podeQualquer } = usePermissoes();
+  const podeCriarOS = pode("os.criar");
+  const podeVerOS = podeQualquer("os.ver", "os.ver_proprias");
 
   /* =========================
      PAINEL DA MÁQUINA
@@ -70,8 +64,7 @@ const isOperador =
   if (mode === "panel") {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {isOperador && (
-          <>
+        {podeCriarOS && (
             <button
               onClick={() => machineId && onCreateOS?.(machineId)}
               className="
@@ -90,7 +83,9 @@ const isOperador =
                 Abrir OS
               </span>
             </button>
+        )}
 
+        {podeVerOS && (
             <button
               onClick={onViewOS}
               className="
@@ -109,7 +104,6 @@ const isOperador =
                 Ver última OS
               </span>
             </button>
-          </>
         )}
       </div>
     );
@@ -121,51 +115,18 @@ const isOperador =
 
   if (!ordem) return null;
 
-  const status = String(ordem.status ?? "").toUpperCase();
   const isExterno = ordem.execucao_externa === true;
  
 
-  // ── Técnico ──────────────────────────────────────────────
-  const podeAssumir =
-    isTecnico && status === "ABERTA" && !isExterno;
-
-  const podeIniciar =
-    isTecnico &&
-    status === "ATRIBUIDA" &&
-    ordem.id_tecnico === userId &&
-    !isExterno;
-
-  const podeFinalizar =
-    // Técnico próprio finaliza normalmente
-    (isTecnico &&
-      status === "EM_ANDAMENTO" &&
-      ordem.id_tecnico === userId &&
-      !isExterno) ||
-    // Gestor pode finalizar qualquer OS em andamento
-    (isGestor && status === "EM_ANDAMENTO") ||
-    // Gestor finaliza OS marcada como técnico externo, em qualquer status aberto
-    (isGestor &&
-      isExterno &&
-      !["FINALIZADA", "CANCELADA"].includes(status));
-
-  // ── Gestor ───────────────────────────────────────────────
-  const tecnicoJaDefinido =
-  !!ordem.id_tecnico &&
-  ordem.id_tecnico !== 0;
-
-const podeAtribuir =
-  isGestor &&
-  !["FINALIZADA", "CANCELADA"].includes(status) &&
-  !tecnicoJaDefinido;
-
-  // Marcar como técnico externo — só faz sentido antes de já estar marcado assim
-const podeDefinirExterno =
-  isGestor &&
-  !tecnicoJaDefinido &&
-  !["FINALIZADA", "CANCELADA"].includes(status);
-
-  const podeCancelar =
-    isGestor && status !== "FINALIZADA";
+  // quais botões mostrar: permissões do usuário + estado da O.S. (ver regrasAcoesOS.ts)
+  const {
+    assumir: podeAssumir,
+    iniciar: podeIniciar,
+    finalizar: podeFinalizar,
+    atribuir: podeAtribuir,
+    definirExterno: podeDefinirExterno,
+    cancelar: podeCancelar,
+  } = acoesDaOS(ordem, userId, pode);
 
     async function handleCancelar(motivo: string) {
   if (!osSelecionada) return;

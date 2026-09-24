@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { OrdemServicoActions } from "../ordemServico/ordemServicoAction";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import type { UserRole } from "@/modules/login/loginType";
 import { useEffect, useState } from "react";
 import { getIndicadoresPorMaquina } from "@/modules/machineDetails/machineDetailsService";
@@ -231,10 +232,8 @@ export function MachineDetailsActions({
      PERMISSÃO PARA ABRIR OS
   ========================= */
 
-  const podeAbrirOS =
-    papel === "GESTOR" ||
-    papel === "OPERADOR" ||
-    papel === "TECNICO";
+  const { pode } = usePermissoes();
+  const podeAbrirOS = pode("os.criar");
 
   /* =========================
      CARREGAR INDICADORES

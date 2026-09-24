@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -85,6 +86,10 @@ export function UserForm({
   onSubmit,
   mode = "create",
 }: Props) {
+  // gestor cadastra só técnico e operador; gestor novo e administrador são do dono do sistema
+  const { role: meuPapel } = usePermissoes();
+  const souAdmin = meuPapel === "ADMIN";
+
   const [form, setForm] =
     useState<UserFormData>({
       nome: initialData?.nome ?? "",
@@ -323,13 +328,17 @@ export function UserForm({
             </SelectTrigger>
 
             <SelectContent>
-              <SelectItem value="ADMIN">
-                Administrador
-              </SelectItem>
+              {initialData?.role === "ADMIN" && (
+                <SelectItem value="ADMIN">
+                  Administrador
+                </SelectItem>
+              )}
 
-              <SelectItem value="GESTOR">
-                Gestor
-              </SelectItem>
+              {(souAdmin || initialData?.role === "GESTOR") && (
+                <SelectItem value="GESTOR">
+                  Gestor
+                </SelectItem>
+              )}
 
               <SelectItem value="TECNICO">
                 Técnico
@@ -340,6 +349,13 @@ export function UserForm({
               </SelectItem>
             </SelectContent>
           </Select>
+
+          {mode === "create" && (
+            <p className="text-xs text-slate-500">
+              O funcionário começa com as permissões padrão do perfil. Depois de cadastrar,
+              ajuste o que ele pode acessar em “Permissões”.
+            </p>
+          )}
         </div>
 
         {/* STATUS */}

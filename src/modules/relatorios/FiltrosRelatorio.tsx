@@ -1,3 +1,4 @@
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { useState } from "react";
 import {
   Building2,
@@ -51,6 +52,7 @@ export function FiltrosRelatorio({
   exportando = false,
   nomeArquivoPadrao,
 }: FiltrosRelatorioProps) {
+  const { pode } = usePermissoes();
   const [modalExportarAberto, setModalExportarAberto] =
     useState(false);
 
@@ -629,7 +631,8 @@ export function FiltrosRelatorio({
             .
           </span>
 
-          <Button
+          {pode("relatorios.exportar") && (
+<Button
             type="button"
             variant="outline"
             onClick={() =>
@@ -667,6 +670,7 @@ export function FiltrosRelatorio({
               ? "Exportando..."
               : "Exportar Excel"}
           </Button>
+)}
         </div>
       </div>
 

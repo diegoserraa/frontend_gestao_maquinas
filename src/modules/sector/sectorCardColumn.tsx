@@ -1,5 +1,6 @@
 import type { CardColumn } from "@/components/data/DataCard";
 import type { Sector } from "./setorTypes";
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
 
 import {
   Pencil,
@@ -8,7 +9,8 @@ import {
 
 export function getSectorCardColumns(
   onEdit: (sector: Sector) => void,
-  onDelete: (sector: Sector) => void
+  onDelete: (sector: Sector) => void,
+  permitir?: AcoesPermitidas
 ): CardColumn<Sector>[] {
   return [
     {
@@ -54,7 +56,8 @@ export function getSectorCardColumns(
 </div>
 
           <div className="flex justify-end gap-1 border-t border-slate-300 pt-3">
-            <button
+            {permitir?.editar !== false && (
+<button
               onClick={() => onEdit(sector)}
               className="
                 p-2
@@ -67,8 +70,10 @@ export function getSectorCardColumns(
             >
               <Pencil size={14} />
             </button>
+)}
 
-            <button
+            {permitir?.excluir !== false && (
+<button
               onClick={() => onDelete(sector)}
               className="
                 p-2
@@ -81,6 +86,7 @@ export function getSectorCardColumns(
             >
               <Trash2 size={14} />
             </button>
+)}
           </div>
         </div>
       ),

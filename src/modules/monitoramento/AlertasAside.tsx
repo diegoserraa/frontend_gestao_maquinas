@@ -1,3 +1,4 @@
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -64,6 +65,7 @@ type Props = {
 
 export function AlertasAside({ alertas, onMudou }: Props) {
   const navigate = useNavigate();
+  const { pode } = usePermissoes();
   const [ocupado, setOcupado] = useState<number | null>(null);
 
   if (alertas.length === 0) return null;
@@ -145,7 +147,7 @@ export function AlertasAside({ alertas, onMudou }: Props) {
                   >
                     <ExternalLink size={12} /> Ver O.S. #{a.ordem_servico_id}
                   </button>
-                ) : (
+                ) : pode("monitoramento.abrir_os") ? (
                   <button
                     type="button"
                     disabled={busy}
@@ -159,8 +161,9 @@ export function AlertasAside({ alertas, onMudou }: Props) {
                     )}
                     Abrir O.S.
                   </button>
-                )}
-                <button
+                ) : null}
+                {pode("monitoramento.resolver_alertas") && (
+<button
                   type="button"
                   disabled={busy}
                   onClick={() => resolver(a)}
@@ -168,6 +171,7 @@ export function AlertasAside({ alertas, onMudou }: Props) {
                 >
                   <Check size={12} /> Resolver
                 </button>
+)}
               </div>
             </div>
           );

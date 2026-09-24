@@ -13,7 +13,10 @@ import {
   getMaintenanceStatus,
 } from "@/lib/helperMachine";
 
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
+
 type Props = {
+  permitir?: AcoesPermitidas;
   onEdit: (machine: Machine) => void;
   onToggle: (id: number) => void;
   onDelete: (machine: Machine) => void;
@@ -27,6 +30,7 @@ export function getMachineTableColumns({
   onDelete,
   onRowClick,
   onViewOS,
+  permitir,
 }: Props): Column<Machine>[] {
   return [
 {
@@ -296,29 +300,35 @@ export function getMachineTableColumns({
             <ClipboardCheck size={16} />
           </button>
 
-          <button
+          {permitir?.editar !== false && (
+<button
             onClick={() => onEdit(row)}
             className="p-2 rounded-md hover:bg-blue-50 text-blue-600"
             title="Editar máquina"
           >
             <Pencil size={14} />
           </button>
+)}
 
-          <button
+          {permitir?.alternar !== false && (
+<button
             onClick={() => onToggle(row.id)}
             className="p-2 rounded-md hover:bg-slate-50"
             title="Ativar/Desativar"
           >
             <Power size={14} />
           </button>
+)}
 
-          <button
+          {permitir?.excluir !== false && (
+<button
             onClick={() => onDelete(row)}
             className="p-2 rounded-md hover:bg-red-50 text-red-500"
             title="Excluir"
           >
             <Trash2 size={14} />
           </button>
+)}
         </div>
       ),
     },

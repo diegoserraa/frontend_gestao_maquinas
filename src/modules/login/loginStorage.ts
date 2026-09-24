@@ -1,10 +1,15 @@
 import type { User } from "./loginType";
+import { limparPermissoes, salvarPermissoes } from "@/modules/permissoes/permissoesStore";
 
 
 export function saveAuth(
   token:string,
-  user:User
+  user:User,
+  permissoes:string[] = []
 ){
+
+  salvarPermissoes(permissoes);
+
 
   localStorage.setItem(
     "token",
@@ -45,6 +50,8 @@ export function getUser():User|null{
 
 
 export function logout(){
+
+  limparPermissoes();
 
   localStorage.removeItem(
     "token"

@@ -30,7 +30,16 @@ import { getMachineTableColumns } from "../../modules/machine/machineTableColumn
 import { getMachineCardColumns } from "../../modules/machine/machineCardColumns";
 import { useNavigate } from "react-router-dom";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+
 export default function Machines() {
+  const { pode } = usePermissoes();
+  const permitir = {
+    editar: pode("maquinas.editar"),
+    excluir: pode("maquinas.excluir"),
+    alternar: pode("maquinas.alterar_status"),
+  };
+
   const [data, setData] = useState<Machine[]>([]);
   const [setores, setSetores] = useState<Setor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,8 +218,9 @@ setExistingAttachments(
         onDelete: handleOpenDelete,
         onRowClick: (id) => navigate(`/machines/${id}`),
         onViewOS: (id) => navigate(`/machines/${id}?tab=os`),
+        permitir,
       }),
-    []
+    [permitir.editar, permitir.excluir, permitir.alternar]
   );
 
   const cardColumns = useMemo(
@@ -219,9 +229,10 @@ setExistingAttachments(
         handleOpenEdit,
         toggleStatus,
         handleOpenDelete,
-        (machine) => navigate(`/machines/${machine.id}?tab=history`)
+        (machine) => navigate(`/machines/${machine.id}?tab=history`),
+        permitir
       ),
-    []
+    [permitir.editar, permitir.excluir, permitir.alternar]
   );
 
   return (
@@ -232,7 +243,8 @@ setExistingAttachments(
           <h1 className="text-xl font-semibold text-slate-900">Máquinas</h1>
           <p className="text-sm text-slate-500">Gestão de ativos industriais</p>
         </div>
-        <button
+        {pode("maquinas.criar") && (
+<button
           onClick={() => {
             setSelectedMachine(undefined);
             setExistingAttachments([]);
@@ -242,6 +254,7 @@ setExistingAttachments(
         >
           + Nova máquina
         </button>
+)}
       </div>
 
       <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

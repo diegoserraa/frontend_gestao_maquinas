@@ -14,11 +14,14 @@ import {
   getMaintenanceStatus,
 } from "@/lib/helperMachine";
 
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
+
 export function getMachineCardColumns(
   onEdit: (machine: Machine) => void,
   onToggle: (id: number) => void,
   onDelete: (machine: Machine) => void,
-  onHistory?: (machine: Machine) => void
+  onHistory?: (machine: Machine) => void,
+  permitir?: AcoesPermitidas
 ): CardColumn<Machine>[] {
   return [
     {
@@ -202,14 +205,17 @@ export function getMachineCardColumns(
                     <ClipboardCheck size={14} />
                   </button>
 
-                  <button
+                  {permitir?.editar !== false && (
+<button
                     onClick={() => onEdit(m)}
                     className="p-2 rounded-md border border-slate-200 text-blue-600 hover:bg-blue-50 transition-colors"
                   >
                     <Pencil size={14} />
                   </button>
+)}
 
-                  <button
+                  {permitir?.alternar !== false && (
+<button
                     onClick={() =>
                       onToggle(m.id)
                     }
@@ -217,8 +223,10 @@ export function getMachineCardColumns(
                   >
                     <Power size={14} />
                   </button>
+)}
 
-                  <button
+                  {permitir?.excluir !== false && (
+<button
                     onClick={() =>
                       onDelete(m)
                     }
@@ -226,6 +234,7 @@ export function getMachineCardColumns(
                   >
                     <Trash2 size={14} />
                   </button>
+)}
                 </div>
               </div>
             </div>

@@ -47,10 +47,14 @@ export default function Login() {
     try {
       setLoading(true);
       const data = await login({ email, senha });
-      saveAuth(data.token, data.user);
+      saveAuth(data.token, data.user, data.permissoes);
       navigate("/");
-    } catch {
-      setError("E-mail ou senha inválidos. Tente novamente.");
+    } catch (erro) {
+      setError(
+        erro instanceof Error && /inativo/i.test(erro.message)
+          ? erro.message
+          : "E-mail ou senha inválidos. Tente novamente."
+      );
     } finally {
       setLoading(false);
     }
