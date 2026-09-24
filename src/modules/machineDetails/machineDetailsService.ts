@@ -1,4 +1,4 @@
-import { apiGet, apiPatch } from "@/lib/apiClient";
+import { apiGet } from "@/lib/apiClient";
 
 /* MACHINE */
 export async function getMachineById(id: number) {
@@ -14,15 +14,14 @@ export async function getOrdensByMachineId(id: number) {
   }
 }
 
-export async function updateOSStatus(id: number, status: string) {
-  return apiPatch(`/ordens-servico/${id}/status`, { status });
-}
-
 export interface IndicadoresPorMaquina {
   osAbertas: number;
   mttrSegundos: number | null;
   mtbfSegundos: number | null;
   tempoAtendimentoSegundos: number | null;
+  // soma das pausas de todas as O.S. da máquina e quantas estão pausadas agora
+  tempoPausadoSegundos: number;
+  osPausadas: number;
 }
 
 export async function getIndicadoresPorMaquina(

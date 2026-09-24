@@ -40,4 +40,13 @@ export interface OrdemServico {
   data_inicio_atendimento?: string;
   motivo_cancelamento?: string;
   data_cancelamento?: string;
+
+  // pausa: tempo já pausado (pausas encerradas), início/motivo da pausa em curso e quanto ela já durou
+  tempo_pausado_segundos?: number;
+  pausada_em?: string | null;
+  motivo_pausa?: string | null;
+  pausa_atual_segundos?: number;
+
+  // nome de quem abriu a O.S. (vem da API)
+  solicitante_nome?: string | null;
 }

@@ -4,6 +4,7 @@ import {
   Wrench,
   CheckCircle2,
   XCircle,
+  PauseCircle,
 } from "lucide-react";
 
 export function formatDateTime(iso?: string | null): string {
@@ -97,6 +98,17 @@ export const STATUS_STYLES = {
     accent: "border-l-amber-500",
     tint: "bg-amber-50/60",
     badge: "bg-amber-50 text-amber-600 border-amber-100",
+  },
+  PAUSADA: {
+    label: "Pausada",
+    icon: PauseCircle,
+    text: "text-orange-700",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    dot: "bg-orange-500",
+    accent: "border-l-orange-500",
+    tint: "bg-orange-50/60",
+    badge: "bg-orange-50 text-orange-600 border-orange-100",
   },
   FINALIZADA: {
     label: "Finalizada",

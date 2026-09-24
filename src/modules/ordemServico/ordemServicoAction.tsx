@@ -5,6 +5,8 @@ import {
   atribuirTecnicoOS,
   atribuirExternoOS,
   iniciarAtendimentoOS,
+  pausarOS,
+  retomarOS,
   finalizarOS,
   cancelarOS,
 } from "./ordemServicoService";
@@ -15,6 +17,7 @@ import { acoesDaOS } from "./regrasAcoesOS";
 
 import { FinalizarOrdemServicoModal } from "../../components/modals/ordemServico/FinalizarOrdemServico";
 import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico";
+import { PausarOrdemServicoModal } from "../../components/modals/ordemServico/PausarOrdemServico";
 
 type Tecnico = {
   id: number;
@@ -52,9 +55,10 @@ export function OrdemServicoActions({
   const [osSelecionada, setOsSelecionada] = useState<OrdemServico | null>(null);
   const [definindoExterno, setDefinindoExterno] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
+  const [openPausar, setOpenPausar] = useState(false);
    
 
-  const { pode, podeQualquer } = usePermissoes();
+  const { pode, podeQualquer, role } = usePermissoes();
   const podeCriarOS = pode("os.criar");
   const podeVerOS = podeQualquer("os.ver", "os.ver_proprias");
 
@@ -122,11 +126,13 @@ export function OrdemServicoActions({
   const {
     assumir: podeAssumir,
     iniciar: podeIniciar,
+    pausar: podePausar,
+    retomar: podeRetomar,
     finalizar: podeFinalizar,
     atribuir: podeAtribuir,
     definirExterno: podeDefinirExterno,
     cancelar: podeCancelar,
-  } = acoesDaOS(ordem, userId, pode);
+  } = acoesDaOS(ordem, userId, pode, role);
 
     async function handleCancelar(motivo: string) {
   if (!osSelecionada) return;
@@ -148,17 +154,33 @@ export function OrdemServicoActions({
 
     try {
       setDefinindoExterno(true);
-      // Reaproveita o endpoint de atribuir técnico, com o id fixo do placeholder
+      // o parceiro já está executando: o servidor coloca a O.S. direto em andamento
+      // (o gestor não "inicia" atendimento; ele define o executor externo e, no fim, finaliza)
       await atribuirExternoOS(ordem.id);
-      // Pula direto pra EM_ANDAMENTO — não existe etapa intermediária visível
-      // pra técnico externo, então já habilita a finalização (evita erro de
-      // transição de status "ATRIBUIDA → FINALIZADA" no backend)
-      await iniciarAtendimentoOS(ordem.id);
-      onRefresh?.("EM_ANDAMENTO"); // 👈 pula ATRIBUIDA e já vai pra EM_ANDAMENTO
+      onRefresh?.("EM_ANDAMENTO");
     } catch (err) {
       console.error(err);
     } finally {
       setDefinindoExterno(false);
+    }
+  }
+
+  async function handlePausar(motivo: string) {
+    if (!osSelecionada) return;
+    await pausarOS(osSelecionada.id, motivo);
+    setOsSelecionada(null);
+    onRefresh?.("PAUSADA");
+  }
+
+  async function handleRetomar(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!ordem) return;
+
+    try {
+      await retomarOS(ordem.id);
+      onRefresh?.("EM_ANDAMENTO");
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -221,6 +243,28 @@ export function OrdemServicoActions({
               className="w-full h-10 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600"
             >
               Iniciar atendimento
+            </button>
+          )}
+
+          {podePausar && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOsSelecionada(ordem);
+                setOpenPausar(true);
+              }}
+              className="w-full h-10 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600"
+            >
+              Pausar atendimento
+            </button>
+          )}
+
+          {podeRetomar && (
+            <button
+              onClick={handleRetomar}
+              className="w-full h-10 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            >
+              Retomar atendimento
             </button>
           )}
 
@@ -311,6 +355,16 @@ export function OrdemServicoActions({
   />
 )}
 
+{/* MODAL PAUSAR */}
+<PausarOrdemServicoModal
+  open={openPausar}
+  onClose={() => {
+    setOpenPausar(false);
+    setOsSelecionada(null);
+  }}
+  onConfirm={handlePausar}
+/>
+
 {/* MODAL CANCELAR */}
 {osSelecionada && (
   <CancelarOrdemServicoModal
@@ -371,6 +425,28 @@ export function OrdemServicoActions({
               className="rounded px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-amber-100"
             >
               Iniciar
+            </button>
+          )}
+
+          {podePausar && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOsSelecionada(ordem);
+                setOpenPausar(true);
+              }}
+              className="rounded px-2 py-1 text-[11px] font-medium text-orange-700 hover:bg-orange-100"
+            >
+              Pausar
+            </button>
+          )}
+
+          {podeRetomar && (
+            <button
+              onClick={handleRetomar}
+              className="rounded px-2 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100"
+            >
+              Retomar
             </button>
           )}
 
@@ -461,6 +537,16 @@ export function OrdemServicoActions({
     onConfirm={handleFinalizar}
   />
 )}
+
+{/* MODAL PAUSAR */}
+<PausarOrdemServicoModal
+  open={openPausar}
+  onClose={() => {
+    setOpenPausar(false);
+    setOsSelecionada(null);
+  }}
+  onConfirm={handlePausar}
+/>
 
 {/* MODAL CANCELAR */}
 <CancelarOrdemServicoModal

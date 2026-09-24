@@ -42,6 +42,10 @@ const STATUS_STYLES: Record<
     badge: "bg-amber-50/80 text-amber-700 ring-amber-100",
     dot: "bg-amber-500",
   },
+  pausada: {
+    badge: "bg-orange-50/80 text-orange-700 ring-orange-100",
+    dot: "bg-orange-500",
+  },
   em_andamento: {
     badge: "bg-amber-50/80 text-amber-700 ring-amber-100",
     dot: "bg-amber-500",

@@ -2,8 +2,9 @@ import { apiGet, apiPost, apiPut } from "@/lib/apiClient";
 import type {
   Catalogo,
   MinhasPermissoes,
+  PedidoEmGrupo,
   PermissoesDoUsuario,
-  RegistroAuditoria,
+  ResultadoEmGrupo,
   ResultadoSalvar,
 } from "./permissoesTypes";
 
@@ -17,8 +18,10 @@ export const getPermissoesDoUsuario = (usuarioId: number) =>
 export const salvarPermissoesDoUsuario = (usuarioId: number, permissoes: string[]) =>
   apiPut<ResultadoSalvar>(`/permissoes/usuarios/${usuarioId}`, { permissoes });
 
+/** Volta o funcionário ao padrão do tipo e a seguir o grupo (remove o ajuste individual). */
 export const restaurarPadraoDoUsuario = (usuarioId: number) =>
   apiPost<ResultadoSalvar>(`/permissoes/usuarios/${usuarioId}/restaurar-padrao`);
 
-export const getAuditoriaDoUsuario = (usuarioId: number, limite = 30) =>
-  apiGet<RegistroAuditoria[]>(`/permissoes/auditoria?usuario=${usuarioId}&limite=${limite}`);
+/** Dar ou retirar permissões de vários funcionários; com `simular` só mostra o que aconteceria. */
+export const aplicarPermissoesEmGrupo = (pedido: PedidoEmGrupo, simular = false) =>
+  apiPost<ResultadoEmGrupo>("/permissoes/em-grupo", { ...pedido, simular });

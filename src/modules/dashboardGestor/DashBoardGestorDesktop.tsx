@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Wrench,
   Wallet,
-  User
+  User,
+  PauseCircle,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
@@ -225,7 +226,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <KpiCard
           label="OS Abertas"
           value={formatCompactNumber(kpis.os_abertas)}
@@ -237,6 +238,12 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
           value={formatCompactNumber(kpis.os_andamento)}
           icon={<Clock size={20} />}
           colorClass="bg-amber-50 text-amber-600"
+        />
+        <KpiCard
+          label="Pausadas"
+          value={formatCompactNumber(kpis.os_pausadas ?? 0)}
+          icon={<PauseCircle size={20} />}
+          colorClass="bg-orange-50 text-orange-600"
         />
         <KpiCard
           label="Atribuídas"

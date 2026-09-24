@@ -4,8 +4,8 @@ import type { User } from "./userType";
 import {
   Pencil,
   Power,
-  ShieldCheck,
   Trash2,
+  UserCog,
 } from "lucide-react";
 
 import type { AcoesDaLinhaUsuario } from "./userType";
@@ -91,7 +91,7 @@ export function getUserTableColumns({
                 aria-label={`Permissões de ${row.nome}`}
                 className="p-2 rounded-md hover:bg-indigo-50 text-indigo-600"
               >
-                <ShieldCheck size={14} />
+                <UserCog size={15} />
               </button>
             )}
 

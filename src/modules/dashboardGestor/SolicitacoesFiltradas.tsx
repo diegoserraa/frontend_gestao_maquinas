@@ -35,6 +35,7 @@ const STATUS_OPTIONS = [
   { value: "todas", label: "Todos os status" },
   { value: "ATRIBUIDA", label: "Atribuída" },
   { value: "EM_ANDAMENTO", label: "Em andamento" },
+  { value: "PAUSADA", label: "Pausada" },
   { value: "FINALIZADA", label: "Finalizada" },
 ];
 

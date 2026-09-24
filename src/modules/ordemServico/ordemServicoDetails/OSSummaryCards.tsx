@@ -1,6 +1,15 @@
-import { Clock, Timer, UserCog, User, Wrench, Flag } from "lucide-react";
+import { Clock, Timer, UserCog, User, Wrench, Flag, PauseCircle, Hammer } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
+
+import { useAgora } from "@/hooks/useAgora";
+import {
+  estaPausada,
+  formatarSegundos,
+  segundosDeReparo,
+  segundosPausados,
+  teveOuTemPausa,
+} from "@/modules/ordemServico/pausaOSLogica";
 
 import { formatDuration } from "./osDetailsHelpers";
 
@@ -85,6 +94,11 @@ function Stat({
 
 export function OSSummaryCards({ os, tecnicoNome }: Props) {
 
+  // enquanto pausada, o tempo pausado anda ao vivo
+  const pausada = estaPausada(os);
+  const agora = useAgora(pausada);
+  const mostraPausa = teveOuTemPausa(os, agora);
+
   const atendimento = formatDuration(
     os.data_inicio_atendimento,
     os.data_resolucao
@@ -109,13 +123,13 @@ export function OSSummaryCards({ os, tecnicoNome }: Props) {
   return (
 
     <div
-      className="
+      className={`
         grid
         grid-cols-2
         sm:grid-cols-3
-        lg:grid-cols-6
+        ${mostraPausa ? "lg:grid-cols-4" : "lg:grid-cols-6"}
         gap-1
-      "
+      `}
     >
 
       <Stat
@@ -123,11 +137,31 @@ export function OSSummaryCards({ os, tecnicoNome }: Props) {
         label="Atendimento"
         value={atendimento.texto}
         hint={
-          atendimento.emAndamento
+          pausada
+            ? "Pausada"
+            : atendimento.emAndamento
             ? "Em andamento"
             : undefined
         }
       />
+
+      {mostraPausa && (
+        <Stat
+          icon={<PauseCircle size={15} />}
+          label="Tempo pausado"
+          value={formatarSegundos(segundosPausados(os, agora))}
+          hint={pausada ? "Pausa em curso" : undefined}
+        />
+      )}
+
+      {mostraPausa && (
+        <Stat
+          icon={<Hammer size={15} />}
+          label="Reparo efetivo"
+          value={formatarSegundos(segundosDeReparo(os, agora))}
+          hint="sem as pausas"
+        />
+      )}
 
 
       <Stat
@@ -153,7 +187,8 @@ export function OSSummaryCards({ os, tecnicoNome }: Props) {
         icon={<User size={15} />}
         label="Solicitante"
         value={
-          "Diego"
+          os.solicitante_nome ??
+          (os.id_solicitante ? `#${os.id_solicitante}` : "-")
         }
       />
 

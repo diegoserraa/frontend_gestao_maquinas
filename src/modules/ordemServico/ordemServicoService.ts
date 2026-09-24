@@ -1,4 +1,5 @@
 import { apiGet, apiPost, apiPatch } from "@/lib/apiClient";
+import type { PausaOS } from "./pausaOSLogica";
 
 /* =========================
    MACHINE
@@ -33,18 +34,6 @@ export type OrdemServicoFormData = {
   id_tecnico?: number | null;
   resolucao?: string;
 };
-
-/* =========================
-   UPDATE STATUS OS
-========================= */
-
-export async function updateOSStatus(id: number, status: string) {
-  try {
-    return await apiPatch(`/ordens-servico/${id}/status`, { status });
-  } catch {
-    throw new Error("Erro ao atualizar status da OS");
-  }
-}
 
 /* =========================
    CREATE ORDEM DE SERVIÇO
@@ -99,6 +88,35 @@ export async function iniciarAtendimentoOS(osId: number) {
     return await apiPatch(`/ordens-servico/${osId}/iniciar`);
   } catch {
     throw new Error("Erro ao iniciar atendimento");
+  }
+}
+
+/* =========================
+   PAUSAR / RETOMAR
+   O motivo da pausa é obrigatório; o tempo parado não conta como tempo de reparo.
+========================= */
+export async function pausarOS(osId: number, motivo: string) {
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/pausar`, { motivo });
+  } catch {
+    throw new Error("Erro ao pausar OS");
+  }
+}
+
+export async function retomarOS(osId: number) {
+  try {
+    return await apiPatch(`/ordens-servico/${osId}/retomar`);
+  } catch {
+    throw new Error("Erro ao retomar OS");
+  }
+}
+
+// histórico de pausas (linha do tempo)
+export async function listarPausasOS(osId: number): Promise<PausaOS[]> {
+  try {
+    return await apiGet<PausaOS[]>(`/ordens-servico/${osId}/pausas`);
+  } catch {
+    throw new Error("Erro ao buscar o histórico de pausas");
   }
 }
 

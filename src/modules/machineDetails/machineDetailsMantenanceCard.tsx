@@ -2,6 +2,7 @@ import type { CardColumn } from "@/components/data/DataCard";
 import type { OrdemServico } from "./machineDetailsTypes";
 import { OrdemServicoActions } from "../ordemServico/ordemServicoAction";
 import type { UserRole } from "@/modules/login/loginType";
+import { estaPausada, formatarSegundos, segundosDaPausaAtual } from "../ordemServico/pausaOSLogica";
 
 type Tecnico = {
   id: number;
@@ -23,6 +24,8 @@ export function getMachineDetailsMobileColumns(
         const statusStyle =
           status.includes("abert")
             ? "bg-blue-50 text-blue-700 border-blue-200"
+            : status.includes("paus")
+            ? "bg-orange-50 text-orange-700 border-orange-200"
             : status.includes("andamento")
             ? "bg-amber-50 text-amber-700 border-amber-200"
             : status.includes("final")
@@ -92,6 +95,19 @@ export function getMachineDetailsMobileColumns(
                 >
                   {status.replaceAll("_", " ")}
                 </span>
+
+                {estaPausada(row) && (
+                  <p className="mt-1 text-[11px] text-orange-600">
+                    Parada há {formatarSegundos(segundosDaPausaAtual(row))}
+                    {row.motivo_pausa ? ` — ${row.motivo_pausa}` : ""}
+                  </p>
+                )}
+
+                {!estaPausada(row) && Number(row.tempo_pausado_segundos ?? 0) > 0 && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {formatarSegundos(row.tempo_pausado_segundos)} em pausas
+                  </p>
+                )}
               </div>
 
               <div>

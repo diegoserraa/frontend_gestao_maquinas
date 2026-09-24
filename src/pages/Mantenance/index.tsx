@@ -285,7 +285,7 @@ const tecnicoAtual = selectedOS?.id_tecnico
 
       {/* HEADER + AÇÕES */}
       <div className="flex flex-col xl:flex-row gap-4 items-stretch">
-        <div className="w-full xl:w-1/2">
+        <div className="w-full xl:w-1/2 flex">
           {loading || !machine ? (
             <HeaderSkeleton />
           ) : (
@@ -296,7 +296,7 @@ const tecnicoAtual = selectedOS?.id_tecnico
           )}
         </div>
 
-        <div className="w-full xl:w-1/2">
+        <div className="w-full xl:w-1/2 flex">
           {loading || !machine ? (
             <ActionsSkeleton />
           ) : (

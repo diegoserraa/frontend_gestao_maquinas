@@ -41,6 +41,8 @@ export type OrdemServicoRelatorioItem = {
   motivo_cancelamento?: string | null;
   valor_gasto?: number | string | null;
   valor_parceiro?: number | string | null;
+  // soma das pausas da O.S. (o servidor já desconta isso do tempo de reparo)
+  tempo_pausado_segundos?: number | string | null;
 };
 
 export type IndicadorMaquinaItem = {

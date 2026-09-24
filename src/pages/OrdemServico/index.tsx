@@ -15,6 +15,7 @@ import type { UserRole } from "@/modules/login/loginType";
 import { OSHeader } from "./../../modules/ordemServico/ordemServicoDetails/OSHeader";
 import { OSSummaryCards } from "../../modules/ordemServico/ordemServicoDetails/OSSummaryCards";
 import { OSActions } from "../../modules/ordemServico/ordemServicoDetails/OSActions";
+import { PausaBanner } from "../../modules/ordemServico/ordemServicoDetails/PausaBanner";
 import { OSPhotosGallery } from "../../modules/ordemServico/ordemServicoDetails/OSPhotosGallery";
 import { formatDateTime, getStatusStyle } from "../../modules/ordemServico/ordemServicoDetails/osDetailsHelpers";
 
@@ -250,6 +251,12 @@ export default function OrdemServicoDetails() {
           tecnicoNome={tecnicoAtual?.nome}
         />
       </div>
+
+      {statusUpper === "PAUSADA" && (
+        <div className="border-t border-slate-100 p-3 sm:p-4">
+          <PausaBanner os={os} />
+        </div>
+      )}
 
       <div
         className={`

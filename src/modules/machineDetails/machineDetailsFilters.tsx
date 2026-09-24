@@ -107,8 +107,16 @@ export function MachineDetailsFilters({
               Em andamento
             </SelectItem>
 
+            <SelectItem value="PAUSADA">
+              Pausada
+            </SelectItem>
+
             <SelectItem value="FINALIZADA">
               Finalizada
+            </SelectItem>
+
+            <SelectItem value="CANCELADA">
+              Cancelada
             </SelectItem>
           </SelectContent>
         </Select>

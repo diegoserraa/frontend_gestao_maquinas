@@ -19,6 +19,7 @@ import {
   QrCode,
   User,
   ChevronDown,
+  PauseCircle,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
@@ -282,6 +283,7 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
       <div className="grid grid-cols-3 gap-2.5">
         <KpiCard label="OS Abertas" value={formatCompactNumber(kpis.os_abertas)} icon={<Inbox size={17} />} colorClass="bg-blue-50 text-blue-600" />
         <KpiCard label="Em Andamento" value={formatCompactNumber(kpis.os_andamento)} icon={<Clock size={17} />} colorClass="bg-amber-50 text-amber-600" />
+        <KpiCard label="Pausadas" value={formatCompactNumber(kpis.os_pausadas ?? 0)} icon={<PauseCircle size={17} />} colorClass="bg-orange-50 text-orange-600" />
         <KpiCard
           label="Atribuídas"
           value={formatCompactNumber(kpis.os_atribuidas)}

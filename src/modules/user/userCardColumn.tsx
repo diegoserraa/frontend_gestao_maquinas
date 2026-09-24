@@ -4,8 +4,8 @@ import type { User } from "./userType";
 import {
   Pencil,
   Power,
-  ShieldCheck,
   Trash2,
+  UserCog,
 } from "lucide-react";
 
 import type { AcoesDaLinhaUsuario } from "./userType";
@@ -32,19 +32,21 @@ export function getUserCardColumns(
             shadow-sm
           "
         >
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="font-medium text-slate-900">
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="min-w-0">
+              <p className="font-medium text-slate-900 [overflow-wrap:anywhere]">
                 {user.nome}
               </p>
 
               <p className="text-xs text-slate-500">
                 ID #{user.id}
               </p>
+              </div>
             </div>
 
             <span
-              className={`text-xs px-2 py-1 rounded-md font-medium ${
+              className={`shrink-0 text-xs px-2 py-1 rounded-md font-medium ${
                 user.ativo
                   ? "bg-emerald-50 text-emerald-700"
                   : "bg-red-50 text-red-700"
@@ -94,7 +96,7 @@ export function getUserCardColumns(
                     aria-label={`Permissões de ${user.nome}`}
                     className={`${botao} text-indigo-600 hover:bg-indigo-50`}
                   >
-                    <ShieldCheck size={16} />
+                    <UserCog size={16} />
                   </button>
                 )}
 

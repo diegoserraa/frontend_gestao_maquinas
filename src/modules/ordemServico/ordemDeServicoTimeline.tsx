@@ -3,16 +3,24 @@ import {
   ClipboardList, UserCheck, Wrench, CheckCircle2, XCircle,
   Paperclip, Eye, Download, ExternalLink, X,
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  Loader2, AlertCircle,
+  Loader2, AlertCircle, PauseCircle, PlayCircle,
 } from "lucide-react";
 import type { OrdemServico } from "../ordemServico/ordemServicoType";
 import type { Anexo } from "@/modules/attachment/attachmentTypes";
 import { getOSAttachments } from "@/modules/attachment/attachmentService";
+import { listarPausasOS } from "./ordemServicoService";
+import {
+  estaPausada,
+  eventosDePausas,
+  formatarSegundos,
+  segundosDaPausaAtual,
+  type PausaOS,
+} from "./pausaOSLogica";
 
-type StatusOS = "aberta" | "atribuida" | "andamento" | "finalizada" | "cancelada";
+type StatusOS = "aberta" | "atribuida" | "andamento" | "pausada" | "retomada" | "finalizada" | "cancelada";
 
 type EventoOS = {
-  id: number;
+  id: number | string;
   titulo: string;
   descricao: string;
   data: string;
@@ -41,6 +49,20 @@ const STATUS_CONFIG = {
     iconColor: "text-amber-500",
     label: "bg-amber-50 text-amber-600 border-amber-100",
     text: "Em andamento",
+  },
+  pausada: {
+    icon: PauseCircle,
+    bg: "bg-orange-50",
+    iconColor: "text-orange-500",
+    label: "bg-orange-50 text-orange-600 border-orange-100",
+    text: "Pausada",
+  },
+  retomada: {
+    icon: PlayCircle,
+    bg: "bg-sky-50",
+    iconColor: "text-sky-500",
+    label: "bg-sky-50 text-sky-600 border-sky-100",
+    text: "Retomada",
   },
   finalizada: {
     icon: CheckCircle2,
@@ -219,6 +241,9 @@ interface Props {
   const [loadingAnexos, setLoadingAnexos] = useState(true);
   const [anexosError, setAnexosError] = useState<string | null>(null);
 
+  // histórico de pausas (falha aqui não impede de mostrar o resto da linha do tempo)
+  const [pausas, setPausas] = useState<PausaOS[]>([]);
+
   // Preview modal
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
@@ -238,6 +263,19 @@ interface Props {
   useEffect(() => {
     fetchAnexos();
   }, [fetchAnexos]);
+
+  useEffect(() => {
+    let ativo = true;
+
+    listarPausasOS(os.id)
+      .then((lista) => ativo && setPausas(lista))
+      .catch(() => ativo && setPausas([]));
+
+    return () => {
+      ativo = false;
+    };
+    // recarrega quando o status muda (pausou / retomou / finalizou)
+  }, [os.id, os.status]);
 
   const anexosAbertura = anexos.filter((a) => a.origem === "OS_ABERTURA");
   const anexosFechamento = anexos.filter((a) => a.origem === "OS_FECHAMENTO");
@@ -305,6 +343,17 @@ if (os.data_inicio_atendimento) {
   });
 }
 
+  // pausas e retomadas, com quem fez, o motivo e quanto tempo ficou parado
+  for (const p of eventosDePausas(pausas)) {
+    eventos.push({
+      id: p.chave,
+      titulo: p.tipo === "pausa" ? "Atendimento pausado" : "Atendimento retomado",
+      descricao: p.descricao,
+      data: p.data,
+      status: p.tipo === "pausa" ? "pausada" : "retomada",
+    });
+  }
+
   if (os.data_resolucao && os.status?.toUpperCase() === "FINALIZADA") {
     eventos.push({
       id: 4,
@@ -326,6 +375,11 @@ if (os.data_inicio_atendimento) {
       origemAnexo: "OS_FECHAMENTO",
     });
   }
+
+  // ordem cronológica (empate mantém a ordem em que foram montados)
+  eventos.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+  const totalPausado = pausas.reduce((soma, p) => soma + (p.duracao_segundos ?? 0), 0) + segundosDaPausaAtual(os);
 
   return (
     <>
@@ -352,6 +406,18 @@ if (os.data_inicio_atendimento) {
           </button>
         </div>
 
+        {/* resumo das pausas */}
+        {(pausas.length > 0 || estaPausada(os)) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-orange-100 bg-orange-50/60 px-4 py-2 text-xs text-orange-700">
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <PauseCircle size={13} aria-hidden="true" />
+              {pausas.length === 1 ? "1 pausa" : `${pausas.length} pausas`}
+            </span>
+            <span>Tempo parado: <strong>{formatarSegundos(totalPausado)}</strong></span>
+            {estaPausada(os) && <span className="font-semibold">Pausada agora</span>}
+          </div>
+        )}
+
         {/* TIMELINE */}
         <div className="p-4 overflow-y-auto max-h-[60vh]">
           <div className="flex flex-col">
@@ -368,7 +434,7 @@ if (os.data_inicio_atendimento) {
                   : null;
 
               return (
-                <div key={ev.id} className="flex gap-3">
+                <div key={String(ev.id)} className="flex gap-3">
 
                   {/* ÍCONE + LINHA */}
                   <div className="flex flex-col items-center">

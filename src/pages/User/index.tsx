@@ -14,6 +14,8 @@ import type { AcoesDaLinhaUsuario, User } from "../../modules/user/userType";
 import { getUser } from "@/modules/login/loginStorage";
 import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { PermissoesUsuarioModal } from "@/modules/permissoes/PermissoesUsuarioModal";
+import { PermissoesGrupoModal } from "@/modules/permissoes/PermissoesGrupoModal";
+import { UsersRound } from "lucide-react";
 
 import { UserFilters } from "../../modules/user/userFilters";
 
@@ -36,6 +38,9 @@ export default function Users() {
 
   // funcionário cujas permissões estão sendo editadas (abre o painel de permissões)
   const [permissoesAlvo, setPermissoesAlvo] = useState<User | null>(null);
+
+  // painel de permissões em grupo
+  const [grupoAberto, setGrupoAberto] = useState(false);
 
   /**
    * O que dá pra fazer com cada funcionário da lista: além da permissão da ação, valem as
@@ -306,31 +311,61 @@ export default function Users() {
           </p>
         </div>
 
-        {pode("usuarios.criar") && (
-          <button
-            onClick={() => {
-              setSelectedUser(
-                undefined
-              );
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {pode("usuarios.gerenciar_permissoes") && (
+            <button
+              type="button"
+              onClick={() => setGrupoAberto(true)}
+              className="
+                inline-flex
+                w-full
+                sm:w-auto
+                items-center
+                justify-center
+                gap-2
+                px-4
+                py-2
+                text-sm
+                font-medium
+                rounded-lg
+                border
+                border-indigo-200
+                bg-white
+                text-indigo-700
+                hover:bg-indigo-50
+              "
+            >
+              <UsersRound size={16} aria-hidden="true" />
+              Permissões em grupo
+            </button>
+          )}
 
-              setOpenModal(true);
-            }}
-            className="
-              w-full
-              sm:w-auto
-              px-4
-              py-2
-              text-sm
-              rounded-lg
-              bg-gradient-to-r
-              from-blue-600
-              to-indigo-600
-              text-white
-            "
-          >
-            + Novo usuário
-          </button>
-        )}
+          {pode("usuarios.criar") && (
+            <button
+              onClick={() => {
+                setSelectedUser(
+                  undefined
+                );
+
+                setOpenModal(true);
+              }}
+              className="
+                w-full
+                sm:w-auto
+                px-4
+                py-2
+                text-sm
+                rounded-lg
+                bg-gradient-to-r
+                from-blue-600
+                to-indigo-600
+                text-white
+              "
+            >
+              + Novo usuário
+            </button>
+          )}
+        </div>
       </div>
 
       <div
@@ -417,6 +452,14 @@ export default function Users() {
         open={permissoesAlvo !== null}
         onClose={() => setPermissoesAlvo(null)}
         usuario={permissoesAlvo}
+      />
+
+      <PermissoesGrupoModal
+        open={grupoAberto}
+        onClose={() => setGrupoAberto(false)}
+        usuarios={data
+          .filter((u) => acoesDaLinha(u).permissoes)
+          .map((u) => ({ id: u.id, nome: u.nome, role: u.role, ativo: u.ativo }))}
       />
 
       <ConfirmDialog
