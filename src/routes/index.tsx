@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 
 
 import MainLayout from "@/components/layout/MainLayout";
-import { RotaComPermissao } from "@/modules/permissoes/Pode";
+import { RotaComPermissao, RotaSoAdmin } from "@/modules/permissoes/Pode";
 import ProtectedRoute from "@/routes/protectRoutes";
 
 
@@ -18,6 +18,8 @@ import Login from "@/pages/Login";
 import OrdemServicoDetails from "@/pages/OrdemServico";
 import Reports from "@/pages/Relatorio";
 import Monitoring from "@/pages/Monitoring";
+import Empresas from "@/pages/Empresas";
+import TrocarSenha from "@/pages/TrocarSenha";
 
 
 
@@ -28,6 +30,13 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+
+
+  // primeiro acesso (senha temporária): fora do layout, o sistema só libera depois de trocar
+  {
+    path: "/trocar-senha",
+    element: <TrocarSenha />,
   },
 
 
@@ -118,6 +127,15 @@ export const router = createBrowserRouter([
           </RotaComPermissao>
         ),
       },
+      {
+        path: "admin/empresas",
+        element: (
+          <RotaSoAdmin>
+            <Empresas />
+          </RotaSoAdmin>
+        ),
+      },
+
        {
         path: "reports",
         element: (

@@ -3,6 +3,8 @@ export type User = {
   nome: string;
   email: string;
   role: UserRole;
+  /** conta criada pelo painel do administrador: precisa trocar a senha temporária antes de usar o sistema */
+  deve_trocar_senha?: boolean;
 };
 
 

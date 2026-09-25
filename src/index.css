@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+/*
+ * Cores base do sistema. O Tailwind v4 usa "currentColor" (preto) como cor de borda padrão e os componentes
+ * (shadcn) esperam tokens de tema que o projeto nunca definiu: sem isto, toda divisória de modal, borda de
+ * botão "Cancelar" (outline) e fundo de menu saía preto ou transparente. Tudo mapeado para a paleta slate
+ * que o resto do sistema já usa; classes explícitas (border-blue-200, bg-white...) continuam mandando.
+ */
+/* o sistema não tem modo escuro: "dark:" só valeria com a classe .dark (nunca usada), não pela preferência do computador */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-slate-200);
+  }
+}
+
+@theme inline {
+  --color-border: var(--color-slate-200);
+  --color-background: #ffffff;
+  --color-foreground: var(--color-slate-900);
+  --color-muted: var(--color-slate-100);
+  --color-muted-foreground: var(--color-slate-500);
+  --color-accent: var(--color-slate-100);
+  --color-accent-foreground: var(--color-slate-900);
+  --color-popover: #ffffff;
+  --color-popover-foreground: var(--color-slate-700);
+}
+
 html {
   font-size: 85%;
 }

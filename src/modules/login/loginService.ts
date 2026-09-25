@@ -10,8 +10,8 @@ export async function login(
   try {
     return await apiPost<LoginResponse>("/auth/login", payload);
   } catch (erro) {
-    // usuário desativado pelo gestor: a mensagem do servidor é útil, as outras ficam genéricas
-    if (erro instanceof Error && /inativo/i.test(erro.message)) throw erro;
+    // usuário desativado ou empresa inativada: a mensagem do servidor é útil, as outras ficam genéricas
+    if (erro instanceof Error && /inativ/i.test(erro.message)) throw erro;
 
     throw new Error("Usuário ou senha inválidos");
   }

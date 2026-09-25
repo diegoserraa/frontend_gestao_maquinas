@@ -8,6 +8,7 @@ import { ShieldOff } from "lucide-react";
 import { DashboardGestorDesktop } from "@/modules/dashboardGestor/DashBoardGestorDesktop";
 import { DashboardGestorMobile } from "@/modules/dashboardGestor/DashboardGestorMobile";
 
+import { DashboardAdmin } from "@/modules/empresas/DashboardAdmin";
 import { DashboardTecnico } from "@/modules/dashboardGestor/DashboardTecnico";
 import { DashboardOperador } from "@/modules/dashboardGestor/DasboardOperador";
 
@@ -46,7 +47,8 @@ export default function Dashboard() {
   useEffect(() => {
     async function registrarDispositivo() {
       try {
-        if (!usuario?.id) {
+        // o administrador (dono do sistema) não recebe avisos de manutenção
+        if (!usuario?.id || usuario.role === "ADMIN") {
           return;
         }
 
@@ -59,8 +61,6 @@ export default function Dashboard() {
     registrarDispositivo();
   }, [usuario]);
 
-  console.log("USUARIO:", usuario);
-
   if (!usuario) {
     return <div>Usuário não encontrado.</div>;
   }
@@ -68,9 +68,12 @@ export default function Dashboard() {
   // AJUSTE AQUI SE NO SEU OBJETO FOR "tipo" AO INVÉS DE "role"
   const perfil = usuario.role;
 
-  console.log("PERFIL:", perfil);
+  // o dono do sistema vê o dashboard das EMPRESAS (não o de uma empresa)
+  if (perfil === "ADMIN") {
+    return <DashboardAdmin />;
+  }
 
-  if (perfil === "GESTOR" || perfil === "ADMIN") {
+  if (perfil === "GESTOR") {
     // o gestor da empresa pode ter tirado este acesso deste funcionário
     if (!pode("dashboard.ver_gestor")) {
       return (

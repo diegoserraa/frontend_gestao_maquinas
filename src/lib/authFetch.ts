@@ -1,4 +1,5 @@
-import { getToken, logout } from "@/modules/login/loginStorage";
+import { estaTrocandoSenha } from "@/modules/conta/contaService";
+import { AVISO_DE_LOGIN, getToken, logout } from "@/modules/login/loginStorage";
 
 /**
  * Backend passou a exigir token em toda rota (antes não validava nada).
@@ -33,6 +34,19 @@ window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   const resposta = await fetchOriginal(input, { ...init, headers });
 
   if (resposta.status === 401 && !url.includes("/auth/login")) {
+    // a própria pessoa acabou de trocar a senha: as chamadas em voo com o token velho não a derrubam
+    if (estaTrocandoSenha()) return resposta;
+
+    // senha trocada em outro aparelho: explica na tela de login em vez de só chutar para fora
+    const corpo = await resposta.clone().json().catch(() => null);
+    if (corpo?.codigo === "SESSAO_ENCERRADA") {
+      try {
+        sessionStorage.setItem(AVISO_DE_LOGIN, "Sua senha foi alterada em outro lugar. Entre novamente com a senha nova.");
+      } catch {
+        // sem sessionStorage: só perde o aviso
+      }
+    }
+
     logout();
     if (!window.location.pathname.startsWith("/login")) {
       window.location.href = "/login";

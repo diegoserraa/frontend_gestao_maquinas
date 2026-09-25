@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 
-import { getToken } from "@/modules/login/loginStorage";
+import { getToken, getUser } from "@/modules/login/loginStorage";
 
 
 interface Props {
@@ -25,6 +25,16 @@ export default function ProtectedRoute({
     );
   }
 
+
+  // conta com senha temporária: só a tela de troca de senha está liberada
+  if (getUser()?.deve_trocar_senha) {
+    return (
+      <Navigate
+        to="/trocar-senha"
+        replace
+      />
+    );
+  }
 
   return children;
 

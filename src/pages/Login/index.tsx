@@ -4,7 +4,7 @@ import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { login } from "@/modules/login/loginService";
-import { saveAuth } from "@/modules/login/loginStorage";
+import { AVISO_DE_LOGIN, saveAuth } from "@/modules/login/loginStorage";
 
 function GearIcon({ size = 28 }: { size?: number }) {
   return (
@@ -40,6 +40,16 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSenha, setShowSenha] = useState(false);
+  // recado deixado por quem derrubou a sessão (ex.: senha trocada em outro aparelho); aparece uma vez só
+  const [aviso] = useState(() => {
+    try {
+      const texto = sessionStorage.getItem(AVISO_DE_LOGIN);
+      sessionStorage.removeItem(AVISO_DE_LOGIN);
+      return texto;
+    } catch {
+      return null;
+    }
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,10 +58,11 @@ export default function Login() {
       setLoading(true);
       const data = await login({ email, senha });
       saveAuth(data.token, data.user, data.permissoes);
-      navigate("/");
+      // conta nova (senha temporária): primeiro cria a senha própria
+      navigate(data.user.deve_trocar_senha ? "/trocar-senha" : "/");
     } catch (erro) {
       setError(
-        erro instanceof Error && /inativo/i.test(erro.message)
+        erro instanceof Error && /inativ/i.test(erro.message)
           ? erro.message
           : "E-mail ou senha inválidos. Tente novamente."
       );
@@ -94,6 +105,13 @@ export default function Login() {
             <h2 className="text-base font-semibold text-slate-800">Acesse sua conta</h2>
             <p className="text-sm text-slate-400 mt-0.5">Entre com suas credenciais</p>
           </div>
+
+          {aviso && (
+            <div role="status" className="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-blue-50 border border-blue-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
+              <p className="text-xs text-blue-700">{aviso}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
 

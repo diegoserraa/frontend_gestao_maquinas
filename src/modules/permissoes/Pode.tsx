@@ -24,9 +24,24 @@ export function Pode({ permissao, qualquer, children, fallback = null }: Props) 
 
 /** Protege uma tela: sem permissão, volta pro início com um aviso. */
 export function RotaComPermissao({ permissao, qualquer, children }: Omit<Props, "fallback">) {
-  const { pode, podeQualquer } = usePermissoes();
+  const { pode, podeQualquer, role } = usePermissoes();
 
-  const liberado = qualquer ? podeQualquer(...qualquer) : permissao ? pode(permissao) : true;
+  // o dono do sistema (administrador) só usa o dashboard e a lista de empresas: as telas de uma empresa
+  // (máquinas, O.S., usuários...) não abrem para ele — volta ao início sem aviso
+  const ehAdmin = role === "ADMIN";
+  const liberado = !ehAdmin && (qualquer ? podeQualquer(...qualquer) : permissao ? pode(permissao) : true);
+
+  useEffect(() => {
+    if (!liberado && !ehAdmin) notify.error("Você não tem acesso a essa tela.");
+  }, [liberado, ehAdmin]);
+
+  return liberado ? <>{children}</> : <Navigate to="/" replace />;
+}
+
+/** Tela só do dono do sistema (administrador). O servidor confere de novo em toda chamada. */
+export function RotaSoAdmin({ children }: { children: ReactNode }) {
+  const { role } = usePermissoes();
+  const liberado = role === "ADMIN";
 
   useEffect(() => {
     if (!liberado) notify.error("Você não tem acesso a essa tela.");
