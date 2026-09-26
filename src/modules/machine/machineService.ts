@@ -1,5 +1,5 @@
 import { apiGet, apiUpload, apiDelete, apiPatch } from "@/lib/apiClient";
-import type { Machine } from "./machineTypes";
+import type { EtiquetasResposta, Machine } from "./machineTypes";
 
 export async function getMachines(): Promise<Machine[]> {
   return apiGet<Machine[]>("/maquinas");
@@ -54,4 +54,15 @@ export async function toggleMachineStatus(id: number) {
   } catch {
     throw new Error("Erro ao alterar status da máquina");
   }
+}
+
+/** Etiquetas com QR Code para imprimir: uma seleção de máquinas e/ou um setor (sem filtro = todas). */
+export async function buscarEtiquetas(filtro: { ids?: number[]; setorId?: number } = {}): Promise<EtiquetasResposta> {
+  const consulta = new URLSearchParams();
+
+  if (filtro.ids?.length) consulta.set("ids", filtro.ids.join(","));
+  if (filtro.setorId) consulta.set("setor_id", String(filtro.setorId));
+
+  const texto = consulta.toString();
+  return apiGet<EtiquetasResposta>(`/maquinas/etiquetas${texto ? `?${texto}` : ""}`);
 }

@@ -1,6 +1,7 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { getToken, getUser } from "@/modules/login/loginStorage";
+import { guardarDestino } from "@/modules/login/destino";
 
 
 interface Props {
@@ -14,9 +15,13 @@ export default function ProtectedRoute({
 
 
   const token = getToken();
+  const local = useLocation();
 
 
   if (!token) {
+    // lembra para onde a pessoa ia (ex.: QR Code da máquina) e leva para lá depois do login
+    guardarDestino(`${local.pathname}${local.search}${local.hash}`);
+
     return (
       <Navigate 
         to="/login"

@@ -51,6 +51,8 @@ export type AcoesPermitidas = {
   editar?: boolean;
   excluir?: boolean;
   alternar?: boolean;
+  /** exportar os QR Codes das máquinas */
+  qr?: boolean;
 };
 
 /* ---------- permissões em grupo ---------- */

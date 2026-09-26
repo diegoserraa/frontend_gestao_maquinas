@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { login } from "@/modules/login/loginService";
 import { AVISO_DE_LOGIN, saveAuth } from "@/modules/login/loginStorage";
+import { consumirDestino } from "@/modules/login/destino";
 
 function GearIcon({ size = 28 }: { size?: number }) {
   return (
@@ -59,7 +60,8 @@ export default function Login() {
       const data = await login({ email, senha });
       saveAuth(data.token, data.user, data.permissoes);
       // conta nova (senha temporária): primeiro cria a senha própria
-      navigate(data.user.deve_trocar_senha ? "/trocar-senha" : "/");
+      // volta para onde a pessoa ia antes de entrar (ex.: QR Code da máquina); senão, o início
+      navigate(data.user.deve_trocar_senha ? "/trocar-senha" : (consumirDestino() ?? "/"));
     } catch (erro) {
       setError(
         erro instanceof Error && /inativ/i.test(erro.message)

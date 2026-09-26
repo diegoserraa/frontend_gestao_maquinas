@@ -1,3 +1,5 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { mascaraCnpj, mascaraTelefone } from "./cnpj";
 import { PLANOS, UFS, type FormEmpresa } from "./empresaForm";
 
@@ -10,6 +12,9 @@ type Props = {
   /** prefixo dos ids (evita ids repetidos na página) */
   prefixo?: string;
 };
+
+/** O Select (Radix) não aceita valor vazio: este marca "nenhum" e vira "" ao sair do formulário. */
+const NENHUM = "__nenhum__";
 
 export const CAMPO =
   "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 shadow-sm " +
@@ -109,14 +114,19 @@ export function FormularioEmpresa({ valores, onChange, desabilitado = false, com
         </Campo>
 
         <Campo id={id("uf")} rotulo="UF">
-          <select id={id("uf")} value={valores.uf} onChange={(e) => onChange({ uf: e.target.value })} disabled={desabilitado} className={CAMPO}>
-            <option value="">Selecione</option>
-            {UFS.map((uf) => (
-              <option key={uf} value={uf}>
-                {uf}
-              </option>
-            ))}
-          </select>
+          <Select value={valores.uf || NENHUM} onValueChange={(v) => onChange({ uf: v === NENHUM ? "" : v })} disabled={desabilitado}>
+            <SelectTrigger id={id("uf")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NENHUM}>Não informar</SelectItem>
+              {UFS.map((uf) => (
+                <SelectItem key={uf} value={uf}>
+                  {uf}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Campo>
       </Secao>
 
@@ -151,14 +161,19 @@ export function FormularioEmpresa({ valores, onChange, desabilitado = false, com
 
       <Secao titulo="Contrato">
         <Campo id={id("plano")} rotulo="Plano">
-          <select id={id("plano")} value={valores.plano} onChange={(e) => onChange({ plano: e.target.value })} disabled={desabilitado} className={CAMPO}>
-            <option value="">Sem plano definido</option>
-            {PLANOS.map((p) => (
-              <option key={p.valor} value={p.valor}>
-                {p.rotulo}
-              </option>
-            ))}
-          </select>
+          <Select value={valores.plano || NENHUM} onValueChange={(v) => onChange({ plano: v === NENHUM ? "" : v })} disabled={desabilitado}>
+            <SelectTrigger id={id("plano")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NENHUM}>Sem plano definido</SelectItem>
+              {PLANOS.map((p) => (
+                <SelectItem key={p.valor} value={p.valor}>
+                  {p.rotulo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Campo>
 
         <Campo id={id("inicio")} rotulo="Início do contrato">

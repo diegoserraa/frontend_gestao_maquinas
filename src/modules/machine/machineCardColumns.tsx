@@ -6,6 +6,7 @@ import {
   Power,
   Trash2,
   ClipboardCheck,
+  QrCode,
 } from "lucide-react";
 
 import {
@@ -21,7 +22,8 @@ export function getMachineCardColumns(
   onToggle: (id: number) => void,
   onDelete: (machine: Machine) => void,
   onHistory?: (machine: Machine) => void,
-  permitir?: AcoesPermitidas
+  permitir?: AcoesPermitidas,
+  onQr?: (machine: Machine) => void
 ): CardColumn<Machine>[] {
   return [
     {
@@ -204,6 +206,17 @@ export function getMachineCardColumns(
                   >
                     <ClipboardCheck size={14} />
                   </button>
+
+                  {permitir?.qr !== false && onQr && (
+<button
+                    onClick={() => onQr(m)}
+                    className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                    title="Exportar QR Code"
+                    aria-label={`Exportar QR Code de ${m.nome}`}
+                  >
+                    <QrCode size={14} />
+                  </button>
+)}
 
                   {permitir?.editar !== false && (
 <button

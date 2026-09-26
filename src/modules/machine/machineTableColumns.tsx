@@ -3,6 +3,7 @@ import {
   Power,
   Trash2,
   ClipboardCheck,
+  QrCode,
 } from "lucide-react";
 
 import type { Column } from "@/components/data/DataTable";
@@ -22,6 +23,8 @@ type Props = {
   onDelete: (machine: Machine) => void;
   onRowClick: (id: number) => void;
   onViewOS: (id: number) => void;
+  /** exportar o QR Code desta máquina */
+  onQr?: (machine: Machine) => void;
 };
 
 export function getMachineTableColumns({
@@ -30,6 +33,7 @@ export function getMachineTableColumns({
   onDelete,
   onRowClick,
   onViewOS,
+  onQr,
   permitir,
 }: Props): Column<Machine>[] {
   return [
@@ -299,6 +303,17 @@ export function getMachineTableColumns({
           >
             <ClipboardCheck size={16} />
           </button>
+
+          {permitir?.qr !== false && onQr && (
+<button
+            onClick={() => onQr(row)}
+            className="p-2 rounded-md hover:bg-slate-50 text-slate-600"
+            title="Exportar QR Code"
+            aria-label={`Exportar QR Code de ${row.nome}`}
+          >
+            <QrCode size={15} />
+          </button>
+)}
 
           {permitir?.editar !== false && (
 <button

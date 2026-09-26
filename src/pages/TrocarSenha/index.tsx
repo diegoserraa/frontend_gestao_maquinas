@@ -8,6 +8,7 @@ import { CampoSenha, RegrasDaSenha } from "@/modules/conta/CampoSenha";
 import { trocarSenha } from "@/modules/conta/contaService";
 import { problemaNaNovaSenha } from "@/modules/conta/senhaLogica";
 import { getToken, getUser, logout } from "@/modules/login/loginStorage";
+import { consumirDestino } from "@/modules/login/destino";
 
 /** Primeiro acesso (senha temporária): o sistema só libera depois de trocar a senha. */
 export default function TrocarSenha() {
@@ -39,7 +40,7 @@ export default function TrocarSenha() {
       await trocarSenha(atual, nova);
 
       notify.success("Senha alterada. Bem-vindo!");
-      navigate("/", { replace: true });
+      navigate(consumirDestino() ?? "/", { replace: true });
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível trocar a senha.");
     } finally {

@@ -1,5 +1,6 @@
 import { estaTrocandoSenha } from "@/modules/conta/contaService";
 import { AVISO_DE_LOGIN, getToken, logout } from "@/modules/login/loginStorage";
+import { guardarDestino } from "@/modules/login/destino";
 
 /**
  * Backend passou a exigir token em toda rota (antes não validava nada).
@@ -46,6 +47,9 @@ window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
         // sem sessionStorage: só perde o aviso
       }
     }
+
+    // sessão expirou no meio do uso: depois de entrar de novo, volta para onde estava
+    guardarDestino(`${window.location.pathname}${window.location.search}${window.location.hash}`);
 
     logout();
     if (!window.location.pathname.startsWith("/login")) {
