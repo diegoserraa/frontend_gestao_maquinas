@@ -29,9 +29,9 @@ export default defineConfig({
 
       manifest: {
 
-        name: "ZDM Solutions",
+        name: "MYMAQ360",
 
-        short_name: "ZDM",
+        short_name: "MYMAQ360",
 
         description:
           "Sistema de gestão de manutenção industrial",

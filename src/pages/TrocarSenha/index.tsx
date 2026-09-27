@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { KeyRound, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { LogoIcone, LogoNome } from "@/components/brand/Logo";
 import { notify } from "@/lib/notify";
 import { CampoSenha, RegrasDaSenha } from "@/modules/conta/CampoSenha";
 import { trocarSenha } from "@/modules/conta/contaService";
@@ -65,12 +66,8 @@ export default function TrocarSenha() {
 
       <div className="w-full max-w-sm relative z-10">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-slate-700 flex items-center justify-center mb-4 shadow-md text-white">
-            <KeyRound size={26} aria-hidden="true" />
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
-            ZDM<span className="text-blue-600">SaaS</span>
-          </h1>
+          <LogoIcone size={56} className="mb-3" />
+          <LogoNome className="text-2xl tracking-tight" />
           <p className="text-sm text-slate-400 mt-1">Gestão de manutenção industrial</p>
         </div>
 
