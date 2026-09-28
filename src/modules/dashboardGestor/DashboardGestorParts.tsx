@@ -99,6 +99,8 @@ type KpiCardProps = {
   icon: ReactNode;
   colorClass: string;
   highlight?: boolean;
+  /** o card vira botão: clicar mostra as ordens de serviço por trás desse número */
+  onClick?: () => void;
 };
 
 export function KpiCard({
@@ -107,9 +109,15 @@ export function KpiCard({
   icon,
   colorClass,
   highlight,
+  onClick,
 }: KpiCardProps) {
+  const Tag = onClick ? "button" : "div";
+
   return (
-    <div
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      aria-label={onClick ? `Ver ordens de serviço: ${label}` : undefined}
       className={`
         bg-white rounded-xl border shadow-sm
         p-2.5 sm:p-4
@@ -119,6 +127,8 @@ export function KpiCard({
         gap-1.5 sm:gap-3
         min-h-[90px] sm:min-h-0
         transition
+        w-full text-left
+        ${onClick ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" : ""}
         ${
           highlight
             ? "border-red-200 ring-1 ring-red-100"
@@ -157,7 +167,7 @@ export function KpiCard({
           {value}
         </p>
       </div>
-    </div>
+    </Tag>
   );
 }
 

@@ -13,26 +13,31 @@ export default function MainLayout() {
   useSincronizarPermissoes();
 
   return (
-    <div className="h-screen flex bg-slate-50">
+    <div className="h-screen flex bg-slate-50 print:h-auto print:block">
       {/* 👇 COLOCA AQUI (global para todas as telas) */}
       <Toaster position="top-right" richColors />
 
-      <div className="hidden md:flex">
+      {/* menu, cabeçalho e a barra de rolagem da tela não fazem sentido no papel */}
+      <div className="hidden md:flex print:hidden">
         <Sidebar
           isCollapsed={sidebar.isCollapsed}
           toggleCollapse={sidebar.toggleCollapse}
         />
       </div>
 
-      <SidebarMobile
-        isOpen={sidebar.isOpen}
-        closeSidebar={sidebar.closeSidebar}
-      />
+      <div className="print:hidden">
+        <SidebarMobile
+          isOpen={sidebar.isOpen}
+          closeSidebar={sidebar.closeSidebar}
+        />
+      </div>
 
-      <div className="flex flex-col flex-1 min-w-0">
-        <Header openSidebar={sidebar.openSidebar} />
+      <div className="flex flex-col flex-1 min-w-0 print:block">
+        <div className="print:hidden">
+          <Header openSidebar={sidebar.openSidebar} />
+        </div>
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-auto print:p-0 print:overflow-visible">
           <Outlet />
         </main>
       </div>

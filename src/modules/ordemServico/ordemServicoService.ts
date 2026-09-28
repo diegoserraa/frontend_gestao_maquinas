@@ -13,6 +13,20 @@ export async function getMachineById(id: number) {
    ORDENS DE SERVIÇO
 ========================= */
 
+/** Todas as O.S. que o usuário pode ver (o servidor já aplica o escopo: todas ou só as próprias). */
+export type OrdemServicoDaLista = {
+  id: number;
+  status: string;
+  tipo_manutencao: string;
+  prioridade: string;
+  data_abertura: string;
+  descricao?: string;
+};
+
+export async function listarOrdensServico(): Promise<OrdemServicoDaLista[]> {
+  return apiGet<OrdemServicoDaLista[]>("/ordens-servico");
+}
+
 export async function getOrdensByMachineId(id: number) {
   try {
     return await apiGet(`/maquinas/${id}/os`);

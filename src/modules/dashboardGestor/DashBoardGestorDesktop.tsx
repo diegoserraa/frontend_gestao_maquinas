@@ -23,7 +23,10 @@ import {
   PauseCircle,
 } from "lucide-react";
 
+import { useState } from "react";
+
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
+import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 
 import {
   KpiCard,
@@ -133,8 +136,14 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
     refetch,
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
 
+  const [cardAberto, setCardAberto] = useState<{ titulo: string; filtro: FiltroDoCard } | null>(null);
+
   if (erro) return <DashboardErrorState onRetry={refetch} />;
   if (loading || !kpis) return <DashboardSkeleton />;
+
+  // clicar num card do topo já mostra quais OS estão por trás daquele número, sem sair da tela
+  const verOrdens = (titulo: string, filtro: Omit<FiltroDoCard, "dataInicio" | "dataFim">) =>
+    setCardAberto({ titulo, filtro: { ...filtro, dataInicio: periodo.dataInicio, dataFim: periodo.dataFim } });
 
   const evolucaoData = evolucao.map((p) => ({
     label: formatDiaCurto(p.dia),
@@ -232,42 +241,49 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
           value={formatCompactNumber(kpis.os_abertas)}
           icon={<Inbox size={20} />}
           colorClass="bg-blue-50 text-blue-600"
+          onClick={() => verOrdens("OS Abertas", { status: ["ABERTA"] })}
         />
         <KpiCard
           label="Em Andamento"
           value={formatCompactNumber(kpis.os_andamento)}
           icon={<Clock size={20} />}
           colorClass="bg-amber-50 text-amber-600"
+          onClick={() => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] })}
         />
         <KpiCard
           label="Pausadas"
           value={formatCompactNumber(kpis.os_pausadas ?? 0)}
           icon={<PauseCircle size={20} />}
           colorClass="bg-orange-50 text-orange-600"
+          onClick={() => verOrdens("Pausadas", { status: ["PAUSADA"] })}
         />
         <KpiCard
           label="Atribuídas"
           value={formatCompactNumber(kpis.os_atribuidas)}
           icon={<User size={20} />}
           colorClass="bg-gradient-to-br from-cyan-50 to-sky-100 text-cyan-700"
+          onClick={() => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] })}
         />
         <KpiCard
           label="Finalizadas"
           value={formatCompactNumber(kpis.os_finalizadas)}
           icon={<CheckCircle2 size={20} />}
           colorClass="bg-emerald-50 text-emerald-600"
+          onClick={() => verOrdens("Finalizadas", { status: ["FINALIZADA"] })}
         />
         <KpiCard
           label="Preventivas"
           value={formatCompactNumber(kpis.preventivas)}
           icon={<ShieldCheck size={20} />}
           colorClass="bg-violet-50 text-violet-600"
+          onClick={() => verOrdens("Preventivas", { tipo: "PREVENTIVA" })}
         />
         <KpiCard
           label="Corretivas"
           value={formatCompactNumber(kpis.corretivas)}
           icon={<Wrench size={20} />}
           colorClass="bg-rose-50 text-rose-600"
+          onClick={() => verOrdens("Corretivas", { tipo: "CORRETIVA" })}
         />
       </div>
 
@@ -649,6 +665,13 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
           </div>
         </SectionCard>
       )}
+
+      <OrdensDoStatusModal
+        aberto={cardAberto !== null}
+        onClose={() => setCardAberto(null)}
+        titulo={cardAberto?.titulo ?? ""}
+        filtro={cardAberto?.filtro ?? null}
+      />
     </div>
   );
 }

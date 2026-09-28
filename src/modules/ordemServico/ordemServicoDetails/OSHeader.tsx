@@ -4,6 +4,7 @@ import {
   Flag,
   HardHat,
   Clock,
+  Printer,
 } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
@@ -18,12 +19,15 @@ type Props = {
   os: OrdemServico;
   maquinaNome?: string;
   onBack: () => void;
+  /** abre o diálogo de impressão do navegador — "Salvar como PDF" já resolve o "baixar" */
+  onImprimir: () => void;
 };
 
 export function OSHeader({
   os,
   maquinaNome,
   onBack,
+  onImprimir,
 }: Props) {
   const statusStyle = getStatusStyle(os.status);
   const StatusIcon = statusStyle.icon;
@@ -149,50 +153,72 @@ return (
 
 
 
-            {/* Data */}
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-                rounded-xl
-                border
-                border-slate-200
-                bg-white/70
-                backdrop-blur
-                px-3 py-2
-                w-fit
-                max-w-full
-              "
-            >
+            {/* Data + Imprimir */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-3
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white/70
+                  backdrop-blur
+                  px-3 py-2
+                  w-fit
+                  max-w-full
+                "
+              >
 
-              <Clock
-                size={15}
-                className="text-blue-500 shrink-0"
-              />
-
-
-              <div className="min-w-0">
-
-                <p className="text-[11px] text-slate-500">
-                  Aberta em
-                </p>
+                <Clock
+                  size={15}
+                  className="text-blue-500 shrink-0"
+                />
 
 
-                <p
-                  className="
-                    text-xs
-                    sm:text-sm
-                    font-semibold
-                    text-slate-700
-                    truncate
-                  "
-                >
-                  {formatDateTime(os.data_abertura)}
-                </p>
+                <div className="min-w-0">
+
+                  <p className="text-[11px] text-slate-500">
+                    Aberta em
+                  </p>
+
+
+                  <p
+                    className="
+                      text-xs
+                      sm:text-sm
+                      font-semibold
+                      text-slate-700
+                      truncate
+                    "
+                  >
+                    {formatDateTime(os.data_abertura)}
+                  </p>
+
+                </div>
 
               </div>
 
+              {/* some no papel — não faz sentido imprimir o próprio botão de imprimir */}
+              <button
+                type="button"
+                onClick={onImprimir}
+                title="Baixar ou imprimir esta O.S."
+                className="
+                  print:hidden
+                  flex items-center gap-1.5
+                  rounded-xl border border-slate-200
+                  bg-white/70 backdrop-blur
+                  px-3 py-2
+                  text-xs sm:text-sm font-semibold text-slate-700
+                  hover:bg-white hover:border-slate-300
+                  transition
+                "
+              >
+                <Printer size={15} className="text-blue-500 shrink-0" />
+                Baixar / Imprimir
+              </button>
             </div>
 
           </div>

@@ -218,31 +218,24 @@ export default function OrdemServicoDetails() {
   const statusStyle = getStatusStyle(os.status);
 
  return (
-<div className="
-  min-h-screen
-  bg-gradient-to-br
-  from-slate-50
-  via-blue-50/40
-  to-indigo-50/40
-  pt-0
-  px-2 sm:px-3 md:px-4
-  pb-6
-">
+  <div className="space-y-4 w-full max-w-full overflow-x-hidden">
+    {/* só aparece no papel: identifica o documento sem depender da tela (menu, botões etc. já saem) */}
+    <p className="hidden print:block text-xs text-slate-500 mb-2">
+      Impresso em {formatDateTime(new Date().toISOString())}
+    </p>
+
     <div
       className="
-        max-w-7xl mx-auto
-        rounded-3xl
-        border border-slate-200/70
-        bg-white/95
-        backdrop-blur-sm
+        bg-white rounded-2xl border border-slate-200 shadow-sm
         overflow-hidden
-        shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+        print:border-0 print:shadow-none print:rounded-none
       "
     >
       <OSHeader
         os={os}
         maquinaNome={maquinaNome}
         onBack={() => navigate(-1)}
+        onImprimir={() => window.print()}
       />
 
       <div className="border-t border-slate-100">
@@ -258,8 +251,10 @@ export default function OrdemServicoDetails() {
         </div>
       )}
 
+      {/* ações (iniciar, atribuir, finalizar...) não fazem sentido numa cópia em papel */}
       <div
         className={`
+          print:hidden
           border-t border-slate-100
           bg-gradient-to-r
           from-blue-50/50
@@ -362,7 +357,7 @@ export default function OrdemServicoDetails() {
 
   
 
-      <div className="border-t border-slate-100 bg-slate-50/50">
+      <div className="print:hidden border-t border-slate-100 bg-slate-50/50">
         <OSPhotosGallery osId={os.id} />
       </div>
     </div>
