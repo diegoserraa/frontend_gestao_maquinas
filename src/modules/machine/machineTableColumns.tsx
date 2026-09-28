@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import type { Column } from "@/components/data/DataTable";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import type { Machine } from "./machineTypes";
 import {
   formatMaintenanceDate,
@@ -264,24 +265,27 @@ export function getMachineTableColumns({
       label: "QR",
       render: (_, row) =>
         row.qr_code ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAmpliar({ src: row.qr_code!, titulo: `QR Code — ${row.nome}` });
-            }}
-            title={`Ampliar QR Code de ${row.nome}`}
-            className="group relative block h-8 w-8 cursor-pointer"
-          >
-            <img
-              src={row.qr_code}
-              alt={`QR Code de ${row.nome}`}
-              className="h-8 w-8 rounded-md border border-slate-200 transition group-hover:brightness-75"
-            />
-            <span className="absolute inset-0 flex items-center justify-center rounded-md opacity-0 transition group-hover:opacity-100">
-              <ZoomIn size={13} className="text-white drop-shadow" />
-            </span>
-          </button>
+          <HoverCard openDelay={80} closeDelay={80}>
+            <HoverCardTrigger asChild>
+              <img
+                src={row.qr_code}
+                alt={`QR Code de ${row.nome}`}
+                title={`Passe o mouse para ampliar — QR Code de ${row.nome}`}
+                onClick={() => onRowClick(row.id)}
+                className="w-8 h-8 rounded-md border border-slate-200 cursor-pointer transition hover:border-blue-300"
+              />
+            </HoverCardTrigger>
+            {/* portal + auto-flip do Radix: abre embaixo por padrão, mas na última linha
+                da tabela (sem espaço embaixo) ele detecta e abre pra cima sozinho —
+                nunca corta, sempre dá pra escanear */}
+            <HoverCardContent side="bottom" className="w-auto p-2">
+              <img
+                src={row.qr_code}
+                alt={`QR Code de ${row.nome}`}
+                className="h-40 w-40 rounded-md"
+              />
+            </HoverCardContent>
+          </HoverCard>
         ) : (
           <span
             className="text-xs text-slate-300 cursor-pointer"
