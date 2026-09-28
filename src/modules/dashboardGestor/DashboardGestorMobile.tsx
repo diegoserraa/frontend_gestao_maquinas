@@ -300,8 +300,9 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         </div>
       </div>
 
-      {/* KPIs — 1 card por linha, cada um com 2 números lado a lado */}
-      <div className="grid grid-cols-1 gap-2.5">
+      {/* KPIs — 2 cards por linha (2 linhas em vez de 4): a tela toda de celular
+          não pode virar só uma parede de números antes de chegar nos gráficos */}
+      <div className="grid grid-cols-2 gap-2">
         <KpiCardDupla
           esquerda={{
             label: "OS Abertas",
