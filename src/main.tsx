@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { InstalarAppBanner } from "@/components/pwa/InstalarAppBanner";
 
 import { registerSW } from "virtual:pwa-register";
 
@@ -47,5 +48,6 @@ updateSW = registerSW({
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <TooltipProvider>
     <RouterProvider router={router} />
+    <InstalarAppBanner />
   </TooltipProvider>
 );
