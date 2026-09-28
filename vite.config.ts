@@ -39,8 +39,9 @@ export default defineConfig({
 
         theme_color: "#2563eb",
 
-        // igual ao azul do ícone: a tela de splash não pisca de branco antes do app carregar
-        background_color: "#2563eb",
+        // igual ao fundo do ícone (branco): a splash não pisca outra cor antes do app carregar,
+        // e o app em si é todo em fundo claro, então a transição fica no mesmo tom
+        background_color: "#ffffff",
 
 
         display: "standalone",
