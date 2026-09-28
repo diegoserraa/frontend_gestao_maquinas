@@ -30,7 +30,7 @@ import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 
 import {
-  KpiCard,
+  KpiCardDupla,
   SectionCard,
   DashboardSkeleton,
   DashboardErrorState,
@@ -235,64 +235,72 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         <PeriodoFilter dataInicio={periodo.dataInicio} dataFim={periodo.dataFim} onChange={onPeriodoChange} />
       </div>
 
-      {/* KPIs — 4 colunas (2 linhas de 4) em vez de espremer 7 numa linha só:
-          fica mais equilibrado e sobra espaço pro "Ver ordens" de cada card */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <KpiCard
-          label="OS Abertas"
-          value={formatCompactNumber(kpis.os_abertas)}
-          icon={<Inbox size={20} />}
-          accent="blue"
-          onClick={() => verOrdens("OS Abertas", { status: ["ABERTA"] })}
+      {/* KPIs — 4 cards, cada um com 2 números lado a lado (status que andam
+          juntos na cabeça do gestor), pra caber numa linha só em vez de duas */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCardDupla
+          esquerda={{
+            label: "OS Abertas",
+            value: formatCompactNumber(kpis.os_abertas),
+            icon: <Inbox size={17} />,
+            accent: "blue",
+            onClick: () => verOrdens("OS Abertas", { status: ["ABERTA"] }),
+          }}
+          direita={{
+            label: "Atribuídas",
+            value: formatCompactNumber(kpis.os_atribuidas),
+            icon: <User size={17} />,
+            accent: "cyan",
+            onClick: () => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] }),
+          }}
         />
-        <KpiCard
-          label="Atribuídas"
-          value={formatCompactNumber(kpis.os_atribuidas)}
-          icon={<User size={20} />}
-          accent="cyan"
-          onClick={() => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] })}
+        <KpiCardDupla
+          esquerda={{
+            label: "Em Andamento",
+            value: formatCompactNumber(kpis.os_andamento),
+            icon: <Clock size={17} />,
+            accent: "amber",
+            onClick: () => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] }),
+          }}
+          direita={{
+            label: "Pausadas",
+            value: formatCompactNumber(kpis.os_pausadas ?? 0),
+            icon: <PauseCircle size={17} />,
+            accent: "orange",
+            onClick: () => verOrdens("Pausadas", { status: ["PAUSADA"] }),
+          }}
         />
-        <KpiCard
-          label="Em Andamento"
-          value={formatCompactNumber(kpis.os_andamento)}
-          icon={<Clock size={20} />}
-          accent="amber"
-          onClick={() => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] })}
-        />
-        <KpiCard
-          label="Pausadas"
-          value={formatCompactNumber(kpis.os_pausadas ?? 0)}
-          icon={<PauseCircle size={20} />}
-          accent="orange"
-          onClick={() => verOrdens("Pausadas", { status: ["PAUSADA"] })}
-        />
-        <KpiCard
-          label="Finalizadas"
-          value={formatCompactNumber(kpis.os_finalizadas)}
-          icon={<CheckCircle2 size={20} />}
-          accent="emerald"
-          onClick={() => verOrdens("Finalizadas", { status: ["FINALIZADA"] })}
-        />
-        <KpiCard
-          label="Canceladas"
-          value={formatCompactNumber(kpis.os_canceladas ?? 0)}
-          icon={<XCircle size={20} />}
-          accent="slate"
-          onClick={() => verOrdens("Canceladas", { status: ["CANCELADA"] })}
+        <KpiCardDupla
+          esquerda={{
+            label: "Finalizadas",
+            value: formatCompactNumber(kpis.os_finalizadas),
+            icon: <CheckCircle2 size={17} />,
+            accent: "emerald",
+            onClick: () => verOrdens("Finalizadas", { status: ["FINALIZADA"] }),
+          }}
+          direita={{
+            label: "Canceladas",
+            value: formatCompactNumber(kpis.os_canceladas ?? 0),
+            icon: <XCircle size={17} />,
+            accent: "slate",
+            onClick: () => verOrdens("Canceladas", { status: ["CANCELADA"] }),
+          }}
         />
         {/* só o número mesmo, sem "Ver ordens" — corretiva/preventiva é a maioria
             das O.S., a lista por trás não ajuda tanto quanto nos outros cards */}
-        <KpiCard
-          label="Preventivas"
-          value={formatCompactNumber(kpis.preventivas)}
-          icon={<ShieldCheck size={20} />}
-          accent="violet"
-        />
-        <KpiCard
-          label="Corretivas"
-          value={formatCompactNumber(kpis.corretivas)}
-          icon={<Wrench size={20} />}
-          accent="rose"
+        <KpiCardDupla
+          esquerda={{
+            label: "Preventivas",
+            value: formatCompactNumber(kpis.preventivas),
+            icon: <ShieldCheck size={17} />,
+            accent: "violet",
+          }}
+          direita={{
+            label: "Corretivas",
+            value: formatCompactNumber(kpis.corretivas),
+            icon: <Wrench size={17} />,
+            accent: "rose",
+          }}
         />
       </div>
 

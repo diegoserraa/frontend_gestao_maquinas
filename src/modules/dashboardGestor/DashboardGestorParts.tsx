@@ -220,6 +220,90 @@ export function KpiCard({
   );
 }
 
+// ── duas métricas num card só ─────────────────────────────
+//
+// Mesma ideia do KpiCard, só que dois números lado a lado dividindo o
+// mesmo card (com uma linha fina no meio) — usado quando dois status
+// andam juntos na cabeça do gestor (ex.: Aberta/Atribuída) e não vale a
+// pena gastar um card inteiro (e uma linha inteira da tela) só pra um.
+
+export type KpiMetade = {
+  label: string;
+  value: string | number;
+  icon: ReactNode;
+  accent: KpiAccent;
+  /** clicar mostra as ordens de serviço por trás desse número; sem onClick, é só o número */
+  onClick?: () => void;
+};
+
+function MetadeDoCard({ label, value, icon, accent, onClick }: KpiMetade) {
+  const Tag = onClick ? "button" : "div";
+  const cor = KPI_ACCENTS[accent];
+
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      aria-label={onClick ? `Ver ordens de serviço: ${label}` : undefined}
+      className={`
+        relative flex-1 min-w-0 text-left
+        flex flex-col sm:flex-row
+        items-center sm:items-center
+        justify-center sm:justify-start
+        gap-1 sm:gap-2.5
+        p-2 sm:p-3
+        transition
+        ${onClick ? "cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-inset" : ""}
+      `}
+    >
+      <div
+        className={`
+          h-7 w-7 sm:h-9 sm:w-9
+          rounded-lg
+          flex items-center justify-center
+          shrink-0
+          ${cor.badge}
+        `}
+      >
+        {icon}
+      </div>
+
+      <div className="text-center sm:text-left min-w-0">
+        <p className="text-[9px] sm:text-[11px] text-slate-500 truncate leading-tight">
+          {label}
+        </p>
+        <p className="text-base sm:text-xl font-bold leading-tight text-slate-800">
+          {value}
+        </p>
+
+        {/* embaixo do valor, dentro do fluxo normal — evita sobrepor o rótulo
+            quando a metade do card é estreita demais pra um selo no canto */}
+        {onClick && (
+          <p
+            className={`
+              mt-0.5 flex items-center justify-center sm:justify-start gap-0.5
+              text-[8px] sm:text-[10px] font-semibold whitespace-nowrap
+              ${cor.cta}
+            `}
+          >
+            Ver ordens
+            <ArrowRight size={8} className="shrink-0" />
+          </p>
+        )}
+      </div>
+    </Tag>
+  );
+}
+
+export function KpiCardDupla({ esquerda, direita }: { esquerda: KpiMetade; direita: KpiMetade }) {
+  return (
+    <div className="flex divide-x divide-slate-100 bg-white rounded-xl border border-slate-200 shadow-sm min-h-[90px] sm:min-h-0 overflow-hidden">
+      <MetadeDoCard {...esquerda} />
+      <MetadeDoCard {...direita} />
+    </div>
+  );
+}
+
 // ── wrapper padrão pras seções com gráfico ───────────────
 
 export function SectionCard({

@@ -26,7 +26,7 @@ import {
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 import {
-  KpiCard,
+  KpiCardDupla,
   DashboardSkeleton,
   DashboardErrorState,
   ChartEmptyState,
@@ -286,17 +286,71 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         </div>
       </div>
 
-      {/* KPIs — 2 colunas no mobile (cards maiores agora, com o "Ver ordens" embaixo) */}
-      <div className="grid grid-cols-2 gap-2.5">
-        <KpiCard label="OS Abertas" value={formatCompactNumber(kpis.os_abertas)} icon={<Inbox size={18} />} accent="blue" onClick={() => verOrdens("OS Abertas", { status: ["ABERTA"] })} />
-        <KpiCard label="Atribuídas" value={formatCompactNumber(kpis.os_atribuidas)} icon={<User size={18} />} accent="cyan" onClick={() => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] })} />
-        <KpiCard label="Em Andamento" value={formatCompactNumber(kpis.os_andamento)} icon={<Clock size={18} />} accent="amber" onClick={() => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] })} />
-        <KpiCard label="Pausadas" value={formatCompactNumber(kpis.os_pausadas ?? 0)} icon={<PauseCircle size={18} />} accent="orange" onClick={() => verOrdens("Pausadas", { status: ["PAUSADA"] })} />
-        <KpiCard label="Finalizadas" value={formatCompactNumber(kpis.os_finalizadas)} icon={<CheckCircle2 size={18} />} accent="emerald" onClick={() => verOrdens("Finalizadas", { status: ["FINALIZADA"] })} />
-        <KpiCard label="Canceladas" value={formatCompactNumber(kpis.os_canceladas ?? 0)} icon={<XCircle size={18} />} accent="slate" onClick={() => verOrdens("Canceladas", { status: ["CANCELADA"] })} />
+      {/* KPIs — 1 card por linha, cada um com 2 números lado a lado */}
+      <div className="grid grid-cols-1 gap-2.5">
+        <KpiCardDupla
+          esquerda={{
+            label: "OS Abertas",
+            value: formatCompactNumber(kpis.os_abertas),
+            icon: <Inbox size={16} />,
+            accent: "blue",
+            onClick: () => verOrdens("OS Abertas", { status: ["ABERTA"] }),
+          }}
+          direita={{
+            label: "Atribuídas",
+            value: formatCompactNumber(kpis.os_atribuidas),
+            icon: <User size={16} />,
+            accent: "cyan",
+            onClick: () => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] }),
+          }}
+        />
+        <KpiCardDupla
+          esquerda={{
+            label: "Em Andamento",
+            value: formatCompactNumber(kpis.os_andamento),
+            icon: <Clock size={16} />,
+            accent: "amber",
+            onClick: () => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] }),
+          }}
+          direita={{
+            label: "Pausadas",
+            value: formatCompactNumber(kpis.os_pausadas ?? 0),
+            icon: <PauseCircle size={16} />,
+            accent: "orange",
+            onClick: () => verOrdens("Pausadas", { status: ["PAUSADA"] }),
+          }}
+        />
+        <KpiCardDupla
+          esquerda={{
+            label: "Finalizadas",
+            value: formatCompactNumber(kpis.os_finalizadas),
+            icon: <CheckCircle2 size={16} />,
+            accent: "emerald",
+            onClick: () => verOrdens("Finalizadas", { status: ["FINALIZADA"] }),
+          }}
+          direita={{
+            label: "Canceladas",
+            value: formatCompactNumber(kpis.os_canceladas ?? 0),
+            icon: <XCircle size={16} />,
+            accent: "slate",
+            onClick: () => verOrdens("Canceladas", { status: ["CANCELADA"] }),
+          }}
+        />
         {/* só o número mesmo, sem "Ver ordens" — corretiva/preventiva é a maioria das O.S. */}
-        <KpiCard label="Preventivas" value={formatCompactNumber(kpis.preventivas)} icon={<ShieldCheck size={18} />} accent="violet" />
-        <KpiCard label="Corretivas" value={formatCompactNumber(kpis.corretivas)} icon={<Wrench size={18} />} accent="rose" />
+        <KpiCardDupla
+          esquerda={{
+            label: "Preventivas",
+            value: formatCompactNumber(kpis.preventivas),
+            icon: <ShieldCheck size={16} />,
+            accent: "violet",
+          }}
+          direita={{
+            label: "Corretivas",
+            value: formatCompactNumber(kpis.corretivas),
+            icon: <Wrench size={16} />,
+            accent: "rose",
+          }}
+        />
       </div>
 
       {/* EVOLUÇÃO */}
