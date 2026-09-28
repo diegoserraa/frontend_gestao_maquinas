@@ -64,7 +64,7 @@ export const ROTULO_NIVEL: Record<Nivel, string> = {
   "sem-dado": "Sem sinal",
 };
 
-type UiNivel = {
+export type UiNivel = {
   texto: string;
   suave: string;
   borda: string;
@@ -100,6 +100,44 @@ export const NIVEL_UI: Record<Nivel, UiNivel> = {
     borda: "border-slate-200",
     ponto: "bg-slate-300",
     hex: "#94a3b8",
+  },
+};
+
+/**
+ * Mesma ideia do NIVEL_UI, só que pensada pra fundo escuro — usada no "modo
+ * exposição" (tela grande, vitrine/estande). Não é "inverter as cores": os
+ * pastéis do tema claro (bg-emerald-50 etc.) não têm equivalente óbvio em
+ * fundo escuro, então essa paleta foi desenhada do zero pra continuar legível
+ * e com contraste alto num fundo bem escuro.
+ */
+export const NIVEL_UI_ESCURO: Record<Nivel, UiNivel> = {
+  ok: {
+    texto: "text-emerald-400",
+    suave: "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30",
+    borda: "border-emerald-500/25",
+    ponto: "bg-emerald-400",
+    hex: "#34d399",
+  },
+  atencao: {
+    texto: "text-amber-400",
+    suave: "bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/30",
+    borda: "border-amber-400/40",
+    ponto: "bg-amber-400",
+    hex: "#fbbf24",
+  },
+  critico: {
+    texto: "text-rose-400",
+    suave: "bg-rose-500/10 text-rose-300 ring-1 ring-rose-500/30",
+    borda: "border-rose-400/50",
+    ponto: "bg-rose-400",
+    hex: "#fb7185",
+  },
+  "sem-dado": {
+    texto: "text-slate-500",
+    suave: "bg-slate-500/10 text-slate-400 ring-1 ring-slate-500/20",
+    borda: "border-slate-600/40",
+    ponto: "bg-slate-500",
+    hex: "#64748b",
   },
 };
 

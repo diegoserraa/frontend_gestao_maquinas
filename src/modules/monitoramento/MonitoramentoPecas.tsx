@@ -5,6 +5,8 @@ import {
   RefreshCw,
   Info,
   Building2,
+  Monitor,
+  LayoutGrid,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -111,12 +113,20 @@ const MODOS: { valor: ModoDados; label: string }[] = [
 export function SeletorModo({
   modo,
   onChange,
+  escuro = false,
 }: {
   modo: ModoDados;
   onChange: (m: ModoDados) => void;
+  /** cabeçalho da tela fica escuro no modo exposição — o pill precisa acompanhar */
+  escuro?: boolean;
 }) {
   return (
-    <div className="inline-flex rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
+    <div
+      className={cn(
+        "inline-flex rounded-xl border p-0.5 shadow-sm",
+        escuro ? "border-white/10 bg-white/5 backdrop-blur" : "border-slate-200 bg-white"
+      )}
+    >
       {MODOS.map((m) => (
         <button
           key={m.valor}
@@ -125,13 +135,69 @@ export function SeletorModo({
           className={cn(
             "rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
             modo === m.valor
-              ? "bg-blue-50 text-blue-700"
+              ? escuro
+                ? "bg-blue-500/20 text-blue-300"
+                : "bg-blue-50 text-blue-700"
+              : escuro
+              ? "text-slate-400 hover:text-slate-200"
               : "text-slate-500 hover:text-slate-700"
           )}
         >
           {m.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/* =================== SELETOR DE EXIBIÇÃO (Normal / Exposição) ==================== */
+
+export type ModoExibicao = "normal" | "exposicao";
+
+export function SeletorExibicao({
+  valor,
+  onChange,
+}: {
+  valor: ModoExibicao;
+  onChange: (m: ModoExibicao) => void;
+}) {
+  const exposicao = valor === "exposicao";
+
+  return (
+    <div
+      className={cn(
+        "inline-flex rounded-xl border p-0.5 shadow-sm",
+        exposicao ? "border-white/10 bg-white/5 backdrop-blur" : "border-slate-200 bg-white"
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => onChange("normal")}
+        title="Visão normal, densa — pra acompanhar o dia a dia"
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
+          !exposicao
+            ? "bg-blue-50 text-blue-700"
+            : "text-slate-400 hover:text-slate-200"
+        )}
+      >
+        <LayoutGrid size={13} />
+        Normal
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("exposicao")}
+        title="Cards grandes, tema escuro — pra mostrar numa tela/estande"
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
+          exposicao
+            ? "bg-blue-500/20 text-blue-300"
+            : "text-slate-500 hover:text-slate-700"
+        )}
+      >
+        <Monitor size={13} />
+        Exposição
+      </button>
     </div>
   );
 }

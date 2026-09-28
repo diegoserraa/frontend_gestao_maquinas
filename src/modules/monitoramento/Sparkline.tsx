@@ -4,6 +4,8 @@ type Props = {
   valores: (number | null)[];
   cor: string;
   altura?: number;
+  /** mais grossa no modo exposição, onde o card (e o gráfico) ficam bem maiores */
+  espessura?: number;
   className?: string;
 };
 
@@ -11,7 +13,7 @@ type Props = {
  * Mini gráfico de linha em SVG puro (sem dependência), com preenchimento
  * em gradiente e ponto final destacado. Escala automática ao min/max.
  */
-export function Sparkline({ valores, cor, altura = 26, className }: Props) {
+export function Sparkline({ valores, cor, altura = 26, espessura = 1.5, className }: Props) {
   const id = useId();
   const largura = 100;
 
@@ -63,13 +65,13 @@ export function Sparkline({ valores, cor, altura = 26, className }: Props) {
         d={linha}
         fill="none"
         stroke={cor}
-        strokeWidth="1.5"
+        strokeWidth={espessura}
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
-      <circle cx={fx} cy={fy} r="2" fill={cor} />
-      <circle cx={fx} cy={fy} r="4" fill={cor} fillOpacity="0.16" />
+      <circle cx={fx} cy={fy} r={espessura + 0.5} fill={cor} />
+      <circle cx={fx} cy={fy} r={(espessura + 0.5) * 2.7} fill={cor} fillOpacity="0.16" />
     </svg>
   );
 }
