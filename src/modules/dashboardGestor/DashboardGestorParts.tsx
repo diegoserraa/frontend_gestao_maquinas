@@ -619,7 +619,7 @@ export function PeriodoFilter({
         lg:items-center
         lg:justify-end
         gap-2
-        w-full
+        w-full lg:w-auto
       "
     >
       {/* DATA INICIAL */}

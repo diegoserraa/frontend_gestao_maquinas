@@ -236,9 +236,9 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
       `}</style>
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
+        <div className="shrink-0">
           <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 whitespace-nowrap">
             Visão geral
             {atualizadoEm && (
               <span className="text-slate-400">
