@@ -1,6 +1,8 @@
 import { Eye, ClipboardList, HardHat } from "lucide-react";
 import { useState } from "react";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import {
   atribuirTecnicoOS,
   atribuirExternoOS,
@@ -56,7 +58,8 @@ export function OrdemServicoActions({
   const [definindoExterno, setDefinindoExterno] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
   const [openPausar, setOpenPausar] = useState(false);
-   
+  const [tecnicoSelecionado, setTecnicoSelecionado] = useState("");
+
 
   const { pode, podeQualquer, role } = usePermissoes();
   const podeCriarOS = pode("os.criar");
@@ -162,6 +165,20 @@ export function OrdemServicoActions({
       console.error(err);
     } finally {
       setDefinindoExterno(false);
+    }
+  }
+
+  async function handleAtribuirTecnico(valor: string) {
+    if (!ordem) return;
+    const tecnicoId = Number(valor);
+    if (!tecnicoId) return;
+    try {
+      await atribuirTecnicoOS(ordem.id, tecnicoId);
+      onRefresh?.();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTecnicoSelecionado(""); // volta pro placeholder — é uma ação de disparo único, não um campo de formulário
     }
   }
 
@@ -292,29 +309,20 @@ export function OrdemServicoActions({
           )}
 
           {podeAtribuir && (
-            <select
-              className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
-              defaultValue=""
-              onClick={(e) => e.stopPropagation()}
-              onChange={async (e) => {
-                const tecnicoId = Number(e.target.value);
-                if (!tecnicoId) return;
-                try {
-                  await atribuirTecnicoOS(ordem.id, tecnicoId);
-                  onRefresh?.();
-                } catch (err) {
-                  console.error(err);
-                }
-                e.target.value = "";
-              }}
-            >
-              <option value="">Atribuir técnico</option>
-              {tecnicos.map((tecnico) => (
-                <option key={tecnico.id} value={tecnico.id}>
-                  {tecnico.nome}
-                </option>
-              ))}
-            </select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select value={tecnicoSelecionado} onValueChange={handleAtribuirTecnico}>
+                <SelectTrigger className="w-full h-10 rounded-lg text-sm">
+                  <SelectValue placeholder="Atribuir técnico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tecnicos.map((tecnico) => (
+                    <SelectItem key={tecnico.id} value={String(tecnico.id)}>
+                      {tecnico.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
   {podeCancelar && (
@@ -474,29 +482,20 @@ export function OrdemServicoActions({
           )}
 
           {podeAtribuir && (
-            <select
-              className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs"
-              defaultValue=""
-              onClick={(e) => e.stopPropagation()}
-              onChange={async (e) => {
-                const tecnicoId = Number(e.target.value);
-                if (!tecnicoId) return;
-                try {
-                  await atribuirTecnicoOS(ordem.id, tecnicoId);
-                  onRefresh?.();
-                } catch (err) {
-                  console.error(err);
-                }
-                e.target.value = "";
-              }}
-            >
-              <option value="">Atribuir</option>
-              {tecnicos.map((tecnico) => (
-                <option key={tecnico.id} value={tecnico.id}>
-                  {tecnico.nome}
-                </option>
-              ))}
-            </select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select value={tecnicoSelecionado} onValueChange={handleAtribuirTecnico}>
+                <SelectTrigger className="h-8 w-fit rounded-md px-2 text-xs [&_svg]:size-3.5">
+                  <SelectValue placeholder="Atribuir" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tecnicos.map((tecnico) => (
+                    <SelectItem key={tecnico.id} value={String(tecnico.id)}>
+                      {tecnico.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
     {podeCancelar && (

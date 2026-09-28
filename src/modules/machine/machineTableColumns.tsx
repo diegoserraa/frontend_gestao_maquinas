@@ -4,6 +4,7 @@ import {
   Trash2,
   ClipboardCheck,
   QrCode,
+  ZoomIn,
 } from "lucide-react";
 
 import type { Column } from "@/components/data/DataTable";
@@ -11,10 +12,10 @@ import type { Machine } from "./machineTypes";
 import {
   formatMaintenanceDate,
   getMaintenanceDaysRemaining,
-  getMaintenanceStatus,
 } from "@/lib/helperMachine";
 
 import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
+import type { ImagemAmpliada } from "./ImagemAmpliadaModal";
 
 type Props = {
   permitir?: AcoesPermitidas;
@@ -25,6 +26,8 @@ type Props = {
   onViewOS: (id: number) => void;
   /** exportar o QR Code desta máquina */
   onQr?: (machine: Machine) => void;
+  /** amplia a foto/QR num visualizador em tela cheia, em vez do hover:scale antigo (cortava na última linha) */
+  onAmpliar: (imagem: ImagemAmpliada) => void;
 };
 
 export function getMachineTableColumns({
@@ -34,6 +37,7 @@ export function getMachineTableColumns({
   onRowClick,
   onViewOS,
   onQr,
+  onAmpliar,
   permitir,
 }: Props): Column<Machine>[] {
   return [
@@ -41,35 +45,29 @@ export function getMachineTableColumns({
   key: "imagem_url",
   label: "Imagem",
   render: (_, row) => (
-    <div
-      className="relative w-12 h-12"
-      onClick={() => onRowClick(row.id)}
-    >
+    <div className="relative w-12 h-12">
       {row.imagem_url ? (
-        <img
-          src={row.imagem_url}
-          alt={row.nome}
-          className="
-            w-12
-            h-12
-            rounded-lg
-            object-cover
-            border
-            shadow-sm
-            cursor-pointer
-
-            transition-all
-            duration-200
-
-            hover:scale-[3]
-            hover:z-50
-
-            origin-left
-            relative
-          "
-        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAmpliar({ src: row.imagem_url!, titulo: row.nome });
+          }}
+          title={`Ampliar foto de ${row.nome}`}
+          className="group relative block h-12 w-12 cursor-pointer"
+        >
+          <img
+            src={row.imagem_url}
+            alt={row.nome}
+            className="h-12 w-12 rounded-lg border object-cover shadow-sm transition group-hover:brightness-75"
+          />
+          <span className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 transition group-hover:opacity-100">
+            <ZoomIn size={16} className="text-white drop-shadow" />
+          </span>
+        </button>
       ) : (
         <div
+          onClick={() => onRowClick(row.id)}
           className="
             w-12
             h-12
@@ -81,6 +79,7 @@ export function getMachineTableColumns({
             justify-center
             text-slate-300
             text-xs
+            cursor-pointer
           "
         >
           —
@@ -265,19 +264,24 @@ export function getMachineTableColumns({
       label: "QR",
       render: (_, row) =>
         row.qr_code ? (
-          <img
-            src={row.qr_code}
-            alt="QR Code"
-            className="
-              w-8
-              h-8
-              rounded-md
-              hover:scale-[3.3]
-              transition
-              cursor-pointer
-            "
-            onClick={() => onRowClick(row.id)}
-          />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAmpliar({ src: row.qr_code!, titulo: `QR Code — ${row.nome}` });
+            }}
+            title={`Ampliar QR Code de ${row.nome}`}
+            className="group relative block h-8 w-8 cursor-pointer"
+          >
+            <img
+              src={row.qr_code}
+              alt={`QR Code de ${row.nome}`}
+              className="h-8 w-8 rounded-md border border-slate-200 transition group-hover:brightness-75"
+            />
+            <span className="absolute inset-0 flex items-center justify-center rounded-md opacity-0 transition group-hover:opacity-100">
+              <ZoomIn size={13} className="text-white drop-shadow" />
+            </span>
+          </button>
         ) : (
           <span
             className="text-xs text-slate-300 cursor-pointer"

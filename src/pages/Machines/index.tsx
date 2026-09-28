@@ -33,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { QrCode } from "lucide-react";
 import { ExportarQrModal } from "../../modules/machine/ExportarQrModal";
+import { ImagemAmpliadaModal, type ImagemAmpliada } from "../../modules/machine/ImagemAmpliadaModal";
 
 export default function Machines() {
   const { pode } = usePermissoes();
@@ -66,6 +67,9 @@ export default function Machines() {
 
   // exportar QR Codes: aberto=true; maquina definida = só a etiqueta dela
   const [qr, setQr] = useState<{ aberto: boolean; maquina: Machine | null }>({ aberto: false, maquina: null });
+
+  // visualizador em tela cheia da foto/QR de uma linha (substitui o hover:scale antigo)
+  const [imagemAmpliada, setImagemAmpliada] = useState<ImagemAmpliada>(null);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [machineToDelete, setMachineToDelete] = useState<Machine | null>(null);
@@ -226,6 +230,7 @@ setExistingAttachments(
         onRowClick: (id) => navigate(`/machines/${id}`),
         onViewOS: (id) => navigate(`/machines/${id}?tab=os`),
         onQr: (machine) => setQr({ aberto: true, maquina: machine }),
+        onAmpliar: setImagemAmpliada,
         permitir,
       }),
     [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
@@ -239,7 +244,8 @@ setExistingAttachments(
         handleOpenDelete,
         (machine) => navigate(`/machines/${machine.id}?tab=history`),
         permitir,
-        (machine) => setQr({ aberto: true, maquina: machine })
+        (machine) => setQr({ aberto: true, maquina: machine }),
+        setImagemAmpliada
       ),
     [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
   );
@@ -339,6 +345,8 @@ setExistingAttachments(
         loading={deleteLoading}
         onConfirm={handleDeleteConfirm}
       />
+
+      <ImagemAmpliadaModal aberto={imagemAmpliada} onClose={() => setImagemAmpliada(null)} />
     </div>
   );
 }

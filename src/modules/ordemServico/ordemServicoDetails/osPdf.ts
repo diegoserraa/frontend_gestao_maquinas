@@ -27,7 +27,7 @@ const LARGURA_UTIL = 210 - MARGEM * 2; // A4 retrato, em mm
 
 type Doc = import("jspdf").jsPDF;
 
-function cabecalho(doc: Doc, os: OrdemServico) {
+function cabecalho(doc: Doc) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(13);
   doc.setTextColor(...COR_MARCA);
@@ -123,7 +123,7 @@ export async function gerarPdfOrdemServico({ os, maquinaNome, tecnicoNome }: Dad
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
   doc.setProperties({ title: `Ordem de Serviço #${os.id}` });
 
-  cabecalho(doc, os);
+  cabecalho(doc);
 
   // título + máquina
   doc.setFont("helvetica", "normal");

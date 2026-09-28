@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import {
   atribuirTecnicoOS,
   atribuirExternoOS,
@@ -94,6 +96,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
   const [openPausar, setOpenPausar] = useState(false);
   const [definindoExterno, setDefinindoExterno] = useState(false);
   const [atribuindo, setAtribuindo] = useState(false);
+  const [tecnicoSelecionado, setTecnicoSelecionado] = useState("");
 
   const [openFinalizar, setOpenFinalizar] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
@@ -193,8 +196,8 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     }
   }
 
-  async function handleAtribuirTecnico(e: React.ChangeEvent<HTMLSelectElement>) {
-    const tecnicoId = Number(e.target.value);
+  async function handleAtribuirTecnico(valor: string) {
+    const tecnicoId = Number(valor);
     if (!tecnicoId) return;
 
     setAtribuindo(true);
@@ -205,7 +208,7 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
       console.error(err);
     } finally {
       setAtribuindo(false);
-      e.target.value = "";
+      setTecnicoSelecionado(""); // volta pro placeholder — é uma ação de disparo único, não um campo de formulário
     }
   }
 
@@ -297,26 +300,18 @@ async function handleConfirmarCancelamento(motivo: string) {
 
         {podeAtribuir && (
           <div className="relative flex-1 min-w-[150px]">
-            <select
-              defaultValue=""
-              disabled={atribuindo}
-              onChange={handleAtribuirTecnico}
-              className="
-                w-full h-11 rounded-xl border border-slate-200 bg-white
-                pl-9 pr-3 text-sm font-semibold text-slate-700
-                outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400
-                disabled:opacity-60 appearance-none cursor-pointer
-              "
-            >
-              <option value="" disabled>
-                Atribuir técnico
-              </option>
-              {tecnicos.map((tecnico) => (
-                <option key={tecnico.id} value={tecnico.id}>
-                  {tecnico.nome}
-                </option>
-              ))}
-            </select>
+            <Select value={tecnicoSelecionado} onValueChange={handleAtribuirTecnico} disabled={atribuindo}>
+              <SelectTrigger className="h-11 pl-9 font-semibold text-slate-700">
+                <SelectValue placeholder="Atribuir técnico" />
+              </SelectTrigger>
+              <SelectContent>
+                {tecnicos.map((tecnico) => (
+                  <SelectItem key={tecnico.id} value={String(tecnico.id)}>
+                    {tecnico.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-blue-600">
               {atribuindo ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
             </div>
