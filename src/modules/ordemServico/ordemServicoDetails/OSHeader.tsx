@@ -153,8 +153,9 @@ return (
 
 
 
-            {/* Data + Imprimir */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Data + Imprimir — items-stretch faz o botão (1 linha) acompanhar a
+                altura do chip de data (2 linhas) em vez de sobrar espaço nas laterais */}
+            <div className="flex flex-wrap items-stretch gap-2">
               <div
                 className="
                   flex
@@ -200,7 +201,10 @@ return (
 
               </div>
 
-              {/* some no papel — não faz sentido imprimir o próprio botão de imprimir */}
+              {/* some no papel — não faz sentido imprimir o próprio botão de imprimir.
+                  items-stretch no pai já estica este botão pra bater com a altura do chip de
+                  data ao lado — "height: 100%" aqui atrapalharia o stretch (o pai não tem
+                  altura própria definida, só a do conteúdo), por isso NÃO usar h-full */}
               <button
                 type="button"
                 onClick={onImprimir}

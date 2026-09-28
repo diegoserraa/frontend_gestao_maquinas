@@ -34,6 +34,14 @@
 html {
   font-size: 85%;
 }
+
+/* margem consistente do papel impresso, independente do padrão de cada navegador/impressora */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
 /* ── Notificações em tempo real ─────────────────────────────── */
 @keyframes sino-balanco {
   0%, 100% { transform: rotate(0); }

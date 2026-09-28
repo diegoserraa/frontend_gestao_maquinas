@@ -8,6 +8,7 @@ import {
   getMachineById,
   listarTecnicos,
 } from "@/modules/ordemServico/ordemServicoService";
+import { LogoIcone, LogoNome } from "@/components/brand/Logo";
 
 import { getUser } from "@/modules/login/loginStorage";
 import type { UserRole } from "@/modules/login/loginType";
@@ -219,10 +220,20 @@ export default function OrdemServicoDetails() {
 
  return (
   <div className="space-y-4 w-full max-w-full overflow-x-hidden">
-    {/* só aparece no papel: identifica o documento sem depender da tela (menu, botões etc. já saem) */}
-    <p className="hidden print:block text-xs text-slate-500 mb-2">
-      Impresso em {formatDateTime(new Date().toISOString())}
-    </p>
+    {/*
+      Cabeçalho de identificação do papel: só aparece na impressão (menu, botões etc. já saem).
+      Não depende do cabeçalho automático do navegador (data/título) — aquele é opcional e o
+      usuário pode desativá-lo na caixa de impressão, então o documento carrega a própria marca.
+    */}
+    <div className="hidden print:flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+      <div className="flex items-center gap-2">
+        <LogoIcone size={26} />
+        <LogoNome className="text-sm" />
+      </div>
+      <p className="text-xs text-slate-500">
+        Impresso em {formatDateTime(new Date().toISOString())}
+      </p>
+    </div>
 
     <div
       className="

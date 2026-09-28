@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import {
   Image as ImageIcon,
   ExternalLink,
+  Download,
   X,
   ChevronLeft,
   ChevronRight,
@@ -12,7 +14,7 @@ import {
 } from "lucide-react";
 
 import type { Anexo } from "@/modules/attachment/attachmentTypes";
-import { getOSAttachments } from "@/modules/attachment/attachmentService";
+import { getOSAttachments, baixarAnexo } from "@/modules/attachment/attachmentService";
 
 type Props = {
   osId: number;
@@ -36,30 +38,58 @@ function anexoType(anexo: Anexo): "image" | "pdf" | "other" {
 // numa grade previsível, com setinhas pra paginar o resto
 const PAGE_SIZE = 8;
 
+async function handleBaixar(e: React.MouseEvent, anexo: Anexo, setBaixando: (v: boolean) => void) {
+  e.stopPropagation();
+  setBaixando(true);
+  try {
+    await baixarAnexo(anexo);
+  } catch {
+    toast.error("Não foi possível baixar o arquivo");
+  } finally {
+    setBaixando(false);
+  }
+}
+
 function Thumb({ anexo, onOpen }: { anexo: Anexo; onOpen: (anexo: Anexo) => void }) {
   const isImg = anexoType(anexo) === "image";
+  const [baixando, setBaixando] = useState(false);
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(anexo)}
-      title={anexo.nome_arquivo}
-     className="
-  group h-16 w-16 rounded-lg overflow-hidden
-  border border-slate-200 bg-slate-50
-  hover:border-blue-300 transition-colors
-"
-    >
-      {isImg ? (
-        <img
-          src={anexo.url_arquivo}
-          alt={anexo.nome_arquivo}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-        />
-      ) : (
-        <div className="h-full flex items-center justify-center text-xl">📄</div>
-      )}
-    </button>
+    <div className="group relative h-16 w-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 hover:border-blue-300 transition-colors">
+      <button
+        type="button"
+        onClick={() => onOpen(anexo)}
+        title={anexo.nome_arquivo}
+        className="h-full w-full"
+      >
+        {isImg ? (
+          <img
+            src={anexo.url_arquivo}
+            alt={anexo.nome_arquivo}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          />
+        ) : (
+          <div className="h-full flex items-center justify-center text-xl">📄</div>
+        )}
+      </button>
+
+      {/* baixar direto da miniatura, sem precisar abrir o preview primeiro */}
+      <button
+        type="button"
+        onClick={(e) => handleBaixar(e, anexo, setBaixando)}
+        disabled={baixando}
+        title={`Baixar ${anexo.nome_arquivo}`}
+        className="
+          absolute top-0.5 right-0.5 h-5 w-5 rounded-full
+          bg-black/60 text-white
+          flex items-center justify-center
+          opacity-0 group-hover:opacity-100 focus-visible:opacity-100
+          transition disabled:opacity-70
+        "
+      >
+        {baixando ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+      </button>
+    </div>
   );
 }
 
@@ -144,6 +174,7 @@ export function OSPhotosGallery({ osId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [baixandoModal, setBaixandoModal] = useState(false);
 
   const fetchAnexos = useCallback(async () => {
     setLoading(true);
@@ -292,6 +323,15 @@ export function OSPhotosGallery({ osId }: Props) {
                   )}
                 </div>
                 <div className="flex items-center gap-1 ml-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => handleBaixar(e, current, setBaixandoModal)}
+                    disabled={baixandoModal}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 transition disabled:opacity-60"
+                    title="Baixar"
+                  >
+                    {baixandoModal ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  </button>
                   <button
                     type="button"
                     onClick={() => window.open(current.url_arquivo, "_blank")}
