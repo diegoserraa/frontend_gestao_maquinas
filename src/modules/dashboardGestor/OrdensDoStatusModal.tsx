@@ -58,6 +58,9 @@ export function OrdensDoStatusModal({ aberto, onClose, titulo, filtro }: Props) 
           if (!dentroDoPeriodo) return false;
           if (filtro.status && !filtro.status.includes(o.status)) return false;
           if (filtro.tipo && o.tipo_manutencao !== filtro.tipo) return false;
+          // "Preventivas"/"Corretivas" contam por tipo, sem as canceladas (mesma regra do
+          // card, em DashboardRepository.obterKPIs) — canceladas têm o card próprio delas.
+          if (filtro.tipo && o.status === "CANCELADA") return false;
           return true;
         });
 

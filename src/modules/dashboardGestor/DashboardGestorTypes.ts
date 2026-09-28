@@ -10,7 +10,10 @@ export interface DashboardKpis {
   os_pausadas?: string;
   os_atribuidas: string;
   os_finalizadas: string;
+  os_canceladas?: string;
+  /** já vem sem contar as canceladas (ver DashboardRepository.obterKPIs) */
   preventivas: string;
+  /** já vem sem contar as canceladas (ver DashboardRepository.obterKPIs) */
   corretivas: string;
 }
 

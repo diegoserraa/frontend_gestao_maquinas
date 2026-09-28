@@ -20,6 +20,7 @@ import {
   User,
   ChevronDown,
   PauseCircle,
+  XCircle,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
@@ -285,21 +286,16 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         </div>
       </div>
 
-      {/* KPIs — 3 colunas no mobile */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <KpiCard label="OS Abertas" value={formatCompactNumber(kpis.os_abertas)} icon={<Inbox size={17} />} colorClass="bg-blue-50 text-blue-600" onClick={() => verOrdens("OS Abertas", { status: ["ABERTA"] })} />
-        <KpiCard label="Em Andamento" value={formatCompactNumber(kpis.os_andamento)} icon={<Clock size={17} />} colorClass="bg-amber-50 text-amber-600" onClick={() => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] })} />
-        <KpiCard label="Pausadas" value={formatCompactNumber(kpis.os_pausadas ?? 0)} icon={<PauseCircle size={17} />} colorClass="bg-orange-50 text-orange-600" onClick={() => verOrdens("Pausadas", { status: ["PAUSADA"] })} />
-        <KpiCard
-          label="Atribuídas"
-          value={formatCompactNumber(kpis.os_atribuidas)}
-          icon={<User size={20} />}
-          colorClass="bg-gradient-to-br from-cyan-50 to-sky-100 text-cyan-700"
-          onClick={() => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] })}
-        />
-        <KpiCard label="Finalizadas" value={formatCompactNumber(kpis.os_finalizadas)} icon={<CheckCircle2 size={17} />} colorClass="bg-emerald-50 text-emerald-600" onClick={() => verOrdens("Finalizadas", { status: ["FINALIZADA"] })} />
-        <KpiCard label="Preventivas" value={formatCompactNumber(kpis.preventivas)} icon={<ShieldCheck size={17} />} colorClass="bg-violet-50 text-violet-600" onClick={() => verOrdens("Preventivas", { tipo: "PREVENTIVA" })} />
-        <KpiCard label="Corretivas" value={formatCompactNumber(kpis.corretivas)} icon={<Wrench size={17} />} colorClass="bg-rose-50 text-rose-600" onClick={() => verOrdens("Corretivas", { tipo: "CORRETIVA" })} />
+      {/* KPIs — 2 colunas no mobile (cards maiores agora, com o "Ver ordens" embaixo) */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <KpiCard label="OS Abertas" value={formatCompactNumber(kpis.os_abertas)} icon={<Inbox size={18} />} accent="blue" onClick={() => verOrdens("OS Abertas", { status: ["ABERTA"] })} />
+        <KpiCard label="Atribuídas" value={formatCompactNumber(kpis.os_atribuidas)} icon={<User size={18} />} accent="cyan" onClick={() => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] })} />
+        <KpiCard label="Em Andamento" value={formatCompactNumber(kpis.os_andamento)} icon={<Clock size={18} />} accent="amber" onClick={() => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] })} />
+        <KpiCard label="Pausadas" value={formatCompactNumber(kpis.os_pausadas ?? 0)} icon={<PauseCircle size={18} />} accent="orange" onClick={() => verOrdens("Pausadas", { status: ["PAUSADA"] })} />
+        <KpiCard label="Finalizadas" value={formatCompactNumber(kpis.os_finalizadas)} icon={<CheckCircle2 size={18} />} accent="emerald" onClick={() => verOrdens("Finalizadas", { status: ["FINALIZADA"] })} />
+        <KpiCard label="Canceladas" value={formatCompactNumber(kpis.os_canceladas ?? 0)} icon={<XCircle size={18} />} accent="slate" onClick={() => verOrdens("Canceladas", { status: ["CANCELADA"] })} />
+        <KpiCard label="Preventivas" value={formatCompactNumber(kpis.preventivas)} icon={<ShieldCheck size={18} />} accent="violet" onClick={() => verOrdens("Preventivas", { tipo: "PREVENTIVA" })} />
+        <KpiCard label="Corretivas" value={formatCompactNumber(kpis.corretivas)} icon={<Wrench size={18} />} accent="rose" onClick={() => verOrdens("Corretivas", { tipo: "CORRETIVA" })} />
       </div>
 
       {/* EVOLUÇÃO */}
