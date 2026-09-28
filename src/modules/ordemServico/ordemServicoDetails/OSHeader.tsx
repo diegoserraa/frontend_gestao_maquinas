@@ -4,10 +4,20 @@ import {
   Flag,
   HardHat,
   Clock,
+  ChevronDown,
   Printer,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import {
   formatDateTime,
@@ -19,8 +29,12 @@ type Props = {
   os: OrdemServico;
   maquinaNome?: string;
   onBack: () => void;
-  /** abre o diálogo de impressão do navegador — "Salvar como PDF" já resolve o "baixar" */
+  /** abre o diálogo de impressão do navegador — pra quem quer só ver/imprimir na hora */
   onImprimir: () => void;
+  /** gera o PDF da O.S. (+ um .zip com as fotos, se houver) e baixa na hora */
+  onBaixarCompleto: () => void;
+  /** true enquanto o PDF/zip está sendo montado — evita clique duplicado */
+  baixando?: boolean;
 };
 
 export function OSHeader({
@@ -28,6 +42,8 @@ export function OSHeader({
   maquinaNome,
   onBack,
   onImprimir,
+  onBaixarCompleto,
+  baixando = false,
 }: Props) {
   const statusStyle = getStatusStyle(os.status);
   const StatusIcon = statusStyle.icon;
@@ -201,28 +217,60 @@ return (
 
               </div>
 
-              {/* some no papel — não faz sentido imprimir o próprio botão de imprimir.
-                  items-stretch no pai já estica este botão pra bater com a altura do chip de
+              {/* some no papel — não faz sentido imprimir o próprio botão de imprimir/baixar.
+                  items-stretch no pai já estica o trigger pra bater com a altura do chip de
                   data ao lado — "height: 100%" aqui atrapalharia o stretch (o pai não tem
                   altura própria definida, só a do conteúdo), por isso NÃO usar h-full */}
-              <button
-                type="button"
-                onClick={onImprimir}
-                title="Baixar ou imprimir esta O.S."
-                className="
-                  print:hidden
-                  flex items-center gap-1.5
-                  rounded-xl border border-slate-200
-                  bg-white/70 backdrop-blur
-                  px-3 py-2
-                  text-xs sm:text-sm font-semibold text-slate-700
-                  hover:bg-white hover:border-slate-300
-                  transition
-                "
-              >
-                <Printer size={15} className="text-blue-500 shrink-0" />
-                Baixar / Imprimir
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={baixando}
+                    title="Imprimir ou baixar esta O.S."
+                    className="
+                      print:hidden
+                      flex items-center gap-1.5
+                      rounded-xl border border-slate-200
+                      bg-white/70 backdrop-blur
+                      px-3 py-2
+                      text-xs sm:text-sm font-semibold text-slate-700
+                      hover:bg-white hover:border-slate-300
+                      transition
+                      disabled:opacity-60 disabled:cursor-wait
+                    "
+                  >
+                    {baixando ? (
+                      <Loader2 size={15} className="text-blue-500 shrink-0 animate-spin" />
+                    ) : (
+                      <Printer size={15} className="text-blue-500 shrink-0" />
+                    )}
+                    Baixar / Imprimir
+                    <ChevronDown size={13} className="text-slate-400 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" sideOffset={6} className="w-56">
+                  <DropdownMenuItem onSelect={onImprimir} className="gap-2.5 cursor-pointer">
+                    <Printer size={15} className="text-slate-400" />
+                    <span>
+                      Imprimir
+                      <span className="block text-[11px] font-normal text-slate-400">Abre a caixa de impressão</span>
+                    </span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onSelect={onBaixarCompleto}
+                    disabled={baixando}
+                    className="gap-2.5 cursor-pointer"
+                  >
+                    <FileDown size={15} className="text-slate-400" />
+                    <span>
+                      Baixar arquivo
+                      <span className="block text-[11px] font-normal text-slate-400">PDF, ou .zip se houver fotos</span>
+                    </span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
           </div>

@@ -1,31 +1,25 @@
 import { apiGet, apiUpload, apiDelete } from "@/lib/apiClient";
+import { baixarArquivo } from "@/lib/baixarArquivo";
 import type { Anexo } from "./attachmentTypes";
 
 /**
- * Baixa o arquivo de verdade (não só abre em outra aba). `url_arquivo` aponta pro
- * bucket de storage (outra origem), então um <a href download> simples não é confiável
- * — o navegador só respeita o atributo `download` em link same-origin, ou quando o
- * servidor manda "Content-Disposition: attachment" (o bucket normalmente não manda).
- * Buscando como blob e criando uma URL local, o download funciona sempre.
+ * Busca os bytes de um anexo. `url_arquivo` aponta pro bucket de storage (outra
+ * origem), então baixar direto por link não é confiável — o navegador só respeita
+ * o atributo `download` em link same-origin, ou quando o servidor manda
+ * "Content-Disposition: attachment" (o bucket normalmente não manda). Buscando
+ * como blob, o download funciona sempre, e o mesmo blob serve tanto pra salvar
+ * o arquivo sozinho quanto pra empacotar vários num ZIP.
  */
-export async function baixarAnexo(anexo: Anexo): Promise<void> {
+export async function buscarAnexoBlob(anexo: Anexo): Promise<Blob> {
   const res = await fetch(anexo.url_arquivo);
-  if (!res.ok) throw new Error("Não foi possível baixar o arquivo");
+  if (!res.ok) throw new Error(`Não foi possível baixar ${anexo.nome_arquivo}`);
+  return res.blob();
+}
 
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = anexo.nome_arquivo;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  // revoga só depois de um tempo: o navegador processa o download de forma assíncrona,
-  // e revogar a URL logo em seguida corre o risco de apagar o blob antes dele terminar
-  // de ler os bytes (download falha silenciosamente, sem nenhum erro no console)
-  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+/** Baixa um único anexo de verdade (não só abre em outra aba). */
+export async function baixarAnexo(anexo: Anexo): Promise<void> {
+  const blob = await buscarAnexoBlob(anexo);
+  baixarArquivo(blob, anexo.nome_arquivo);
 }
 
 export async function getAttachmentById(id: number): Promise<Anexo> {

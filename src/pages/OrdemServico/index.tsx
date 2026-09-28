@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { FileText, ListChecks, ClipboardX } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
@@ -19,6 +20,7 @@ import { OSActions } from "../../modules/ordemServico/ordemServicoDetails/OSActi
 import { PausaBanner } from "../../modules/ordemServico/ordemServicoDetails/PausaBanner";
 import { OSPhotosGallery } from "../../modules/ordemServico/ordemServicoDetails/OSPhotosGallery";
 import { formatDateTime, getStatusStyle } from "../../modules/ordemServico/ordemServicoDetails/osDetailsHelpers";
+import { baixarOrdemServicoCompleta } from "../../modules/ordemServico/ordemServicoDetails/osDownload";
 
 type Tecnico = { id: number; nome: string };
 
@@ -144,6 +146,7 @@ export default function OrdemServicoDetails() {
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(false);
+  const [baixando, setBaixando] = useState(false);
 
   const usuario = getUser();
   const userRole: UserRole = usuario?.role ?? "OPERADOR";
@@ -188,6 +191,22 @@ export default function OrdemServicoDetails() {
       setOs((atual) => (atual ? { ...atual, status: nextStatus } : atual));
     }
     carregar();
+  }
+
+  async function handleBaixarCompleto() {
+    if (!os || baixando) return;
+
+    setBaixando(true);
+    const tecnicoNome = tecnicos.find((t) => t.id === os.id_tecnico)?.nome;
+
+    toast.promise(
+      baixarOrdemServicoCompleta({ os, maquinaNome, tecnicoNome }).finally(() => setBaixando(false)),
+      {
+        loading: "Preparando o arquivo...",
+        success: "Download pronto.",
+        error: "Não foi possível gerar o arquivo. Tente de novo.",
+      }
+    );
   }
 
   if (loading) return <DetailsSkeleton />;
@@ -247,6 +266,8 @@ export default function OrdemServicoDetails() {
         maquinaNome={maquinaNome}
         onBack={() => navigate(-1)}
         onImprimir={() => window.print()}
+        onBaixarCompleto={handleBaixarCompleto}
+        baixando={baixando}
       />
 
       <div className="border-t border-slate-100">

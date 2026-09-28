@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { notify } from "@/lib/notify";
 
 import { calcularGrade, ETIQUETA_PADRAO, nomeDoArquivo, totalDeFolhas } from "./etiquetasLogica";
-import { baixarArquivo, gerarPdfEtiquetas } from "./etiquetasPdf";
+import { gerarPdfEtiquetas } from "./etiquetasPdf";
+import { baixarArquivo } from "@/lib/baixarArquivo";
 import { buscarEtiquetas } from "./machineService";
 import type { EtiquetasResposta, Machine, Setor } from "./machineTypes";
 

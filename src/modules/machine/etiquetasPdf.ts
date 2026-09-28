@@ -100,18 +100,3 @@ export async function gerarPdfEtiquetas(dados: EtiquetasResposta, modo: ModoDoPd
 
   return doc.output("blob");
 }
-
-/** Faz o navegador baixar o arquivo. */
-export function baixarArquivo(blob: Blob, nome: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = nome;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  // dá tempo do navegador começar o download antes de liberar a memória
-  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
