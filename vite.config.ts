@@ -39,7 +39,8 @@ export default defineConfig({
 
         theme_color: "#2563eb",
 
-        background_color: "#ffffff",
+        // igual ao azul do ícone: a tela de splash não pisca de branco antes do app carregar
+        background_color: "#2563eb",
 
 
         display: "standalone",
@@ -50,17 +51,35 @@ export default defineConfig({
 
         icons: [
 
+          // "any": cantos já arredondados, para navegador/desktop, onde ninguém recorta por cima
           {
             src: "/pwa-192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
-
 
           {
             src: "/pwa-512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any",
+          },
+
+          // "maskable": fundo quadrado até a borda e o desenho recuado numa área segura, porque o
+          // Android aplica a própria máscara (círculo, "squircle" etc.) por cima deste arquivo
+          {
+            src: "/maskable-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
+          },
+
+          {
+            src: "/maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
 
         ],
