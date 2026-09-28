@@ -5,8 +5,10 @@ import {
   RefreshCw,
   Info,
   Building2,
-  Monitor,
-  LayoutGrid,
+  Sun,
+  MoonStar,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -104,20 +106,26 @@ export function StatusMini({ status }: { status: RealtimeStatus }) {
 
 /* =================== SELETOR DE MODO ==================== */
 
+// "auto" continua existindo por baixo (é o valor inicial, decide sozinho entre
+// demo/real conforme chega sinal de verdade) — só não aparece mais como opção
+// pra escolher; a pedido do usuário, só "Demonstração" e "Real" ficam visíveis.
 const MODOS: { valor: ModoDados; label: string }[] = [
-  { valor: "auto", label: "Auto" },
   { valor: "demo", label: "Demonstração" },
   { valor: "real", label: "Real" },
 ];
 
 export function SeletorModo({
   modo,
+  modoEfetivo,
   onChange,
   escuro = false,
 }: {
   modo: ModoDados;
+  /** "auto" não aparece mais como botão, mas continua existindo por baixo — este
+   * diz pra qual dos dois (demo/real) ele resolveu, pra destacar o botão certo */
+  modoEfetivo: "demo" | "real";
   onChange: (m: ModoDados) => void;
-  /** cabeçalho da tela fica escuro no modo exposição — o pill precisa acompanhar */
+  /** cabeçalho da tela fica escuro quando o tema escuro está ativo — o pill acompanha */
   escuro?: boolean;
 }) {
   return (
@@ -127,78 +135,83 @@ export function SeletorModo({
         escuro ? "border-white/10 bg-white/5 backdrop-blur" : "border-slate-200 bg-white"
       )}
     >
-      {MODOS.map((m) => (
-        <button
-          key={m.valor}
-          type="button"
-          onClick={() => onChange(m.valor)}
-          className={cn(
-            "rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
-            modo === m.valor
-              ? escuro
-                ? "bg-blue-500/20 text-blue-300"
-                : "bg-blue-50 text-blue-700"
-              : escuro
-              ? "text-slate-400 hover:text-slate-200"
-              : "text-slate-500 hover:text-slate-700"
-          )}
-        >
-          {m.label}
-        </button>
-      ))}
+      {MODOS.map((m) => {
+        const ativo = modo === "auto" ? modoEfetivo === m.valor : modo === m.valor;
+        return (
+          <button
+            key={m.valor}
+            type="button"
+            onClick={() => onChange(m.valor)}
+            className={cn(
+              "rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
+              ativo
+                ? escuro
+                  ? "bg-blue-500/20 text-blue-300"
+                  : "bg-blue-50 text-blue-700"
+                : escuro
+                ? "text-slate-400 hover:text-slate-200"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            {m.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-/* =================== SELETOR DE EXIBIÇÃO (Normal / Exposição) ==================== */
+/* =================== BOTÃO DE TEMA (claro/escuro) ==================== */
 
-export type ModoExibicao = "normal" | "exposicao";
-
-export function SeletorExibicao({
-  valor,
+export function BotaoTema({
+  escuro,
   onChange,
 }: {
-  valor: ModoExibicao;
-  onChange: (m: ModoExibicao) => void;
+  escuro: boolean;
+  onChange: (v: boolean) => void;
 }) {
-  const exposicao = valor === "exposicao";
-
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onChange(!escuro)}
+      title={escuro ? "Mudar pro tema claro" : "Mudar pro tema escuro"}
       className={cn(
-        "inline-flex rounded-xl border p-0.5 shadow-sm",
-        exposicao ? "border-white/10 bg-white/5 backdrop-blur" : "border-slate-200 bg-white"
+        "flex h-8 w-8 items-center justify-center rounded-xl border shadow-sm transition-colors",
+        escuro
+          ? "border-white/10 bg-white/5 text-amber-300 hover:bg-white/10"
+          : "border-slate-200 bg-white text-slate-500 hover:text-slate-700"
       )}
     >
-      <button
-        type="button"
-        onClick={() => onChange("normal")}
-        title="Visão normal, densa — pra acompanhar o dia a dia"
-        className={cn(
-          "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
-          !exposicao
-            ? "bg-blue-50 text-blue-700"
-            : "text-slate-400 hover:text-slate-200"
-        )}
-      >
-        <LayoutGrid size={13} />
-        Normal
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("exposicao")}
-        title="Cards grandes, tema escuro — pra mostrar numa tela/estande"
-        className={cn(
-          "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors",
-          exposicao
-            ? "bg-blue-500/20 text-blue-300"
-            : "text-slate-500 hover:text-slate-700"
-        )}
-      >
-        <Monitor size={13} />
-        Exposição
-      </button>
-    </div>
+      {escuro ? <Sun size={15} /> : <MoonStar size={15} />}
+    </button>
+  );
+}
+
+/* =================== BOTÃO DE TELA CHEIA ==================== */
+
+export function BotaoTelaCheia({
+  ativo,
+  onChange,
+  escuro = false,
+}: {
+  ativo: boolean;
+  onChange: (v: boolean) => void;
+  escuro?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!ativo)}
+      title={ativo ? "Sair da tela cheia" : "Abrir em tela cheia, sem menu — só as máquinas"}
+      className={cn(
+        "flex h-8 w-8 items-center justify-center rounded-xl border shadow-sm transition-colors",
+        escuro
+          ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+          : "border-slate-200 bg-white text-slate-500 hover:text-slate-700"
+      )}
+    >
+      {ativo ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+    </button>
   );
 }
 

@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Search, Cpu, CircleCheck, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,9 +21,9 @@ import { MaquinaMonitorCard } from "@/modules/monitoramento/MaquinaMonitorCard";
 import { TelemetriaHistoricoDialog } from "@/modules/monitoramento/TelemetriaHistoricoDialog";
 import {
   SeletorModo,
-  SeletorExibicao,
+  BotaoTema,
+  BotaoTelaCheia,
   AvisoDemo,
-  type ModoExibicao,
 } from "@/modules/monitoramento/MonitoramentoPecas";
 import {
   estaAoVivo,
@@ -33,21 +34,19 @@ import type { TelemetriaAtual } from "@/modules/monitoramento/monitoramentoTypes
 
 const PESO: Record<Nivel, number> = { critico: 0, atencao: 1, "sem-dado": 2, ok: 3 };
 const CHAVE_SEM_SETOR = "__sem_setor__";
-const GRID_CHEIO =
-  "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
-const GRID_COM_ASIDE =
-  "grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4";
-// modo exposição: poucas colunas de propósito — cards grandes valem mais que
-// caber muitas máquinas na mesma linha (é uma vitrine, não uma planilha)
-const GRID_EXPOSICAO = "grid gap-5 sm:grid-cols-2 xl:grid-cols-3";
+// cards sempre grandes: em vez de forçar um número fixo de colunas por
+// breakpoint (que sobra estreito quando o painel de alertas está aberto do
+// lado, espremendo os números até sobrepor), cada card garante pelo menos
+// 300px — o navegador decide sozinho quantos cabem por linha nesse espaço
+const GRID = "grid gap-4 grid-cols-[repeat(auto-fill,minmax(360px,1fr))]";
 
-const CHAVE_EXIBICAO = "mymaq360_monitoramento_exibicao";
+const CHAVE_TEMA = "mymaq360_monitoramento_escuro";
 
-function lerExibicaoSalva(): ModoExibicao {
+function lerTemaSalvo(): boolean {
   try {
-    return localStorage.getItem(CHAVE_EXIBICAO) === "exposicao" ? "exposicao" : "normal";
+    return localStorage.getItem(CHAVE_TEMA) === "1";
   } catch {
-    return "normal";
+    return false;
   }
 }
 
@@ -68,22 +67,44 @@ export default function Monitoring() {
   const [setorFiltro, setSetorFiltro] = useState("all");
   const [selecionada, setSelecionada] = useState<TelemetriaAtual | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
-  const [exibicao, setExibicaoState] = useState<ModoExibicao>(lerExibicaoSalva);
+  const [escuro, setEscuroState] = useState<boolean>(lerTemaSalvo);
+  const [telaCheia, setTelaCheia] = useState(false);
 
-  const exposicao = exibicao === "exposicao";
-
-  // lembra a escolha — útil pra não ter que reativar toda vez que abrir a tela
-  // de novo no dia da feira
-  function setExibicao(m: ModoExibicao) {
-    setExibicaoState(m);
+  // lembra o tema escolhido — não precisa reativar toda vez que abrir a tela de novo
+  function setEscuro(v: boolean) {
+    setEscuroState(v);
     try {
-      localStorage.setItem(CHAVE_EXIBICAO, m);
+      localStorage.setItem(CHAVE_TEMA, v ? "1" : "0");
     } catch {
       // localStorage indisponível (aba privada, etc.) — só não persiste, sem quebrar nada
     }
   }
 
-  const temAside = alertas.length > 0 && !exposicao;
+  // tela cheia de verdade (Fullscreen API) além de esconder o menu/cabeçalho do
+  // sistema — some tudo que não é máquina. Não é obrigatório o navegador aceitar
+  // (precisa ser chamado direto num clique do usuário); mesmo se recusar, o
+  // overlay por cima do menu já resolve a parte visual sozinho.
+  function alternarTelaCheia(v: boolean) {
+    setTelaCheia(v);
+    try {
+      if (v) document.documentElement.requestFullscreen?.();
+      else if (document.fullscreenElement) document.exitFullscreen?.();
+    } catch {
+      // sem suporte/permissão — o overlay continua funcionando do mesmo jeito
+    }
+  }
+
+  // se o usuário sair da tela cheia pelo Esc (nativo do navegador), acompanha o estado
+  useEffect(() => {
+    function aoMudar() {
+      if (!document.fullscreenElement) setTelaCheia(false);
+    }
+    document.addEventListener("fullscreenchange", aoMudar);
+    return () => document.removeEventListener("fullscreenchange", aoMudar);
+  }, []);
+
+  const temAside = alertas.length > 0 && !telaCheia;
+  const modoEfetivo: "demo" | "real" = demoAtivo ? "demo" : "real";
 
   const contagem = useMemo(() => {
     let critico = 0, atencao = 0, semSinal = 0;
@@ -160,33 +181,32 @@ export default function Monitoring() {
     setHistoricoAberto(true);
   }, []);
 
-  const grid = exposicao ? GRID_EXPOSICAO : temAside ? GRID_COM_ASIDE : GRID_CHEIO;
-
   const conteudo = (
     <div className="space-y-5">
       {/* CABEÇALHO */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className={exposicao ? "text-3xl font-bold text-slate-50" : "text-xl font-semibold text-slate-900"}>
+          <h1 className={escuro ? "text-3xl font-bold text-slate-50" : "text-xl font-semibold text-slate-900"}>
             Monitoramento
           </h1>
-          <p className={exposicao ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
+          <p className={escuro ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
             Estado das máquinas em tempo real
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SeletorModo modo={modo} onChange={setModo} escuro={exposicao} />
-          <SeletorExibicao valor={exibicao} onChange={setExibicao} />
+          <SeletorModo modo={modo} modoEfetivo={modoEfetivo} onChange={setModo} escuro={escuro} />
+          <BotaoTema escuro={escuro} onChange={setEscuro} />
+          <BotaoTelaCheia ativo={telaCheia} onChange={alternarTelaCheia} escuro={escuro} />
         </div>
       </div>
 
-      {demoAtivo && !exposicao && <AvisoDemo />}
+      {demoAtivo && !telaCheia && <AvisoDemo />}
 
-      <ResumoTopo {...contagem} exposicao={exposicao} />
+      <ResumoTopo {...contagem} escuro={escuro} />
 
-      {/* FILTROS — escondidos no modo exposição: é uma vitrine de tudo, não uma
-          busca de trabalho, e simplifica a tela pra quem só vai olhar de longe */}
-      {leituras.length > 4 && !exposicao && (
+      {/* FILTROS — escondidos em tela cheia: é pra olhar tudo de uma vez, não pra
+          garimpar uma máquina específica */}
+      {leituras.length > 4 && !telaCheia && (
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
             <Search
@@ -220,14 +240,14 @@ export default function Monitoring() {
 
       {/* GRADE POR SETOR */}
       {carregando ? (
-        <div className={grid}>
+        <div className={GRID}>
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
               className={
-                exposicao
+                escuro
                   ? "h-56 animate-pulse rounded-3xl border border-white/10 bg-white/5"
-                  : "h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-100"
+                  : "h-56 animate-pulse rounded-3xl border border-slate-200 bg-slate-100"
               }
             />
           ))}
@@ -235,7 +255,7 @@ export default function Monitoring() {
       ) : grupos.length === 0 ? (
         <div
           className={
-            exposicao
+            escuro
               ? "flex flex-col items-center gap-2 rounded-3xl border border-dashed border-white/10 bg-white/5 py-16 text-slate-500"
               : "flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-slate-400"
           }
@@ -249,32 +269,32 @@ export default function Monitoring() {
             <section key={g.chave}>
               <div
                 className={
-                  exposicao
+                  escuro
                     ? "mb-3 flex items-baseline gap-2 border-b border-white/10 pb-1.5"
                     : "mb-3 flex items-baseline gap-2 border-b border-slate-200 pb-1.5"
                 }
               >
                 <h2
                   className={
-                    exposicao
+                    escuro
                       ? "text-xs font-semibold uppercase tracking-wide text-slate-400"
                       : "text-xs font-semibold uppercase tracking-wide text-slate-500"
                   }
                 >
                   {g.nome}
                 </h2>
-                <span className={exposicao ? "text-xs text-slate-600" : "text-xs text-slate-300"}>
+                <span className={escuro ? "text-xs text-slate-600" : "text-xs text-slate-300"}>
                   {g.itens.length}
                 </span>
               </div>
-              <div className={grid}>
+              <div className={GRID}>
                 {g.itens.map((l) => (
                   <MaquinaMonitorCard
                     key={l.maquina_id}
                     leitura={l}
                     historico={historico[l.maquina_id] ?? []}
                     onAbrir={abrirHistorico}
-                    exposicao={exposicao}
+                    escuro={escuro}
                   />
                 ))}
               </div>
@@ -285,47 +305,79 @@ export default function Monitoring() {
     </div>
   );
 
+  const corpo = (
+    <div className="relative">
+      {temAside ? (
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5">
+          <aside className="order-1 mb-5 lg:order-2 lg:mb-0">
+            <div className="lg:sticky lg:top-4">
+              <AlertasAside
+                alertas={alertas}
+                onMudou={recarregar}
+              />
+            </div>
+          </aside>
+          <div className="order-2 min-w-0 lg:order-1">{conteudo}</div>
+        </div>
+      ) : (
+        conteudo
+      )}
+    </div>
+  );
+
+  const dialogo = (
+    <TelemetriaHistoricoDialog
+      leitura={selecionada}
+      open={historicoAberto}
+      onOpenChange={setHistoricoAberto}
+    />
+  );
+
+  // TELA CHEIA — portal pro body: fica por cima do menu/cabeçalho do sistema
+  // (que continuam ali embaixo, só não aparecem), sem precisar mexer no
+  // MainLayout pra escondê-los
+  if (telaCheia) {
+    return createPortal(
+      <div
+        className={cn(
+          "fixed inset-0 z-9999 overflow-y-auto p-6",
+          escuro
+            ? "bg-slate-950"
+            : "bg-slate-50"
+        )}
+      >
+        {escuro && (
+          <>
+            <div className="pointer-events-none fixed -top-24 -left-24 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" aria-hidden />
+            <div className="pointer-events-none fixed -bottom-24 -right-24 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" aria-hidden />
+          </>
+        )}
+        <div className="relative mx-auto max-w-[1800px]">{corpo}</div>
+        {dialogo}
+      </div>,
+      document.body
+    );
+  }
+
   return (
     <div
       className={cn(
         "w-full transition-colors duration-300",
         // sangra por cima do padding do MainLayout (p-6) pra tomar conta da
-        // tela inteira de verdade — uma "vitrine" com borda clara ao redor
-        // não convence ninguém
-        exposicao &&
-          "relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden bg-slate-950 p-6"
+        // área de conteúdo inteira — uma seção escura com borda clara ao
+        // redor não convence ninguém
+        escuro && "relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden bg-slate-950 p-6"
       )}
     >
-      {exposicao && (
+      {escuro && (
         <>
           <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" aria-hidden />
         </>
       )}
 
-      <div className="relative">
-        {temAside ? (
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5">
-            <aside className="order-1 mb-5 lg:order-2 lg:mb-0">
-              <div className="lg:sticky lg:top-4">
-                <AlertasAside
-                  alertas={alertas}
-                  onMudou={recarregar}
-                />
-              </div>
-            </aside>
-            <div className="order-2 min-w-0 lg:order-1">{conteudo}</div>
-          </div>
-        ) : (
-          conteudo
-        )}
-      </div>
-
-      <TelemetriaHistoricoDialog
-        leitura={selecionada}
-        open={historicoAberto}
-        onOpenChange={setHistoricoAberto}
-      />
+      {corpo}
+      {dialogo}
     </div>
   );
 }
@@ -338,16 +390,16 @@ function ResumoTopo({
   atencao,
   critico,
   semSinal,
-  exposicao = false,
+  escuro = false,
 }: {
   total: number;
   normal: number;
   atencao: number;
   critico: number;
   semSinal: number;
-  exposicao?: boolean;
+  escuro?: boolean;
 }) {
-  const paletas = exposicao
+  const paletas = escuro
     ? {
         ok: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
         critico: "border-rose-400/50 bg-rose-500/10 text-rose-300",
@@ -382,13 +434,13 @@ function ResumoTopo({
   }
 
   return (
-    <div className={cn("rounded-2xl border px-4 py-3", exposicao && "backdrop-blur", cor)}>
+    <div className={cn("rounded-2xl border px-4 py-3", escuro && "backdrop-blur", cor)}>
       <div className="flex items-center gap-2">
-        <Icone size={exposicao ? 22 : 18} />
-        <span className={exposicao ? "text-lg font-bold" : "text-sm font-semibold"}>{frase}</span>
+        <Icone size={escuro ? 22 : 18} />
+        <span className={escuro ? "text-lg font-bold" : "text-sm font-semibold"}>{frase}</span>
       </div>
       {total > 0 && (
-        <p className={cn("mt-1 opacity-80", exposicao ? "text-sm" : "text-xs")}>
+        <p className={cn("mt-1 opacity-80", escuro ? "text-sm" : "text-xs")}>
           {total} máquinas · {normal} normal · {atencao} atenção · {critico} crítico
           {semSinal > 0 && ` · ${semSinal} sem sinal`}
         </p>
