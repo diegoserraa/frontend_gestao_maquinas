@@ -15,12 +15,16 @@ import {
   CheckCircle2,
   ShieldCheck,
   Wrench,
-  Wallet,
+  Boxes,
+  HardHat,
   QrCode,
   User,
   ChevronDown,
   PauseCircle,
   XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
@@ -37,6 +41,8 @@ import {
   formatCompactNumber,
   formatDiaCurto,
   formatMesCurto,
+  calcularTendenciaCustos,
+  calcularProporcao,
 } from "../dashboardGestor/DashboardGestorParts";
 import type { FiltroPeriodo } from "./DashboardGestorTypes";
 import { Button } from "@/components/ui/button";
@@ -203,6 +209,14 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
   const evolucaoWidth = chartScrollWidth(evolucaoData.length, 36, 320);
   const tempoMedioWidth = chartScrollWidth(tempoMedioData.length, 36, 320);
   const custosWidth = chartScrollWidth(custosEvolucaoData.length, 56, 280);
+
+  // ── CUSTOS — dados derivados (mesma conta do Desktop) ─────
+  const tendenciaCustos = custos ? calcularTendenciaCustos(custosEvolucaoData) : null;
+  const proporcaoCustos = custos
+    ? calcularProporcao(toNumber(custos.resumo.material), toNumber(custos.resumo.terceirizado))
+    : { pctA: 0, pctB: 0 };
+  const maxCustoMaquina = Math.max(...(custos?.maquinas ?? []).map((m) => toNumber(m.total)), 1);
+  const IconeTendencia = tendenciaCustos?.direcao === "alta" ? TrendingUp : tendenciaCustos?.direcao === "baixa" ? TrendingDown : Minus;
 
   return (
     <div className="space-y-4 overflow-x-hidden">
@@ -526,29 +540,46 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         )}
       </CollapsibleSection>
 
-      {/* CUSTOS */}
+      {/* CUSTOS — índigo (mesma cor do gradiente da marca), mesmo padrão do Desktop */}
       {custos && (
-        <CollapsibleSection title="Custos de Manutenção" borderClass="border-t-slate-300">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
-              <p className="text-[10px] text-slate-500">Material</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.material)}</p>
+        <CollapsibleSection title="Custos de Manutenção" borderClass="border-t-indigo-400">
+          {/* HERO — total em destaque + tendência vs mês anterior */}
+          <div>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Total no período</span>
+              {tendenciaCustos && (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tendenciaCustos.classe}`}>
+                  <IconeTendencia size={10} />
+                  {tendenciaCustos.texto}
+                </span>
+              )}
             </div>
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
-              <p className="text-[10px] text-slate-500">Terceiriz.</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.terceirizado)}</p>
+
+            <p className="text-2xl font-bold text-indigo-700 tabular-nums leading-tight">
+              {formatCurrency(custos.resumo.total)}
+            </p>
+
+            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 flex">
+              <div className="h-full bg-indigo-500" style={{ width: `${proporcaoCustos.pctA}%` }} />
+              <div className="h-full bg-sky-300" style={{ width: `${proporcaoCustos.pctB}%` }} />
             </div>
-            <div className="rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-2">
-              <div className="flex items-center gap-1">
-                <Wallet size={10} className="text-blue-500" />
-                <p className="text-[10px] text-blue-500">Total</p>
-              </div>
-              <p className="text-sm font-bold text-blue-700 truncate">{formatCurrency(custos.resumo.total)}</p>
+
+            <div className="mt-2 flex flex-col gap-1 text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Boxes size={12} className="text-indigo-500 shrink-0" />
+                Material <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.material)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctA}%)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <HardHat size={12} className="text-sky-400 shrink-0" />
+                Terceirizado <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.terceirizado)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctB}%)</span>
+              </span>
             </div>
           </div>
 
           {custosEvolucaoData.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4 pt-3 border-t border-slate-100">
               <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mb-1.5">Evolução mensal</p>
               <div className="chart-scroll overflow-x-auto">
                 <div style={{ minWidth: custosWidth }}>
@@ -562,7 +593,7 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                         contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
                         cursor={{ fill: "#f8fafc" }}
                       />
-                      <Bar dataKey="total" name="Custo" fill={CHART_COLORS.violeta} radius={[4, 4, 0, 0]} barSize={20} />
+                      <Bar dataKey="total" name="Custo" fill={CHART_COLORS.indigo} radius={[4, 4, 0, 0]} barSize={20} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -573,16 +604,22 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
           {custos.maquinas.length > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-100">
               <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mb-2">Custo por máquina</p>
-              <div className="divide-y divide-slate-100 max-h-[150px] overflow-y-auto pr-1">
+              <div className="space-y-1 max-h-[150px] overflow-y-auto pr-1">
                 {[...custos.maquinas]
                   .sort((a, b) => toNumber(b.total) - toNumber(a.total))
                   .slice(0, 5)
-                  .map((m) => (
-                    <div key={m.nome} className="flex items-center justify-between py-1.5 text-xs">
-                      <span className="text-slate-700 truncate">{m.nome}</span>
-                      <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">{formatCurrency(m.total)}</span>
-                    </div>
-                  ))}
+                  .map((m) => {
+                    const pct = (toNumber(m.total) / maxCustoMaquina) * 100;
+                    return (
+                      <div key={m.nome} className="relative rounded-lg overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 bg-indigo-50" style={{ width: `${pct}%` }} />
+                        <div className="relative flex items-center justify-between py-1.5 px-2 text-xs">
+                          <span className="text-slate-700 truncate">{m.nome}</span>
+                          <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">{formatCurrency(m.total)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}

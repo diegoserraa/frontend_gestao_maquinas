@@ -88,7 +88,45 @@ export const CHART_COLORS = {
   vermelho: "#ef4444",
   violeta: "#8b5cf6",
   slate: "#94a3b8",
+  /** mesmo índigo do gradiente da marca (Logo.tsx) — usado no card de Custos */
+  indigo: "#4f46e5",
 };
+
+// ── ajudantes do card de Custos ───────────────────────────
+//
+// Ficam aqui (não duplicados em Desktop/Mobile) porque os dois usam
+// exatamente a mesma conta — só o jeito de exibir muda.
+
+/** compara o último mês da evolução com o anterior; null se não dá pra comparar */
+export type TendenciaCustos = {
+  texto: string;
+  classe: string;
+  direcao: "alta" | "baixa" | "estavel";
+};
+
+export function calcularTendenciaCustos(evolucao: { total: number }[]): TendenciaCustos | null {
+  if (evolucao.length < 2) return null;
+
+  const atual = evolucao[evolucao.length - 1].total;
+  const anterior = evolucao[evolucao.length - 2].total;
+  if (anterior <= 0) return null;
+
+  const variacao = Math.round(((atual - anterior) / anterior) * 100);
+  if (variacao === 0) return { texto: "estável vs mês anterior", classe: "bg-slate-100 text-slate-500", direcao: "estavel" };
+
+  return variacao > 0
+    ? { texto: `+${variacao}% vs mês anterior`, classe: "bg-red-50 text-red-600", direcao: "alta" }
+    : { texto: `${variacao}% vs mês anterior`, classe: "bg-emerald-50 text-emerald-600", direcao: "baixa" };
+}
+
+/** % de cada parte sobre o total — pra montar a barrinha material x terceirizado */
+export function calcularProporcao(a: number, b: number): { pctA: number; pctB: number } {
+  const total = a + b;
+  if (total <= 0) return { pctA: 0, pctB: 0 };
+
+  const pctA = Math.round((a / total) * 100);
+  return { pctA, pctB: 100 - pctA };
+}
 
 // ── card de KPI ────────────────────────────────────────────
 //

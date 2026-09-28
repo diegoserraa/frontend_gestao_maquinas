@@ -14,14 +14,17 @@ import {
 import {
   Inbox,
   Clock,
-  AlertTriangle,
   CheckCircle2,
   ShieldCheck,
   Wrench,
-  Wallet,
+  Boxes,
+  HardHat,
   User,
   PauseCircle,
   XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -42,6 +45,8 @@ import {
   formatCompactNumber,
   formatDiaCurto,
   formatMesCurto,
+  calcularTendenciaCustos,
+  calcularProporcao,
 } from "./DashboardGestorParts";
 
 import type { FiltroPeriodo } from "./DashboardGestorTypes";
@@ -168,13 +173,19 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
     total: toNumber(p.total),
   }));
 
-  const atribuidas = toNumber(kpis.os_atribuidas);
-
   const maxTecnicoTotal = Math.max(...rankingTecnicos.map((t) => toNumber(t.total)), 1);
 
   const evolucaoWidth = chartScrollWidth(evolucaoData.length, 42, 480);
   const tempoMedioWidth = chartScrollWidth(tempoMedioData.length, 42, 480);
   const custosWidth = chartScrollWidth(custosEvolucaoData.length, 70, 320);
+
+  // ── CUSTOS — dados derivados ───────────────────────────────
+  const tendenciaCustos = custos ? calcularTendenciaCustos(custosEvolucaoData) : null;
+  const proporcaoCustos = custos
+    ? calcularProporcao(toNumber(custos.resumo.material), toNumber(custos.resumo.terceirizado))
+    : { pctA: 0, pctB: 0 };
+  const maxCustoMaquina = Math.max(...(custos?.maquinas ?? []).map((m) => toNumber(m.total)), 1);
+  const IconeTendencia = tendenciaCustos?.direcao === "alta" ? TrendingUp : tendenciaCustos?.direcao === "baixa" ? TrendingDown : Minus;
 
   // ── PREVENTIVAS VENCIDAS — dados derivados ────────────────
   const preventivasMaquinas = preventivasVencidas?.maquinas ?? [];
@@ -228,7 +239,13 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
           <p className="text-sm text-slate-500">
-            Visão geral 
+            Visão geral
+            {atualizadoEm && (
+              <span className="text-slate-400">
+                {" "}
+                · atualizado às {atualizadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </p>
         </div>
 
@@ -602,29 +619,58 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         </SectionCard>
       </div>
 
-      {/* CUSTOS — gráfico e lista lado a lado, em vez de empilhados,
-          pra ocupar bem menos altura na tela */}
+      {/* CUSTOS — índigo (mesma cor do gradiente da marca) pra destacar
+          como um cartão "premium", em vez do cinza neutro de antes */}
       {custos && (
         <SectionCard
           title="Custos de Manutenção"
           subtitle="Material, terceirizado e evolução mensal"
-          className="border-t-4 border-t-slate-300"
+          className="border-t-4 border-t-indigo-400"
         >
-          {/* resumo — linha única e compacta */}
-          <div className="grid grid-cols-3 gap-2.5 mb-4">
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-              <p className="text-[11px] text-slate-500">Material</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.material)}</p>
+          {/* HERO — total em destaque + tendência vs mês anterior, igual em
+              espírito ao número grande das Preventivas Vencidas */}
+          <div className="mb-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Total no período
+              </span>
+
+              {tendenciaCustos && (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${tendenciaCustos.classe}`}
+                >
+                  <IconeTendencia size={11} />
+                  {tendenciaCustos.texto}
+                </span>
+              )}
             </div>
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-              <p className="text-[11px] text-slate-500">Terceirizado</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.terceirizado)}</p>
+
+            <p className="text-3xl font-bold text-indigo-700 tabular-nums leading-tight">
+              {formatCurrency(custos.resumo.total)}
+            </p>
+
+            {/* barra material x terceirizado — mesma ideia de "proporção visual"
+                do gráfico de Máquinas com Mais Chamados, só que horizontal e dupla */}
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 flex">
+              <div className="h-full bg-indigo-500" style={{ width: `${proporcaoCustos.pctA}%` }} />
+              <div className="h-full bg-sky-300" style={{ width: `${proporcaoCustos.pctB}%` }} />
             </div>
-            <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-              <p className="text-[11px] text-blue-500">Total</p>
-              <p className="text-sm font-bold text-blue-700 truncate">{formatCurrency(custos.resumo.total)}</p>
+
+            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Boxes size={13} className="text-indigo-500" />
+                Material <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.material)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctA}%)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <HardHat size={13} className="text-sky-400" />
+                Terceirizado <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.terceirizado)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctB}%)</span>
+              </span>
             </div>
           </div>
+
+          <div className="border-t border-slate-100 pt-4" />
 
           {/* evolução mensal + custo por máquina, lado a lado */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -637,7 +683,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
               ) : (
                 <div className="chart-scroll overflow-x-auto -mx-1 px-1">
                   <div style={{ minWidth: custosWidth }}>
-                    <ResponsiveContainer width="100%" height={150}>
+                    <ResponsiveContainer width="100%" height={180}>
                       <BarChart
                         data={custosEvolucaoData}
                         margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
@@ -651,7 +697,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                           contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
                           cursor={{ fill: "#f8fafc" }}
                         />
-                        <Bar dataKey="total" name="Custo" fill={CHART_COLORS.violeta} radius={[4, 4, 0, 0]} barSize={24} />
+                        <Bar dataKey="total" name="Custo" fill={CHART_COLORS.indigo} radius={[4, 4, 0, 0]} barSize={24} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -664,18 +710,29 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                 <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1.5">
                   Custo por máquina
                 </p>
-                <div className="divide-y divide-slate-100 max-h-[150px] overflow-y-auto pr-1">
+                {/* barra proporcional atrás do texto — mesmo padrão visual do
+                    Ranking de Técnicos, só na cor índigo deste card */}
+                <div className="space-y-1 max-h-[180px] overflow-y-auto pr-1">
                   {[...custos.maquinas]
                     .sort((a, b) => toNumber(b.total) - toNumber(a.total))
                     .slice(0, 6)
-                    .map((m) => (
-                      <div key={m.nome} className="flex items-center justify-between py-1.5 text-sm">
-                        <span className="text-slate-700 truncate">{m.nome}</span>
-                        <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">
-                          {formatCurrency(m.total)}
-                        </span>
-                      </div>
-                    ))}
+                    .map((m) => {
+                      const pct = (toNumber(m.total) / maxCustoMaquina) * 100;
+                      return (
+                        <div key={m.nome} className="relative rounded-lg overflow-hidden group">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-indigo-50 transition-all duration-300 group-hover:bg-indigo-100"
+                            style={{ width: `${pct}%` }}
+                          />
+                          <div className="relative flex items-center justify-between py-1.5 px-2 text-sm">
+                            <span className="text-slate-700 truncate">{m.nome}</span>
+                            <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">
+                              {formatCurrency(m.total)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
