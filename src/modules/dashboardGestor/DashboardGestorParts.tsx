@@ -92,51 +92,42 @@ export const CHART_COLORS = {
 
 // ── card de KPI ────────────────────────────────────────────
 //
-// Paleta central: cada card recebe um "accent" (não mais uma classe de cor
-// solta) e daqui saem, sempre coordenados, a barrinha colorida no topo, o
-// selo do ícone (gradiente suave) e a cor do "Ver ordens" — evita o antigo
-// jeito de cada card montar sua própria combinação de classes na mão.
+// Paleta central: cada card recebe um "accent" em vez de uma classe de cor
+// solta escolhida na mão — daqui saem, sempre coordenados, o selo do ícone
+// e a cor do "Ver ordens".
 
 const KPI_ACCENTS = {
   blue: {
-    bar: "bg-blue-500",
-    badge: "from-blue-50 to-blue-100 text-blue-600",
-    cta: "text-blue-600 group-hover:text-blue-700",
+    badge: "bg-blue-50 text-blue-600",
+    cta: "text-blue-600",
   },
   amber: {
-    bar: "bg-amber-500",
-    badge: "from-amber-50 to-amber-100 text-amber-600",
-    cta: "text-amber-600 group-hover:text-amber-700",
+    badge: "bg-amber-50 text-amber-600",
+    cta: "text-amber-600",
   },
   orange: {
-    bar: "bg-orange-500",
-    badge: "from-orange-50 to-orange-100 text-orange-600",
-    cta: "text-orange-600 group-hover:text-orange-700",
+    badge: "bg-orange-50 text-orange-600",
+    cta: "text-orange-600",
   },
   cyan: {
-    bar: "bg-cyan-500",
-    badge: "from-cyan-50 to-sky-100 text-cyan-700",
-    cta: "text-cyan-700 group-hover:text-cyan-800",
+    badge: "bg-gradient-to-br from-cyan-50 to-sky-100 text-cyan-700",
+    cta: "text-cyan-700",
   },
   emerald: {
-    bar: "bg-emerald-500",
-    badge: "from-emerald-50 to-emerald-100 text-emerald-600",
-    cta: "text-emerald-600 group-hover:text-emerald-700",
+    badge: "bg-emerald-50 text-emerald-600",
+    cta: "text-emerald-600",
   },
   violet: {
-    bar: "bg-violet-500",
-    badge: "from-violet-50 to-violet-100 text-violet-600",
-    cta: "text-violet-600 group-hover:text-violet-700",
+    badge: "bg-violet-50 text-violet-600",
+    cta: "text-violet-600",
   },
   rose: {
-    bar: "bg-rose-500",
-    badge: "from-rose-50 to-rose-100 text-rose-600",
-    cta: "text-rose-600 group-hover:text-rose-700",
+    badge: "bg-rose-50 text-rose-600",
+    cta: "text-rose-600",
   },
   slate: {
-    bar: "bg-slate-400",
-    badge: "from-slate-100 to-slate-200 text-slate-500",
-    cta: "text-slate-500 group-hover:text-slate-600",
+    badge: "bg-slate-100 text-slate-500",
+    cta: "text-slate-500",
   },
 } as const;
 
@@ -169,67 +160,62 @@ export function KpiCard({
       onClick={onClick}
       aria-label={onClick ? `Ver ordens de serviço: ${label}` : undefined}
       className={`
-        group relative overflow-hidden text-left w-full
-        bg-white rounded-2xl border shadow-sm
-        transition-all duration-200
-        ${
-          onClick
-            ? "cursor-pointer hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-            : ""
-        }
+        relative
+        bg-white rounded-xl border shadow-sm
+        p-2.5 sm:p-4
+        flex flex-col sm:flex-row
+        items-center sm:items-center
+        justify-center sm:justify-start
+        gap-1.5 sm:gap-3
+        min-h-[90px] sm:min-h-0
+        transition
+        w-full text-left
+        ${onClick ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" : ""}
         ${highlight ? "border-red-200 ring-1 ring-red-100" : "border-slate-200"}
       `}
     >
-      {/* acento colorido no topo — a mesma cor do selo do ícone e do "Ver ordens" */}
-      <span className={`absolute inset-x-0 top-0 h-1 ${cor.bar}`} aria-hidden="true" />
-
-      <div className="p-3 sm:p-4">
-        <div className="flex items-center sm:items-start gap-2.5 sm:gap-3">
-          <div
-            className={`
-              flex h-9 w-9 sm:h-11 sm:w-11 shrink-0
-              items-center justify-center
-              rounded-xl sm:rounded-2xl
-              bg-gradient-to-br shadow-sm
-              ${cor.badge}
-            `}
-          >
-            {icon}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[10px] sm:text-[11px] font-medium uppercase tracking-wide text-slate-400">
-              {label}
-            </p>
-
-            <p
-              className={`
-                text-xl sm:text-2xl font-bold leading-tight
-                ${highlight ? "text-red-600" : "text-slate-800"}
-              `}
-            >
-              {value}
-            </p>
-          </div>
-        </div>
-
-        {/* CTA sempre visível (não só no hover) — deixa claro, sem precisar adivinhar, que o card é clicável */}
-        {onClick && (
-          <div
-            className={`
-              mt-2.5 sm:mt-3
-              flex items-center gap-1
-              border-t border-slate-100 pt-2
-              text-[11px] font-semibold
-              transition-colors
-              ${cor.cta}
-            `}
-          >
-            Ver ordens
-            <ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-          </div>
-        )}
+      <div
+        className={`
+          h-8 w-8 sm:h-11 sm:w-11
+          rounded-lg sm:rounded-xl
+          flex items-center justify-center
+          shrink-0
+          ${cor.badge}
+        `}
+      >
+        {icon}
       </div>
+
+      <div className="text-center sm:text-left min-w-0">
+        <p className="text-[10px] sm:text-xs text-slate-500 truncate leading-tight">
+          {label}
+        </p>
+
+        <p
+          className={`
+            text-lg sm:text-2xl
+            font-bold leading-tight
+            ${highlight ? "text-red-600" : "text-slate-800"}
+          `}
+        >
+          {value}
+        </p>
+      </div>
+
+      {/* "Ver ordens" no cantinho, sem empurrar o card pra baixo — mesma altura de antes */}
+      {onClick && (
+        <span
+          className={`
+            absolute top-1.5 right-2 sm:top-2 sm:right-3
+            flex items-center gap-0.5
+            text-[9px] sm:text-[10px] font-semibold
+            ${cor.cta}
+          `}
+        >
+          Ver ordens
+          <ArrowRight size={9} className="shrink-0" />
+        </span>
+      )}
     </Tag>
   );
 }
