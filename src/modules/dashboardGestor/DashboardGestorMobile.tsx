@@ -294,8 +294,9 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         <KpiCard label="Pausadas" value={formatCompactNumber(kpis.os_pausadas ?? 0)} icon={<PauseCircle size={18} />} accent="orange" onClick={() => verOrdens("Pausadas", { status: ["PAUSADA"] })} />
         <KpiCard label="Finalizadas" value={formatCompactNumber(kpis.os_finalizadas)} icon={<CheckCircle2 size={18} />} accent="emerald" onClick={() => verOrdens("Finalizadas", { status: ["FINALIZADA"] })} />
         <KpiCard label="Canceladas" value={formatCompactNumber(kpis.os_canceladas ?? 0)} icon={<XCircle size={18} />} accent="slate" onClick={() => verOrdens("Canceladas", { status: ["CANCELADA"] })} />
-        <KpiCard label="Preventivas" value={formatCompactNumber(kpis.preventivas)} icon={<ShieldCheck size={18} />} accent="violet" onClick={() => verOrdens("Preventivas", { tipo: "PREVENTIVA" })} />
-        <KpiCard label="Corretivas" value={formatCompactNumber(kpis.corretivas)} icon={<Wrench size={18} />} accent="rose" onClick={() => verOrdens("Corretivas", { tipo: "CORRETIVA" })} />
+        {/* só o número mesmo, sem "Ver ordens" — corretiva/preventiva é a maioria das O.S. */}
+        <KpiCard label="Preventivas" value={formatCompactNumber(kpis.preventivas)} icon={<ShieldCheck size={18} />} accent="violet" />
+        <KpiCard label="Corretivas" value={formatCompactNumber(kpis.corretivas)} icon={<Wrench size={18} />} accent="rose" />
       </div>
 
       {/* EVOLUÇÃO */}

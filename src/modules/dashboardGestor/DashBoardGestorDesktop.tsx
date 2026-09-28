@@ -280,19 +280,19 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
           accent="slate"
           onClick={() => verOrdens("Canceladas", { status: ["CANCELADA"] })}
         />
+        {/* só o número mesmo, sem "Ver ordens" — corretiva/preventiva é a maioria
+            das O.S., a lista por trás não ajuda tanto quanto nos outros cards */}
         <KpiCard
           label="Preventivas"
           value={formatCompactNumber(kpis.preventivas)}
           icon={<ShieldCheck size={20} />}
           accent="violet"
-          onClick={() => verOrdens("Preventivas", { tipo: "PREVENTIVA" })}
         />
         <KpiCard
           label="Corretivas"
           value={formatCompactNumber(kpis.corretivas)}
           icon={<Wrench size={20} />}
           accent="rose"
-          onClick={() => verOrdens("Corretivas", { tipo: "CORRETIVA" })}
         />
       </div>
 
