@@ -106,7 +106,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           (o gestor precisa bater o olho e já saber qual máquina é, de longe);
           sem foto, fica no layout compacto de sempre, só texto */}
       {temFoto ? (
-        <div className="relative h-52 w-full shrink-0 overflow-hidden">
+        <div className="relative h-40 w-full shrink-0 overflow-hidden">
           <img
             src={leitura.imagem_url!}
             alt=""
@@ -114,13 +114,13 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             onError={() => setFotoQuebrada(true)}
           />
-          {/* scrim só no terço debaixo — o resto da foto fica limpo, sem lavar
+          {/* scrim só na faixa debaixo — o resto da foto fica limpo, sem lavar
               o que o gestor precisa "bater o olho e reconhecer" */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
           <span
             className={cn(
-              "absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] shadow-md",
+              "absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] shadow-sm",
               ui.suave
             )}
           >
@@ -133,11 +133,11 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
             {rotulo}
           </span>
 
-          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm transition-transform group-hover:translate-x-0.5">
-            <ChevronRight size={15} />
+          <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm transition-transform group-hover:translate-x-0.5">
+            <ChevronRight size={13} />
           </span>
 
-          <h3 className="absolute inset-x-3.5 bottom-3 truncate text-xl font-bold tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
+          <h3 className="absolute inset-x-3 bottom-2 truncate text-base font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
             {leitura.maquina_nome ?? `Máquina #${leitura.maquina_id}`}
           </h3>
         </div>
