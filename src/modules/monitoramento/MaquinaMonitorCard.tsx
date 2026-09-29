@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { ChevronRight, Thermometer, Activity, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -41,6 +41,11 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
   const atencao = estadoNivel === "atencao" && aoVivo;
 
   const ui = escuro ? NIVEL_UI_ESCURO[estadoNivel] : NIVEL_UI[estadoNivel];
+
+  // se a foto falhar (link quebrado, offline etc.), volta pro layout sem foto
+  // em vez de deixar um espaço quebrado — a imagem em si nunca é obrigatória
+  const [fotoQuebrada, setFotoQuebrada] = useState(false);
+  const temFoto = Boolean(leitura.imagem_url) && !fotoQuebrada;
 
   // borda neutra e discreta por padrão — só quem precisa de atenção "pesa"
   // visualmente (crítico ganha até um brilho); uma tela cheia de cards
@@ -97,27 +102,25 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
         />
       )}
 
-      {/* ESTADO + NOME */}
-      <div className="relative flex items-start gap-3 px-5 pt-5 pb-4">
-        {leitura.imagem_url && (
+      {/* ESTADO + NOME — com foto, vira uma "capa" grande no topo do card
+          (o gestor precisa bater o olho e já saber qual máquina é, de longe);
+          sem foto, fica no layout compacto de sempre, só texto */}
+      {temFoto ? (
+        <div className="relative h-52 w-full shrink-0 overflow-hidden">
           <img
-            src={leitura.imagem_url}
+            src={leitura.imagem_url!}
             alt=""
             loading="lazy"
-            className={cn(
-              "h-12 w-12 shrink-0 rounded-xl object-cover ring-1",
-              escuro ? "ring-white/10" : "ring-slate-200"
-            )}
-            // se a foto falhar (link quebrado, offline etc.), some sem deixar buraco
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            onError={() => setFotoQuebrada(true)}
           />
-        )}
-        <div className="min-w-0 flex-1">
+          {/* scrim só no terço debaixo — o resto da foto fica limpo, sem lavar
+              o que o gestor precisa "bater o olho e reconhecer" */}
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em]",
+              "absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] shadow-md",
               ui.suave
             )}
           >
@@ -129,23 +132,50 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
             </span>
             {rotulo}
           </span>
-          <h3
-            className={cn(
-              "mt-2.5 truncate text-xl font-semibold tracking-tight",
-              escuro ? "text-slate-50" : "text-slate-900"
-            )}
-          >
+
+          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm transition-transform group-hover:translate-x-0.5">
+            <ChevronRight size={15} />
+          </span>
+
+          <h3 className="absolute inset-x-3.5 bottom-3 truncate text-xl font-bold tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
             {leitura.maquina_nome ?? `Máquina #${leitura.maquina_id}`}
           </h3>
         </div>
-        <ChevronRight
-          size={18}
-          className={cn(
-            "mt-1.5 shrink-0 transition-transform group-hover:translate-x-0.5",
-            escuro ? "text-slate-600 group-hover:text-slate-400" : "text-slate-300 group-hover:text-slate-500"
-          )}
-        />
-      </div>
+      ) : (
+        <div className="relative flex items-start gap-3 px-5 pt-5 pb-4">
+          <div className="min-w-0 flex-1">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em]",
+                ui.suave
+              )}
+            >
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                {critico && (
+                  <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-75", ui.ponto)} />
+                )}
+                <span className={cn("relative inline-flex h-1.5 w-1.5 rounded-full", ui.ponto)} />
+              </span>
+              {rotulo}
+            </span>
+            <h3
+              className={cn(
+                "mt-2.5 truncate text-xl font-semibold tracking-tight",
+                escuro ? "text-slate-50" : "text-slate-900"
+              )}
+            >
+              {leitura.maquina_nome ?? `Máquina #${leitura.maquina_id}`}
+            </h3>
+          </div>
+          <ChevronRight
+            size={18}
+            className={cn(
+              "mt-1.5 shrink-0 transition-transform group-hover:translate-x-0.5",
+              escuro ? "text-slate-600 group-hover:text-slate-400" : "text-slate-300 group-hover:text-slate-500"
+            )}
+          />
+        </div>
+      )}
 
       {/* MÉTRICAS + MINI-GRÁFICOS */}
       <div
