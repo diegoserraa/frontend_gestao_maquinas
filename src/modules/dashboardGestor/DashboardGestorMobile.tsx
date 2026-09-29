@@ -25,6 +25,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  OctagonPause,
+  TimerOff,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
@@ -152,6 +154,7 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
     preventivasVencidas,
     rankingTecnicos,
     custos,
+    resumoParadas,
     refetch,
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
   const [scannerAberto, setScannerAberto] = useState(false);
@@ -364,6 +367,24 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
             value: formatCompactNumber(kpis.corretivas),
             icon: <Wrench size={16} />,
             accent: "rose",
+          }}
+        />
+      </div>
+
+      {/* PARADAS — próprio destaque, mesmo motivo do desktop (ver comentário lá) */}
+      <div className="grid grid-cols-1 gap-2">
+        <KpiCardDupla
+          esquerda={{
+            label: "Máquinas paradas agora",
+            value: formatCompactNumber(resumoParadas?.paradasAgora ?? 0),
+            icon: <OctagonPause size={16} />,
+            accent: "rose",
+          }}
+          direita={{
+            label: "Horas paradas no período",
+            value: `${(resumoParadas?.horasParadas ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}h`,
+            icon: <TimerOff size={16} />,
+            accent: "orange",
           }}
         />
       </div>

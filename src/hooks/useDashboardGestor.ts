@@ -8,6 +8,7 @@ import {
   getPreventivasVencidas,
   getRankingTecnicos,
   getCustos,
+  getResumoParadas,
 } from "../modules/dashboardGestor/DashboardGestorService";
 
 import type {
@@ -18,6 +19,7 @@ import type {
   PreventivasVencidas,
   RankingTecnicoItem,
   CustosGestor,
+  ResumoParadas,
 } from "../modules/dashboardGestor/DashboardGestorTypes";
 
 
@@ -59,6 +61,10 @@ export function useDashboardGestor(
     useState<CustosGestor | null>(null);
 
 
+  const [resumoParadas, setResumoParadas] =
+    useState<ResumoParadas | null>(null);
+
+
 
   const carregar = useCallback(async () => {
 
@@ -75,7 +81,8 @@ export function useDashboardGestor(
         mp,
         mv,
         rt,
-        c
+        c,
+        rp
       ] = await Promise.all([
 
         getKpis(
@@ -113,6 +120,11 @@ export function useDashboardGestor(
           dataFim
         ),
 
+        getResumoParadas(
+          dataInicio,
+          dataFim
+        ),
+
       ]);
 
 
@@ -143,6 +155,10 @@ export function useDashboardGestor(
 
 
       setCustos(c);
+
+      setResumoParadas(
+        rp ?? null
+      );
 
 
       setAtualizadoEm(
@@ -202,6 +218,8 @@ export function useDashboardGestor(
     rankingTecnicos,
 
     custos,
+
+    resumoParadas,
 
     refetch: carregar,
 

@@ -5,6 +5,7 @@ import {
   Printer,
   FileDown,
   Loader2,
+  OctagonPause,
 } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
@@ -379,6 +380,27 @@ return (
       "
     >
       Externo
+    </span>
+  )}
+
+  {os.maquina_parada && (
+    <span
+      title={os.motivo_parada ?? undefined}
+      className="
+        inline-flex items-center gap-1
+        px-2 py-1
+        sm:px-3 sm:py-1.5
+        rounded-full
+        text-[11px]
+        sm:text-xs
+        font-semibold
+        border border-rose-200
+        bg-rose-50
+        text-rose-700
+      "
+    >
+      <OctagonPause size={11} />
+      Máquina parada
     </span>
   )}
 

@@ -55,4 +55,8 @@ export interface OrdemServico {
 
   // nome de quem abriu a O.S. (vem da API)
   solicitante_nome?: string | null;
+
+  // "máquina parada" (v1 enxuto) — respondido só na abertura, ver OrdemServicoForm
+  maquina_parada?: boolean;
+  motivo_parada?: string | null;
 }

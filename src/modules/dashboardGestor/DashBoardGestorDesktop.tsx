@@ -25,6 +25,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  OctagonPause,
+  TimerOff,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -139,6 +141,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
     preventivasVencidas,
     rankingTecnicos,
     custos,
+    resumoParadas,
     refetch,
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
 
@@ -317,6 +320,28 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
             value: formatCompactNumber(kpis.corretivas),
             icon: <Wrench size={17} />,
             accent: "rose",
+          }}
+        />
+      </div>
+
+      {/* PARADAS — sozinho numa linha própria, com mais espaço que os outros:
+          é o número que responde de cara o diferencial do sistema
+          ("quanto tempo minha fábrica ficou parada"), merece destaque
+          maior que um KPI de rotina (v1 enxuto: só os dois números, sem
+          detalhe por máquina ainda — ver ResumoParadas) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <KpiCardDupla
+          esquerda={{
+            label: "Máquinas paradas agora",
+            value: formatCompactNumber(resumoParadas?.paradasAgora ?? 0),
+            icon: <OctagonPause size={17} />,
+            accent: "rose",
+          }}
+          direita={{
+            label: "Horas paradas no período",
+            value: `${(resumoParadas?.horasParadas ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}h`,
+            icon: <TimerOff size={17} />,
+            accent: "orange",
           }}
         />
       </div>

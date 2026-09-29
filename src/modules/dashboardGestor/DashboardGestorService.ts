@@ -7,6 +7,7 @@ import type {
   RankingTecnicoItem,
   CustosGestor,
   PreventivasVencidas,
+  ResumoParadas,
 } from "./DashboardGestorTypes";
 
 import type { OrdemServicoResumo } from "@/modules/dashboardGestor/OrdemServicoCard";
@@ -146,6 +147,20 @@ export function getCustos(
 ): Promise<CustosGestor> {
   return fetchJson<CustosGestor>(
     `/dashboard/gestor/custos${buildQuery(
+      dataInicio,
+      dataFim
+    )}`
+  );
+}
+
+// não confundir com getMaquinasParadas acima (ranking por Nº de chamados) —
+// esse é o resumo de tempo parado de verdade
+export function getResumoParadas(
+  dataInicio?: string,
+  dataFim?: string
+): Promise<ResumoParadas> {
+  return fetchJson<ResumoParadas>(
+    `/dashboard/gestor/resumo-paradas${buildQuery(
       dataInicio,
       dataFim
     )}`

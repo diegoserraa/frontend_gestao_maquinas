@@ -67,6 +67,8 @@ export async function createOrdemServico(data: {
   prioridade: "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
   id_tecnico?: number | null;
   resolucao?: string;
+  maquina_parada?: boolean;
+  motivo_parada?: string;
 }): Promise<{ id: number }> {
   try {
     return await apiPost<{ id: number }>("/ordens-servico", data);

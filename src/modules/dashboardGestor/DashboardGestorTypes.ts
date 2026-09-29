@@ -42,6 +42,14 @@ export interface MaquinaParada {
   total: string;
 }
 
+/** Não confundir com MaquinaParada acima (esse é ranking por Nº de
+ * chamados). Este é o resumo de tempo parado de verdade — v1 enxuto,
+ * sem detalhe por máquina ainda. */
+export interface ResumoParadas {
+  paradasAgora: number;
+  horasParadas: number;
+}
+
 export interface PreventivaVencida {
   maquina_id: number;
   nome: string;
