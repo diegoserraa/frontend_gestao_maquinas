@@ -139,26 +139,6 @@ export function getStatusStyle(status?: string | null) {
   return STATUS_STYLES[key] ?? STATUS_STYLES.ABERTA;
 }
 
-// ── prioridade ───────────────────────────────────────────
-// Deixa de ser um badge pastel do mesmo peso visual do status.
-// Por padrão é só texto neutro; só ganha cor (e um pouco de peso)
-// quando é urgente/crítica/alta — que é quando essa informação é
-// de fato acionável, não decorativa.
-export function getPrioridadeAccent(prioridade?: string | null): {
-  text: string;
-  icon: string;
-} {
-  const key = String(prioridade ?? "").toUpperCase();
-
-  if (key === "URGENTE" || key === "CRITICA") {
-    return { text: "text-red-600 font-medium", icon: "text-red-500" };
-  }
-  if (key === "ALTA") {
-    return { text: "text-amber-600 font-medium", icon: "text-amber-500" };
-  }
-  return { text: "text-slate-500", icon: "text-slate-400" };
-}
-
 // mantido por compatibilidade com outros pontos do sistema que ainda
 // usem o badge completo de prioridade (ex: tabelas/listas de OS)
 const PRIORIDADE_STYLES: Record<string, string> = {

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { FileText, ListChecks, ClipboardX } from "lucide-react";
 
-import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
+import type { OrdemServico, Tecnico } from "@/modules/ordemServico/ordemServicoType";
 import {
   getOrdemServicoById,
   getMachineById,
@@ -21,8 +21,6 @@ import { PausaBanner } from "../../modules/ordemServico/ordemServicoDetails/Paus
 import { OSPhotosGallery } from "../../modules/ordemServico/ordemServicoDetails/OSPhotosGallery";
 import { formatDateTime, getStatusStyle } from "../../modules/ordemServico/ordemServicoDetails/osDetailsHelpers";
 import { baixarOrdemServicoCompleta } from "../../modules/ordemServico/ordemServicoDetails/osDownload";
-
-type Tecnico = { id: number; nome: string };
 
 function DetailsSkeleton() {
   return (

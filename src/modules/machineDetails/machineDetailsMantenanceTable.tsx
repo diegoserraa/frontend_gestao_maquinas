@@ -2,12 +2,8 @@ import type { Column } from "@/components/data/DataTable";
 import type { OrdemServico } from "./machineDetailsTypes";
 import { OrdemServicoActions } from "../ordemServico/ordemServicoAction";
 import type { UserRole } from "@/modules/login/loginType";
+import type { Tecnico } from "../ordemServico/ordemServicoType";
 import { estaPausada, formatarSegundos, segundosDaPausaAtual } from "../ordemServico/pausaOSLogica";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
 
 function getTipoStyle(tipo: string) {
   const t = tipo?.toLowerCase();

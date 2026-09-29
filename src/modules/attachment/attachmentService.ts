@@ -66,9 +66,9 @@ export async function uploadOSFechamentoAttachment(osId: number, file: File): Pr
   return uploadAnexo(formData);
 }
 
-export async function deleteAttachment(id: number) {
+export async function deleteAttachment(id: number): Promise<void> {
   try {
-    return await apiDelete(`/anexos/${id}`);
+    await apiDelete(`/anexos/${id}`);
   } catch {
     throw new Error("Erro ao excluir anexo");
   }

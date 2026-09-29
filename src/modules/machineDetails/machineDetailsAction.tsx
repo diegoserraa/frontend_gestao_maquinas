@@ -20,18 +20,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type StatusOS =
-  | "aberta"
-  | "atribuida"
-  | "andamento"
-  | "pausada"
-  | "finalizada"
-  | null;
-
 type Papel = UserRole;
 
 interface MachineDetailsActionsProps {
-  osStatus: StatusOS;
   machineId: number;
   papel?: Papel;
 
@@ -230,7 +221,6 @@ function KpiCard({
 ========================= */
 
 export function MachineDetailsActions({
-  osStatus,
   machineId,
   papel,
   onCreateOS,

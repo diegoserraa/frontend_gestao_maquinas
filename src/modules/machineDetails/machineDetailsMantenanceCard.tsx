@@ -2,12 +2,8 @@ import type { CardColumn } from "@/components/data/DataCard";
 import type { OrdemServico } from "./machineDetailsTypes";
 import { OrdemServicoActions } from "../ordemServico/ordemServicoAction";
 import type { UserRole } from "@/modules/login/loginType";
+import type { Tecnico } from "../ordemServico/ordemServicoType";
 import { estaPausada, formatarSegundos, segundosDaPausaAtual } from "../ordemServico/pausaOSLogica";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
 
 export function getMachineDetailsMobileColumns(
   onView?: (os: OrdemServico) => void,

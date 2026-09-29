@@ -1,8 +1,5 @@
 import {
   ArrowLeft,
-  Wrench,
-  Flag,
-  HardHat,
   Clock,
   ChevronDown,
   Printer,
@@ -19,11 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  formatDateTime,
-  getStatusStyle,
-  getPrioridadeAccent,
-} from "./osDetailsHelpers";
+import { formatDateTime, getStatusStyle } from "./osDetailsHelpers";
 
 type Props = {
   os: OrdemServico;
@@ -47,9 +40,6 @@ export function OSHeader({
 }: Props) {
   const statusStyle = getStatusStyle(os.status);
   const StatusIcon = statusStyle.icon;
-
-  const prioridadeAccent =
-    getPrioridadeAccent(os.prioridade);
 
   const isExterno =
     os.execucao_externa === true;
@@ -101,10 +91,23 @@ return (
         "
       >
 
-        {/* Voltar */}
-  
-
-
+        {/* Voltar — some no papel, é só navegação */}
+        <button
+          type="button"
+          onClick={onBack}
+          title="Voltar"
+          className="
+            print:hidden
+            flex h-9 w-9 shrink-0 items-center justify-center
+            rounded-xl border border-slate-200
+            bg-white/70 backdrop-blur
+            text-slate-500
+            hover:bg-white hover:text-slate-700 hover:border-slate-300
+            transition
+          "
+        >
+          <ArrowLeft size={16} />
+        </button>
 
         <div className="flex-1 min-w-0">
 

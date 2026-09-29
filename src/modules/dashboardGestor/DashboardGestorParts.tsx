@@ -647,7 +647,7 @@ export function PeriodoFilter({
       <Button
         type="button"
         onClick={aplicar}
-        disabled={!inicio || !fim}
+        disabled={!inicio || !fim || !alterado}
         className="
           w-full
           lg:w-[140px]

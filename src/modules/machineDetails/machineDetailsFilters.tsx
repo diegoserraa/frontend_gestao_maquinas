@@ -15,7 +15,6 @@ import {
 
 type Props = {
   status: string; // 👈 agora controlado por fora (MachineDetails.tsx)
-  userRole: string; // 👈 recebido de verdade, sem mock
   onSearch: (v: string) => void;
   onStatus: (v: string) => void;
   onPriority: (v: string) => void;
@@ -23,7 +22,6 @@ type Props = {
 
 export function MachineDetailsFilters({
   status,
-  userRole,
   onSearch,
   onStatus,
   onPriority,

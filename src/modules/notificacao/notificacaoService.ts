@@ -1,4 +1,5 @@
 import { apiGet, apiPatch, apiDelete } from "@/lib/apiClient";
+import type { Notificacao } from "./notificacaoType";
 
 /* =========================
    NOTIFICAÇÕES
@@ -7,31 +8,20 @@ import { apiGet, apiPatch, apiDelete } from "@/lib/apiClient";
 /*
    Buscar notificações do usuário
 */
-export async function getNotificacoes(usuario_id: number) {
+export async function getNotificacoes(usuario_id: number): Promise<Notificacao[]> {
   try {
-    return await apiGet(`/notificacoes?usuario_id=${usuario_id}`);
+    return await apiGet<Notificacao[]>(`/notificacoes?usuario_id=${usuario_id}`);
   } catch {
     throw new Error("Erro ao buscar notificações");
   }
 }
 
 /*
-   Buscar apenas notificações não lidas
-*/
-export async function getNotificacoesNaoLidas(usuario_id: number) {
-  try {
-    return await apiGet(`/notificacoes/nao-lidas?usuario_id=${usuario_id}`);
-  } catch {
-    throw new Error("Erro ao buscar notificações não lidas");
-  }
-}
-
-/*
    Buscar contador do sino
 */
-export async function getContadorNotificacoes(usuario_id: number) {
+export async function getContadorNotificacoes(usuario_id: number): Promise<{ total: number }> {
   try {
-    return await apiGet(`/notificacoes/contador?usuario_id=${usuario_id}`);
+    return await apiGet<{ total: number }>(`/notificacoes/contador?usuario_id=${usuario_id}`);
   } catch {
     throw new Error("Erro ao buscar contador de notificações");
   }
@@ -40,9 +30,9 @@ export async function getContadorNotificacoes(usuario_id: number) {
 /*
    Marcar notificação como lida
 */
-export async function marcarNotificacaoComoLida(id: number) {
+export async function marcarNotificacaoComoLida(id: number): Promise<void> {
   try {
-    return await apiPatch(`/notificacoes/${id}/lida`);
+    await apiPatch(`/notificacoes/${id}/lida`);
   } catch {
     throw new Error("Erro ao marcar notificação como lida");
   }
@@ -51,9 +41,9 @@ export async function marcarNotificacaoComoLida(id: number) {
 /*
    Marcar todas como lidas
 */
-export async function marcarTodasNotificacoesComoLidas(usuario_id: number) {
+export async function marcarTodasNotificacoesComoLidas(usuario_id: number): Promise<void> {
   try {
-    return await apiPatch("/notificacoes/marcar-todas", { usuario_id });
+    await apiPatch("/notificacoes/marcar-todas", { usuario_id });
   } catch {
     throw new Error("Erro ao marcar notificações como lidas");
   }

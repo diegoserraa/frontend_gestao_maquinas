@@ -24,7 +24,7 @@ import {
   finalizarOS,
   cancelarOS,
 } from "@/modules/ordemServico/ordemServicoService";
-import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
+import type { OrdemServico, Tecnico } from "@/modules/ordemServico/ordemServicoType";
 
 import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { acoesDaOS } from "@/modules/ordemServico/regrasAcoesOS";
@@ -32,11 +32,6 @@ import { FinalizarOrdemServicoModal } from "@/components/modals/ordemServico/Fin
 import { CancelarOrdemServicoModal } from "@/components/modals/ordemServico/CancelarOrdemServico";
 import { PausarOrdemServicoModal } from "@/components/modals/ordemServico/PausarOrdemServico";
 import { OrdemServicoTimeline } from "@/modules/ordemServico/ordemDeServicoTimeline";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
 
 type Props = {
   os: OrdemServico;

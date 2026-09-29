@@ -14,17 +14,13 @@ import {
 } from "./ordemServicoService";
 
 import type { OrdemServico } from "../machineDetails/machineDetailsTypes";
+import type { Tecnico } from "./ordemServicoType";
 import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { acoesDaOS } from "./regrasAcoesOS";
 
 import { FinalizarOrdemServicoModal } from "../../components/modals/ordemServico/FinalizarOrdemServico";
 import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico";
 import { PausarOrdemServicoModal } from "../../components/modals/ordemServico/PausarOrdemServico";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
 
 type Props = {
   mode?: "table" | "panel" | "mobile";

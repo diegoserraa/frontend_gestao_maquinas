@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -11,14 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import {
-  Wrench,
-  AlertTriangle,
-  User,
-  ClipboardList,
-  Settings,
-  Gauge,
-} from "lucide-react";
+import { Settings, Gauge } from "lucide-react";
 
 export type OrdemServicoFormData = {
   id_solicitante?: number;
@@ -31,14 +23,13 @@ export type OrdemServicoFormData = {
   resolucao?: string;
 };
 
-type Tecnico = {
-  id: number;
-  nome: string;
-};
-
+// atribuir técnico é sempre um passo separado, depois de criar a O.S.
+// (regra de negócio: gestor atribui a técnico/parceiro externo depois de
+// aberta) — não existe seletor de técnico neste formulário, então "tecnicos"
+// nunca chegou a ser usado aqui; a busca em si continua acontecendo em
+// Mantenance/index.tsx pra outras telas que precisam dela.
 type Props = {
   machineId: number;
-  tecnicos: Tecnico[];
   loading?: boolean;
   onSubmit: (data: OrdemServicoFormData) => void;
 };
@@ -58,7 +49,6 @@ function validate(form: OrdemServicoFormData): FormErrors {
 
 export function OrdemServicoForm({
   machineId,
-  tecnicos,
   loading,
   onSubmit,
 }: Props) {

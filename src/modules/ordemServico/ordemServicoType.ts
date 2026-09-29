@@ -1,3 +1,9 @@
+// era redeclarado idêntico (id + nome) em 7 arquivos diferentes — um só aqui
+export type Tecnico = {
+  id: number;
+  nome: string;
+};
+
 export type OrdemServicoFormData = {
   maquina_id: number;
   descricao: string;

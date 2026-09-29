@@ -29,6 +29,7 @@ import type {
   OrdemServico,
   OrdemServicoFormData,
 } from "../../modules/machineDetails/machineDetailsTypes";
+import type { Tecnico } from "../../modules/ordemServico/ordemServicoType";
 
 import { getMachineDetailsColumns } from "../../modules/machineDetails/machineDetailsMantenanceTable";
 import { getMachineDetailsMobileColumns } from "../../modules/machineDetails/machineDetailsMantenanceCard";
@@ -36,7 +37,6 @@ import { getMachineDetailsMobileColumns } from "../../modules/machineDetails/mac
 import { useSectors } from "@/hooks/useSector";
 import { OrdemServicoTimeline } from "../../modules/ordemServico/ordemDeServicoTimeline";
 import { OrdemServicoModal } from "../../components/modals/ordemServico/CriarOrdemServico";
-import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico"; // 👈 ADICIONADO
 
 /* ------------------------------------------------------------------ */
 /* SKELETONS — mesmo padrão visual do restante da tela (rounded-2xl,   */
@@ -121,16 +121,10 @@ export default function MachineDetails() {
   const [pageSize, setPageSize] = useState(5);
 
   const [isMobile, setIsMobile] = useState(false);
-  const [tecnicos, setTecnicos] = useState<
-    { id: number; nome: string }[]
-  >([]);
-  const [tecnicosLoading, setTecnicosLoading] = useState(true);
+  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
 
   // 👇 MODAL CREATE OS
   const [openCreateOS, setOpenCreateOS] = useState(false);
-  const [openCancelar, setOpenCancelar] = useState(false);
-  const [osParaCancelar, setOsParaCancelar] =
-  useState<OrdemServico | null>(null);
 
   // 👇 usado no refreshOsList pra saber se acompanha o filtro automaticamente
   const isTecnico = userRole === "TECNICO";
@@ -138,13 +132,10 @@ export default function MachineDetails() {
   useEffect(() => {
     async function carregarTecnicos() {
       try {
-        setTecnicosLoading(true);
         const data = await listarTecnicos();
         setTecnicos(data ?? []);
       } catch (error) {
         console.error(error);
-      } finally {
-        setTecnicosLoading(false);
       }
     }
 
@@ -250,10 +241,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
   ? tecnicos.find((t) => t.id === selectedOS.id_tecnico)
   : undefined;
   // 👇 CREATE OS HANDLER
-  function handleCancelarOS(os: OrdemServico) {
-  setOsParaCancelar(os);
-  setOpenCancelar(true);
-}
   async function handleCreateOS(data: OrdemServicoFormData) {
   try {
     const createdOS = await createOrdemServico(data); // 👈 guarda o retorno
@@ -302,13 +289,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
           ) : (
             <MachineDetailsActions
               machineId={machine.id}
-              osStatus={
-                osList.find((os) =>
-                  ["aberta", "atribuida", "andamento"].includes(
-                    os.status
-                  )
-                )?.status as any ?? null
-              }
               papel={userRole} // 👈 AQUI PASSA O PAPEL DO USUÁRIO
               onCreateOS={() => setOpenCreateOS(true)} // 👈 AQUI ABRE O MODAL
               onViewOS={() => setSelectedOS(osList[0] ?? null)}
@@ -329,7 +309,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
               ) : (
                 <MachineDetailsFilters
                   status={status}
-                  userRole={userRole}
                   onSearch={setSearch}
                   onStatus={setStatus}
                   onPriority={setPriority}
@@ -408,7 +387,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
         open={openCreateOS}
         onClose={() => setOpenCreateOS(false)}
         machineId={machineId}
-        tecnicos={tecnicosLoading ? [] : tecnicos} // depois você pluga seu hook de técnicos
         onSave={handleCreateOS}
       />
     </div>

@@ -1,12 +1,12 @@
 import { apiGet, apiUpload, apiDelete, apiPatch } from "@/lib/apiClient";
-import type { EtiquetasResposta, Machine } from "./machineTypes";
+import type { EtiquetasResposta, Machine, Setor } from "./machineTypes";
 
 export async function getMachines(): Promise<Machine[]> {
   return apiGet<Machine[]>("/maquinas");
 }
 
-export async function getSectors() {
-  return apiGet("/setores");
+export async function getSectors(): Promise<Setor[]> {
+  return apiGet<Setor[]>("/setores");
 }
 
 function montarFormData(payload: any): FormData {
@@ -48,9 +48,9 @@ export async function deleteMachine(id: number) {
   return apiDelete(`/maquinas/${id}`);
 }
 
-export async function toggleMachineStatus(id: number) {
+export async function toggleMachineStatus(id: number): Promise<Machine> {
   try {
-    return await apiPatch(`/maquinas/${id}/status`);
+    return await apiPatch<Machine>(`/maquinas/${id}/status`);
   } catch {
     throw new Error("Erro ao alterar status da máquina");
   }

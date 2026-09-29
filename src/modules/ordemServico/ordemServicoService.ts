@@ -1,12 +1,17 @@
 import { apiGet, apiPost, apiPatch } from "@/lib/apiClient";
 import type { PausaOS } from "./pausaOSLogica";
+import type { Tecnico, OrdemServico } from "./ordemServicoType";
+import type {
+  Machine,
+  OrdemServico as OrdemServicoDaMaquina,
+} from "../machineDetails/machineDetailsTypes";
 
 /* =========================
    MACHINE
 ========================= */
 
-export async function getMachineById(id: number) {
-  return apiGet(`/maquinas/${id}`);
+export async function getMachineById(id: number): Promise<Machine> {
+  return apiGet<Machine>(`/maquinas/${id}`);
 }
 
 /* =========================
@@ -27,9 +32,9 @@ export async function listarOrdensServico(): Promise<OrdemServicoDaLista[]> {
   return apiGet<OrdemServicoDaLista[]>("/ordens-servico");
 }
 
-export async function getOrdensByMachineId(id: number) {
+export async function getOrdensByMachineId(id: number): Promise<OrdemServicoDaMaquina[]> {
   try {
-    return await apiGet(`/maquinas/${id}/os`);
+    return await apiGet<OrdemServicoDaMaquina[]>(`/maquinas/${id}/os`);
   } catch {
     throw new Error("Erro ao buscar ordens de serviço");
   }
@@ -62,9 +67,9 @@ export async function createOrdemServico(data: {
   prioridade: "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
   id_tecnico?: number | null;
   resolucao?: string;
-}) {
+}): Promise<{ id: number }> {
   try {
-    return await apiPost("/ordens-servico", data);
+    return await apiPost<{ id: number }>("/ordens-servico", data);
   } catch {
     throw new Error("Erro ao criar ordem de serviço");
   }
@@ -74,9 +79,9 @@ export async function createOrdemServico(data: {
    ATRIBUIR TÉCNICO
    Quem atribuiu é identificado pelo backend a partir do token.
 ========================= */
-export async function atribuirTecnicoOS(osId: number, id_tecnico: number) {
+export async function atribuirTecnicoOS(osId: number, id_tecnico: number): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/atribuir`, { id_tecnico });
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/atribuir`, { id_tecnico });
   } catch {
     throw new Error("Erro ao atribuir técnico");
   }
@@ -86,9 +91,9 @@ export async function atribuirTecnicoOS(osId: number, id_tecnico: number) {
    MARCAR COMO EXECUÇÃO EXTERNA (parceiro)
    Não há técnico: a O.S. é marcada com execucao_externa no backend.
 ========================= */
-export async function atribuirExternoOS(osId: number) {
+export async function atribuirExternoOS(osId: number): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/atribuir`, { externo: true });
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/atribuir`, { externo: true });
   } catch {
     throw new Error("Erro ao definir técnico externo");
   }
@@ -97,9 +102,9 @@ export async function atribuirExternoOS(osId: number) {
 /* =========================
    INICIAR ATENDIMENTO
 ========================= */
-export async function iniciarAtendimentoOS(osId: number) {
+export async function iniciarAtendimentoOS(osId: number): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/iniciar`);
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/iniciar`);
   } catch {
     throw new Error("Erro ao iniciar atendimento");
   }
@@ -109,17 +114,17 @@ export async function iniciarAtendimentoOS(osId: number) {
    PAUSAR / RETOMAR
    O motivo da pausa é obrigatório; o tempo parado não conta como tempo de reparo.
 ========================= */
-export async function pausarOS(osId: number, motivo: string) {
+export async function pausarOS(osId: number, motivo: string): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/pausar`, { motivo });
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/pausar`, { motivo });
   } catch {
     throw new Error("Erro ao pausar OS");
   }
 }
 
-export async function retomarOS(osId: number) {
+export async function retomarOS(osId: number): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/retomar`);
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/retomar`);
   } catch {
     throw new Error("Erro ao retomar OS");
   }
@@ -144,9 +149,9 @@ export async function finalizarOS(
   resolucao: string,
   valorGasto?: number,
   parceiro?: { id_parceiro: number; valor_parceiro: number } | null
-) {
+): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/finalizar`, {
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/finalizar`, {
       resolucao,
       valor_gasto: valorGasto ?? null,
       ...(parceiro
@@ -164,25 +169,25 @@ export async function finalizarOS(
 /* =========================
    CANCELAR OS
 ========================= */
-export async function cancelarOS(osId: number, motivo_cancelamento: string) {
+export async function cancelarOS(osId: number, motivo_cancelamento: string): Promise<OrdemServico> {
   try {
-    return await apiPatch(`/ordens-servico/${osId}/cancelar`, { motivo_cancelamento });
+    return await apiPatch<OrdemServico>(`/ordens-servico/${osId}/cancelar`, { motivo_cancelamento });
   } catch {
     throw new Error("Erro ao cancelar OS");
   }
 }
 
-export async function listarTecnicos() {
+export async function listarTecnicos(): Promise<Tecnico[]> {
   try {
-    return await apiGet("/usuarios/tecnicos");
+    return await apiGet<Tecnico[]>("/usuarios/tecnicos");
   } catch {
     throw new Error("Erro ao buscar técnicos");
   }
 }
 
-export async function getOrdemServicoById(id: number) {
+export async function getOrdemServicoById(id: number): Promise<OrdemServico> {
   try {
-    return await apiGet(`/ordens-servico/${id}`);
+    return await apiGet<OrdemServico>(`/ordens-servico/${id}`);
   } catch {
     throw new Error("Erro ao buscar ordem de serviço");
   }
