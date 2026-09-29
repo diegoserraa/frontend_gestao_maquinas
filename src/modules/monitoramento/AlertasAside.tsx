@@ -199,51 +199,60 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
                 )}
               </p>
 
-              <div className="mt-2.5 flex flex-wrap gap-1.5 pl-7">
-                {a.status === "convertido" && a.ordem_servico_id ? (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/ordens-servico/${a.ordem_servico_id}`)}
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
-                      escuro
-                        ? "border-blue-500/25 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15"
-                        : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                    )}
-                  >
-                    <ExternalLink size={12} /> Ver O.S. #{a.ordem_servico_id}
-                  </button>
-                ) : pode("monitoramento.abrir_os") ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => abrirOS(a)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white shadow-sm disabled:opacity-60"
-                  >
-                    {busy ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Wrench size={12} />
-                    )}
-                    Abrir O.S.
-                  </button>
-                ) : null}
-                {pode("monitoramento.resolver_alertas") && (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => resolver(a)}
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
-                      escuro
-                        ? "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                        : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                    )}
-                  >
-                    <Check size={12} /> Resolver
-                  </button>
-                )}
-              </div>
+              {/* alerta simulado (Demonstração) — id negativo, não existe no banco.
+                  Resolver/Abrir O.S. chamariam a API por um id que não existe
+                  (404), então só avisa em vez de oferecer ação que quebra */}
+              {a.id < 0 ? (
+                <p className={cn("mt-2.5 pl-7 text-[10px] italic", escuro ? "text-slate-600" : "text-slate-400")}>
+                  Simulado — ação disponível quando o dado for real
+                </p>
+              ) : (
+                <div className="mt-2.5 flex flex-wrap gap-1.5 pl-7">
+                  {a.status === "convertido" && a.ordem_servico_id ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/ordens-servico/${a.ordem_servico_id}`)}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+                        escuro
+                          ? "border-blue-500/25 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15"
+                          : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      )}
+                    >
+                      <ExternalLink size={12} /> Ver O.S. #{a.ordem_servico_id}
+                    </button>
+                  ) : pode("monitoramento.abrir_os") ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => abrirOS(a)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white shadow-sm disabled:opacity-60"
+                    >
+                      {busy ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Wrench size={12} />
+                      )}
+                      Abrir O.S.
+                    </button>
+                  ) : null}
+                  {pode("monitoramento.resolver_alertas") && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => resolver(a)}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
+                        escuro
+                          ? "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                          : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                      )}
+                    >
+                      <Check size={12} /> Resolver
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

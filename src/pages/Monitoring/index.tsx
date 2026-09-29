@@ -29,6 +29,7 @@ import {
 import {
   estaAoVivo,
   nivelGeral,
+  alertasDeDemonstracao,
   type Nivel,
 } from "@/modules/monitoramento/monitoramentoHelpers";
 import type { TelemetriaAtual } from "@/modules/monitoramento/monitoramentoTypes";
@@ -61,8 +62,18 @@ function situacao(l: TelemetriaAtual): Nivel {
 export default function Monitoring() {
   const { leituras, historico, carregando, demoAtivo, modo, setModo } =
     useMonitoramentoDados();
-  const { alertas, recarregar } = usePainelAlertas();
+  const { alertas: alertasReais, recarregar } = usePainelAlertas();
   const { sectors } = useSectors();
+
+  // em Demonstração os alertas não existem de verdade no banco (a simulação
+  // roda só no navegador) — deriva da própria leitura simulada pra o painel
+  // "Precisam de ação" bater com o resumo do topo (mesma contagem de
+  // crítico/atenção em vez de mostrar só os alertas reais, quase sempre
+  // vazios ou de outra máquina completamente diferente das exibidas agora)
+  const alertas = useMemo(
+    () => (demoAtivo ? alertasDeDemonstracao(leituras) : alertasReais),
+    [demoAtivo, leituras, alertasReais]
+  );
 
   const [busca, setBusca] = useState("");
   const [setorFiltro, setSetorFiltro] = useState("all");

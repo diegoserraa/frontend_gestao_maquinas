@@ -1,6 +1,7 @@
 /* Formatação, faixas de alerta e paleta (tema claro, igual ao resto do app). */
 
 import type { LimiteMetrica, TelemetriaAtual } from "./monitoramentoTypes";
+import type { AlertaMonitoramento } from "./monitoramentoService";
 
 export type Nivel = "ok" | "atencao" | "critico" | "sem-dado";
 
@@ -197,4 +198,86 @@ export function tendencia(serie: (number | null)[]): -1 | 0 | 1 {
   if (variacao > 0.02) return 1;
   if (variacao < -0.02) return -1;
   return 0;
+}
+
+/**
+ * Modo Demonstração simula leituras no navegador — nunca passa pelo motor de
+ * alertas do backend, então `telemetria_alertas` nunca tem nada sobre elas.
+ * Sem isso, o resumo do topo dizia "3 críticas" e o painel "Precisam de
+ * ação" mostrava só os alertas de verdade (quase sempre vazio ou com uma
+ * máquina só) — os dois números não batiam, parecia bug.
+ *
+ * Deriva o mesmo tipo de alerta direto da leitura simulada. `id` sai
+ * negativo de propósito: nunca existe de verdade no banco, então
+ * AlertasAside sabe (via `id < 0`) que não pode chamar
+ * resolverAlerta/abrirOSDoAlerta com ele — só mostra o aviso mesmo.
+ */
+export function alertasDeDemonstracao(
+  leituras: TelemetriaAtual[]
+): AlertaMonitoramento[] {
+  const alertas: AlertaMonitoramento[] = [];
+
+  for (const l of leituras) {
+    if (l.atualizado_em === null) continue; // nunca teve leitura — não é "alerta", é "sem dado" mesmo
+
+    if (!estaAoVivo(l.atualizado_em)) {
+      alertas.push({
+        id: -l.maquina_id,
+        maquina_id: l.maquina_id,
+        maquina_nome: l.maquina_nome ?? `Máquina #${l.maquina_id}`,
+        setor_nome: l.setor_nome,
+        chave: "sinal",
+        nivel: "sem_sinal",
+        valor: null,
+        limite: null,
+        status: "aberto",
+        ordem_servico_id: null,
+        detalhe: null,
+        aberto_em: l.atualizado_em,
+      });
+      continue;
+    }
+
+    const nivelTemp = nivelTemperatura(l.temperatura, l.limites?.temperatura);
+    const nivelVib = nivelVibracao(l.vibracao, l.limites?.vibracao);
+    const pior =
+      nivelTemp === "critico" || nivelVib === "critico"
+        ? "critico"
+        : nivelTemp === "atencao" || nivelVib === "atencao"
+        ? "atencao"
+        : null;
+    if (!pior) continue;
+
+    // prioriza a métrica que efetivamente bateu o nível "pior"
+    const chave = nivelTemp === pior ? "temperatura" : "vibracao";
+    const valor = chave === "temperatura" ? l.temperatura : l.vibracao;
+    const limiteConfig = l.limites?.[chave];
+    const limitePadrao = LIMITES_PADRAO[chave];
+    const limite =
+      pior === "critico"
+        ? limiteConfig?.alarme ?? limitePadrao.alarme
+        : limiteConfig?.atencao ?? limitePadrao.atencao;
+
+    alertas.push({
+      id: -l.maquina_id,
+      maquina_id: l.maquina_id,
+      maquina_nome: l.maquina_nome ?? `Máquina #${l.maquina_id}`,
+      setor_nome: l.setor_nome,
+      chave,
+      nivel: pior,
+      valor,
+      limite,
+      status: "aberto",
+      ordem_servico_id: null,
+      detalhe: null,
+      aberto_em: l.atualizado_em,
+    });
+  }
+
+  const peso: Record<AlertaMonitoramento["nivel"], number> = {
+    critico: 0,
+    atencao: 1,
+    sem_sinal: 2,
+  };
+  return alertas.sort((a, b) => peso[a.nivel] - peso[b.nivel]);
 }
