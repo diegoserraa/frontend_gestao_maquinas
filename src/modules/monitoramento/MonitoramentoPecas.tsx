@@ -215,9 +215,16 @@ export function BotaoTelaCheia({
   );
 }
 
-export function AvisoDemo() {
+export function AvisoDemo({ escuro = false }: { escuro?: boolean }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-xl border px-3 py-2 text-[12px]",
+        escuro
+          ? "border-amber-500/25 bg-amber-500/10 text-amber-300"
+          : "border-amber-200 bg-amber-50 text-amber-800"
+      )}
+    >
       <Info size={14} className="shrink-0" />
       <p>
         <span className="font-medium">Dados de demonstração</span> — ainda não há

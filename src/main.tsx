@@ -4,6 +4,8 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 
+import { ThemeProvider } from "next-themes";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { InstalarAppBanner } from "@/components/pwa/InstalarAppBanner";
 
@@ -46,8 +48,13 @@ updateSW = registerSW({
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <TooltipProvider>
-    <RouterProvider router={router} />
-    <InstalarAppBanner />
-  </TooltipProvider>
+  // só serve pro Toaster (sonner) hoje — nenhuma outra tela do sistema tem
+  // modo escuro, então fica fixo em "light" por padrão; só a tela de
+  // Monitoramento chama setTheme() pra combinar o toast com o tema dela
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <TooltipProvider>
+      <RouterProvider router={router} />
+      <InstalarAppBanner />
+    </TooltipProvider>
+  </ThemeProvider>
 );

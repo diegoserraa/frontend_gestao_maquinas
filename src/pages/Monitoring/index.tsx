@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTheme } from "next-themes";
 import { Search, Cpu, CircleCheck, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ export default function Monitoring() {
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [escuro, setEscuroState] = useState<boolean>(lerTemaSalvo);
   const [telaCheia, setTelaCheia] = useState(false);
+  const { setTheme } = useTheme();
 
   // lembra o tema escolhido — não precisa reativar toda vez que abrir a tela de novo
   function setEscuro(v: boolean) {
@@ -79,6 +81,17 @@ export default function Monitoring() {
       // localStorage indisponível (aba privada, etc.) — só não persiste, sem quebrar nada
     }
   }
+
+  // o toast (sonner) é global e não sabe nada sobre esta tela — sincroniza o
+  // tema dele com o nosso pra não abrir uma notificação clara em cima do
+  // fundo escuro (ex.: "O.S. aberta" depois de agir num alerta). Ao sair
+  // desta tela, devolve pro claro — nenhuma outra tela do sistema tem
+  // modo escuro ainda.
+  useEffect(() => {
+    setTheme(escuro ? "dark" : "light");
+    return () => setTheme("light");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [escuro]);
 
   // tela cheia de verdade (Fullscreen API) além de esconder o menu/cabeçalho do
   // sistema — some tudo que não é máquina. Não é obrigatório o navegador aceitar
@@ -200,7 +213,7 @@ export default function Monitoring() {
         </div>
       </div>
 
-      {demoAtivo && !telaCheia && <AvisoDemo />}
+      {demoAtivo && !telaCheia && <AvisoDemo escuro={escuro} />}
 
       <ResumoTopo {...contagem} escuro={escuro} />
 
@@ -336,6 +349,7 @@ export default function Monitoring() {
               <AlertasAside
                 alertas={alertas}
                 onMudou={recarregar}
+                escuro={escuro}
               />
             </div>
           </aside>
