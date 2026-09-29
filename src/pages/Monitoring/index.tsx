@@ -357,12 +357,17 @@ export default function Monitoring() {
 
   // TELA CHEIA — portal pro body: fica por cima do menu/cabeçalho do sistema
   // (que continuam ali embaixo, só não aparecem), sem precisar mexer no
-  // MainLayout pra escondê-los
+  // MainLayout pra escondê-los.
+  // z-40 (não z-9999!): o Dialog e o Select do shadcn também são portados pro
+  // body e usam z-50 — se este overlay tivesse um z-index maior que o deles,
+  // o modal de histórico e o dropdown de setor ficariam renderizados POR BAIXO
+  // dele (inacessíveis a um clique real, mesmo abertos no estado do React).
+  // z-40 já é suficiente pra cobrir o menu/cabeçalho normais (sem z-index).
   if (telaCheia) {
     return createPortal(
       <div
         className={cn(
-          "fixed inset-0 z-9999 overflow-y-auto p-6",
+          "fixed inset-0 z-40 overflow-y-auto p-6",
           escuro
             ? "bg-slate-950"
             : "bg-slate-50"
