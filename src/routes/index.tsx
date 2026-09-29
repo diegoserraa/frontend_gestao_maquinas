@@ -4,6 +4,7 @@ import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { RotaComPermissao, RotaSoAdmin } from "@/modules/permissoes/Pode";
 import ProtectedRoute from "@/routes/protectRoutes";
+import { RouteError } from "@/components/RouteError";
 
 
 import Dashboard from "@/pages/Dashboard";
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+    errorElement: <RouteError />,
   },
 
 
@@ -37,10 +39,13 @@ export const router = createBrowserRouter([
   {
     path: "/trocar-senha",
     element: <TrocarSenha />,
+    errorElement: <RouteError />,
   },
 
 
   // 🔒 ROTAS PROTEGIDAS
+  // errorElement aqui cobre TODAS as rotas filhas (machines, monitoring,
+  // sector...) — nenhuma delas precisa da própria, o erro sobe até aqui
   {
     path: "/",
 
@@ -49,6 +54,7 @@ export const router = createBrowserRouter([
         <MainLayout />
       </ProtectedRoute>
     ),
+    errorElement: <RouteError />,
 
 
     children: [
