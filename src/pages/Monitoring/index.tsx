@@ -116,7 +116,10 @@ export default function Monitoring() {
     return () => document.removeEventListener("fullscreenchange", aoMudar);
   }, []);
 
-  const temAside = alertas.length > 0 && !telaCheia;
+  // alertas e aviso de demo ficam disponíveis em qualquer modo, inclusive
+  // tela cheia — mesmo raciocínio do filtro de setor: "tela cheia" é só uma
+  // apresentação imersiva, não some com funcionalidade
+  const temAside = alertas.length > 0;
   const modoEfetivo: "demo" | "real" = demoAtivo ? "demo" : "real";
 
   const contagem = useMemo(() => {
@@ -213,7 +216,7 @@ export default function Monitoring() {
         </div>
       </div>
 
-      {demoAtivo && !telaCheia && <AvisoDemo escuro={escuro} />}
+      {demoAtivo && <AvisoDemo escuro={escuro} />}
 
       <ResumoTopo {...contagem} escuro={escuro} />
 
