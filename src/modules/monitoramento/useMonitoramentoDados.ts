@@ -132,6 +132,7 @@ export function useMonitoramentoDados() {
         ? real.leituras.map((l) => ({
             maquina_id: l.maquina_id,
             maquina_nome: l.maquina_nome ?? `Máquina #${l.maquina_id}`,
+            imagem_url: l.imagem_url,
             setor_id: l.setor_id,
             setor_nome: l.setor_nome,
           }))

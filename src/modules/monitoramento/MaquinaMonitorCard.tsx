@@ -98,8 +98,23 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       )}
 
       {/* ESTADO + NOME */}
-      <div className="relative flex items-start justify-between gap-3 px-5 pt-5 pb-4">
-        <div className="min-w-0">
+      <div className="relative flex items-start gap-3 px-5 pt-5 pb-4">
+        {leitura.imagem_url && (
+          <img
+            src={leitura.imagem_url}
+            alt=""
+            loading="lazy"
+            className={cn(
+              "h-12 w-12 shrink-0 rounded-xl object-cover ring-1",
+              escuro ? "ring-white/10" : "ring-slate-200"
+            )}
+            // se a foto falhar (link quebrado, offline etc.), some sem deixar buraco
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        )}
+        <div className="min-w-0 flex-1">
           <span
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em]",

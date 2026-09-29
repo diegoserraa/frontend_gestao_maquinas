@@ -13,6 +13,7 @@ type Cenario = "normal" | "atencao" | "critico" | "offline" | "sem-dados";
 type MockBase = {
   maquina_id: number;
   maquina_nome: string;
+  imagem_url?: string | null;
   setor_id: number | null;
   setor_nome: string | null;
   cenario?: Cenario;
@@ -28,31 +29,43 @@ type EstadoMock = {
   semDados: boolean;
 };
 
+// fotos reais (Unsplash, licença livre) só pra frota 100% mock não nascer
+// sem nenhuma imagem — mesmo esquema usado nas máquinas de verdade.
+const F = "?w=800&h=600&fit=crop&auto=format&q=80";
+const FOTO_TORNO = `https://images.unsplash.com/photo-1666634157070-6fd830fb5672${F}`;
+const FOTO_USINAGEM = `https://images.unsplash.com/photo-1740209475472-aa7d280f7452${F}`;
+const FOTO_FRESADORA = `https://images.unsplash.com/photo-1666618090858-fbcee636bd3e${F}`;
+const FOTO_PRENSA = `https://images.unsplash.com/photo-1750534232315-7c0669506201${F}`;
+const FOTO_INDUSTRIAL = `https://images.unsplash.com/photo-1535923430552-0ce3cd477cc7${F}`;
+const FOTO_COMPRESSOR = `https://images.unsplash.com/photo-1655165312002-9d781ad4046e${F}`;
+const FOTO_EXAUSTOR = `https://images.unsplash.com/photo-1652699160837-6471c565b440${F}`;
+const FOTO_FABRICA = `https://images.unsplash.com/photo-1717386255773-1e3037c81788${F}`;
+
 const FROTA_PADRAO: MockBase[] = [
   // Usinagem
-  { maquina_id: 9001, maquina_nome: "Torno CNC 07", setor_id: 1, setor_nome: "Usinagem" },
-  { maquina_id: 9002, maquina_nome: "Centro de Usinagem 02", setor_id: 1, setor_nome: "Usinagem", cenario: "critico" },
-  { maquina_id: 9003, maquina_nome: "Fresadora Universal 04", setor_id: 1, setor_nome: "Usinagem" },
-  { maquina_id: 9004, maquina_nome: "Retífica Cilíndrica 01", setor_id: 1, setor_nome: "Usinagem" },
-  { maquina_id: 9005, maquina_nome: "Torno CNC 11", setor_id: 1, setor_nome: "Usinagem", cenario: "sem-dados" },
+  { maquina_id: 9001, maquina_nome: "Torno CNC 07", imagem_url: FOTO_TORNO, setor_id: 1, setor_nome: "Usinagem" },
+  { maquina_id: 9002, maquina_nome: "Centro de Usinagem 02", imagem_url: FOTO_USINAGEM, setor_id: 1, setor_nome: "Usinagem", cenario: "critico" },
+  { maquina_id: 9003, maquina_nome: "Fresadora Universal 04", imagem_url: FOTO_FRESADORA, setor_id: 1, setor_nome: "Usinagem" },
+  { maquina_id: 9004, maquina_nome: "Retífica Cilíndrica 01", imagem_url: FOTO_TORNO, setor_id: 1, setor_nome: "Usinagem" },
+  { maquina_id: 9005, maquina_nome: "Torno CNC 11", imagem_url: FOTO_TORNO, setor_id: 1, setor_nome: "Usinagem", cenario: "sem-dados" },
 
   // Estamparia
-  { maquina_id: 9006, maquina_nome: "Prensa Hidráulica 02", setor_id: 2, setor_nome: "Estamparia", cenario: "atencao" },
-  { maquina_id: 9007, maquina_nome: "Prensa Excêntrica 05", setor_id: 2, setor_nome: "Estamparia" },
-  { maquina_id: 9008, maquina_nome: "Prensa Excêntrica 06", setor_id: 2, setor_nome: "Estamparia" },
-  { maquina_id: 9009, maquina_nome: "Guilhotina Industrial 03", setor_id: 2, setor_nome: "Estamparia" },
+  { maquina_id: 9006, maquina_nome: "Prensa Hidráulica 02", imagem_url: FOTO_PRENSA, setor_id: 2, setor_nome: "Estamparia", cenario: "atencao" },
+  { maquina_id: 9007, maquina_nome: "Prensa Excêntrica 05", imagem_url: FOTO_PRENSA, setor_id: 2, setor_nome: "Estamparia" },
+  { maquina_id: 9008, maquina_nome: "Prensa Excêntrica 06", imagem_url: FOTO_PRENSA, setor_id: 2, setor_nome: "Estamparia" },
+  { maquina_id: 9009, maquina_nome: "Guilhotina Industrial 03", imagem_url: FOTO_INDUSTRIAL, setor_id: 2, setor_nome: "Estamparia" },
 
   // Injeção Plástica
-  { maquina_id: 9010, maquina_nome: "Injetora 03", setor_id: 3, setor_nome: "Injeção Plástica" },
-  { maquina_id: 9011, maquina_nome: "Injetora 08", setor_id: 3, setor_nome: "Injeção Plástica", cenario: "atencao" },
-  { maquina_id: 9012, maquina_nome: "Injetora 12", setor_id: 3, setor_nome: "Injeção Plástica" },
-  { maquina_id: 9013, maquina_nome: "Moinho Granulador 02", setor_id: 3, setor_nome: "Injeção Plástica", cenario: "offline" },
+  { maquina_id: 9010, maquina_nome: "Injetora 03", imagem_url: FOTO_FABRICA, setor_id: 3, setor_nome: "Injeção Plástica" },
+  { maquina_id: 9011, maquina_nome: "Injetora 08", imagem_url: FOTO_FABRICA, setor_id: 3, setor_nome: "Injeção Plástica", cenario: "atencao" },
+  { maquina_id: 9012, maquina_nome: "Injetora 12", imagem_url: FOTO_FABRICA, setor_id: 3, setor_nome: "Injeção Plástica" },
+  { maquina_id: 9013, maquina_nome: "Moinho Granulador 02", imagem_url: FOTO_INDUSTRIAL, setor_id: 3, setor_nome: "Injeção Plástica", cenario: "offline" },
 
   // Utilidades
-  { maquina_id: 9014, maquina_nome: "Compressor de Ar A1", setor_id: 4, setor_nome: "Utilidades" },
-  { maquina_id: 9015, maquina_nome: "Bomba Centrífuga B2", setor_id: 4, setor_nome: "Utilidades" },
-  { maquina_id: 9016, maquina_nome: "Exaustor Industrial 04", setor_id: 4, setor_nome: "Utilidades" },
-  { maquina_id: 9017, maquina_nome: "Chiller de Processo 01", setor_id: 4, setor_nome: "Utilidades" },
+  { maquina_id: 9014, maquina_nome: "Compressor de Ar A1", imagem_url: FOTO_COMPRESSOR, setor_id: 4, setor_nome: "Utilidades" },
+  { maquina_id: 9015, maquina_nome: "Bomba Centrífuga B2", imagem_url: FOTO_COMPRESSOR, setor_id: 4, setor_nome: "Utilidades" },
+  { maquina_id: 9016, maquina_nome: "Exaustor Industrial 04", imagem_url: FOTO_EXAUSTOR, setor_id: 4, setor_nome: "Utilidades" },
+  { maquina_id: 9017, maquina_nome: "Chiller de Processo 01", imagem_url: FOTO_INDUSTRIAL, setor_id: 4, setor_nome: "Utilidades" },
 ];
 
 function clamp(v: number, min: number, max: number) {

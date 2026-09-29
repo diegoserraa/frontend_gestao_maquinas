@@ -7,6 +7,7 @@ export type LimiteMetrica = {
 export type TelemetriaAtual = {
   maquina_id: number;
   maquina_nome: string | null;
+  imagem_url?: string | null;
   setor_id: number | null;
   setor_nome: string | null;
   status: string | null;
