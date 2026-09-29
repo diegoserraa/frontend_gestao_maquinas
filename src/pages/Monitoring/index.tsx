@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useTheme } from "next-themes";
 import { Search, Cpu, CircleCheck, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { setToastTheme } from "@/lib/toastTheme";
 import {
   Select,
   SelectContent,
@@ -70,9 +70,21 @@ export default function Monitoring() {
   // "Precisam de ação" bater com o resumo do topo (mesma contagem de
   // crítico/atenção em vez de mostrar só os alertas reais, quase sempre
   // vazios ou de outra máquina completamente diferente das exibidas agora)
-  const alertas = useMemo(
+  const alertasDemo = useMemo(
     () => (demoAtivo ? alertasDeDemonstracao(leituras) : alertasReais),
     [demoAtivo, leituras, alertasReais]
+  );
+
+  // "Ignorar" num alerta simulado só tira da lista aqui (nunca existiu de
+  // verdade no banco) — mora na página, não no AlertasAside, porque é a
+  // página quem decide reservar ou não a coluna do aside (temAside); se o
+  // filtro ficasse só dentro do painel, ignorar tudo deixava a seção
+  // "sumida" mas o grid continuava reservando os 320px dela, sobrando um
+  // vão vazio em vez dos cards ocuparem a largura toda de novo
+  const [ignoradosDemo, setIgnoradosDemo] = useState<Set<number>>(new Set());
+  const alertas = useMemo(
+    () => alertasDemo.filter((a) => !(a.id < 0 && ignoradosDemo.has(a.maquina_id))),
+    [alertasDemo, ignoradosDemo]
   );
 
   const [busca, setBusca] = useState("");
@@ -81,7 +93,6 @@ export default function Monitoring() {
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [escuro, setEscuroState] = useState<boolean>(lerTemaSalvo);
   const [telaCheia, setTelaCheia] = useState(false);
-  const { setTheme } = useTheme();
 
   // lembra o tema escolhido — não precisa reativar toda vez que abrir a tela de novo
   function setEscuro(v: boolean) {
@@ -97,10 +108,11 @@ export default function Monitoring() {
   // tema dele com o nosso pra não abrir uma notificação clara em cima do
   // fundo escuro (ex.: "O.S. aberta" depois de agir num alerta). Ao sair
   // desta tela, devolve pro claro — nenhuma outra tela do sistema tem
-  // modo escuro ainda.
+  // modo escuro ainda. setToastTheme é isolado (não mexe na <html>, só no
+  // toast) — ver o comentário em lib/toastTheme.ts pro porquê disso importar.
   useEffect(() => {
-    setTheme(escuro ? "dark" : "light");
-    return () => setTheme("light");
+    setToastTheme(escuro ? "dark" : "light");
+    return () => setToastTheme("light");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [escuro]);
 
@@ -364,6 +376,9 @@ export default function Monitoring() {
                 alertas={alertas}
                 onMudou={recarregar}
                 escuro={escuro}
+                onIgnorarDemo={(maquinaId) =>
+                  setIgnoradosDemo((prev) => new Set(prev).add(maquinaId))
+                }
               />
             </div>
           </aside>

@@ -74,9 +74,15 @@ type Props = {
   alertas: AlertaMonitoramento[];
   onMudou: () => void;
   escuro?: boolean;
+  /** "Ignorar" num alerta simulado (id < 0) — quem decide se ele some da
+   * lista é a página (Monitoring), não este componente: ela é quem também
+   * decide o layout (reservar ou não a coluna do aside), então precisa
+   * saber a contagem final pra não sobrar espaço vazio reservado por um
+   * aside que na prática não tem mais nada pra mostrar. */
+  onIgnorarDemo: (maquinaId: number) => void;
 };
 
-export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
+export function AlertasAside({ alertas, onMudou, escuro = false, onIgnorarDemo }: Props) {
   const navigate = useNavigate();
   const { pode } = usePermissoes();
   const [ocupado, setOcupado] = useState<number | null>(null);
@@ -88,13 +94,8 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
   // guarda por maquina_id porque a lista é recalculada a cada leitura nova
   // e o alerta em si não tem identidade estável entre uma leitura e outra.
   const [demoConvertidos, setDemoConvertidos] = useState<Record<number, number>>({});
-  const [demoDispensados, setDemoDispensados] = useState<Set<number>>(new Set());
 
-  const visiveis = alertas.filter(
-    (a) => !(a.id < 0 && demoDispensados.has(a.maquina_id))
-  );
-
-  if (visiveis.length === 0) return null;
+  if (alertas.length === 0) return null;
 
   async function abrirOS(a: AlertaMonitoramento) {
     try {
@@ -133,9 +134,9 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
 
   async function resolver(a: AlertaMonitoramento) {
     if (a.id < 0) {
-      // não existe de verdade pra "resolver" no banco — só tira da lista
-      // (some por completo até a simulação gerar outro alerta pra ela)
-      setDemoDispensados((prev) => new Set(prev).add(a.maquina_id));
+      // não existe de verdade pra "resolver" no banco — a página é quem
+      // decide tirar da lista (ela também recalcula o layout com base nisso)
+      onIgnorarDemo(a.maquina_id);
       return;
     }
     try {
@@ -182,7 +183,7 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
             escuro ? "bg-white/10 text-slate-300" : "bg-slate-200/70 text-slate-600"
           )}
         >
-          {visiveis.length}
+          {alertas.length}
         </span>
       </div>
 
@@ -192,7 +193,7 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
           escuro ? "divide-white/[0.06]" : "divide-slate-100"
         )}
       >
-        {visiveis.map((a) => {
+        {alertas.map((a) => {
           const busy = ocupado === a.id;
           const nivel = nivelDoAlerta(a);
           const ui = escuro ? NIVEL_UI_ESCURO[nivel] : NIVEL_UI[nivel];

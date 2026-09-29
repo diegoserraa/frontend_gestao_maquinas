@@ -1,4 +1,3 @@
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import {
   CircleCheckIcon,
@@ -8,8 +7,10 @@ import {
   Loader2Icon,
 } from "lucide-react"
 
+import { useToastTheme } from "@/lib/toastTheme"
+
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const theme = useToastTheme()
   const escuro = theme === "dark"
 
   return (
