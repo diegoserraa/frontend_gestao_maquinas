@@ -204,31 +204,53 @@ export default function Monitoring() {
 
       <ResumoTopo {...contagem} escuro={escuro} />
 
-      {/* FILTROS — escondidos em tela cheia: é pra olhar tudo de uma vez, não pra
-          garimpar uma máquina específica */}
-      {leituras.length > 4 && !telaCheia && (
+      {/* FILTROS — ficam disponíveis em qualquer modo, inclusive tela cheia:
+          filtrar por setor faz sentido mesmo numa demonstração/exposição */}
+      {leituras.length > 4 && (
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
             <Search
               size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              className={cn(
+                "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2",
+                escuro ? "text-slate-500" : "text-slate-400"
+              )}
             />
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar máquina..."
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className={cn(
+                "h-10 w-full rounded-xl border pl-9 pr-3 text-sm outline-none transition-colors",
+                escuro
+                  ? "border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                  : "border-slate-200 bg-white text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              )}
             />
           </div>
           <div className="w-full sm:w-52">
             <Select value={setorFiltro} onValueChange={setSetorFiltro}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger
+                className={cn(
+                  "h-10",
+                  escuro && "border-white/10 bg-white/5 text-slate-100 hover:border-white/20 [&_svg]:text-slate-400"
+                )}
+              >
                 <SelectValue placeholder="Setor" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os setores</SelectItem>
+              <SelectContent className={cn(escuro && "border-white/10 bg-slate-900 text-slate-100")}>
+                <SelectItem
+                  value="all"
+                  className={cn(escuro && "text-slate-200 focus:bg-white/10 focus:text-white data-[state=checked]:bg-blue-500/20 data-[state=checked]:text-blue-300")}
+                >
+                  Todos os setores
+                </SelectItem>
                 {opcoesSetor.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
+                  <SelectItem
+                    key={s.id}
+                    value={s.id}
+                    className={cn(escuro && "text-slate-200 focus:bg-white/10 focus:text-white data-[state=checked]:bg-blue-500/20 data-[state=checked]:text-blue-300")}
+                  >
                     {s.nome}
                   </SelectItem>
                 ))}

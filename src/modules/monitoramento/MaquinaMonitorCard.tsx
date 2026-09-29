@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Thermometer, Activity, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
@@ -38,21 +38,29 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
   const rotulo =
     semDados || !aoVivo ? "SEM SINAL" : ROTULO_NIVEL[estadoNivel].toUpperCase();
   const critico = estadoNivel === "critico" && aoVivo;
+  const atencao = estadoNivel === "atencao" && aoVivo;
 
   const ui = escuro ? NIVEL_UI_ESCURO[estadoNivel] : NIVEL_UI[estadoNivel];
 
+  // borda neutra e discreta por padrão — só quem precisa de atenção "pesa"
+  // visualmente (crítico ganha até um brilho); uma tela cheia de cards
+  // gritando cor teria o efeito contrário do que se quer numa vitrine
   const cardCor = escuro
     ? cn(
-        "bg-slate-900/60 backdrop-blur-xl hover:bg-slate-900/80",
+        "bg-slate-900/50 backdrop-blur-xl hover:bg-slate-900/70",
         critico
-          ? "border-rose-500/50 shadow-[0_0_28px_-6px_rgba(251,113,133,0.45)]"
-          : `${ui.borda} shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]`
+          ? "border-rose-500/40 shadow-[0_0_32px_-8px_rgba(251,113,133,0.35)] hover:border-rose-500/60"
+          : atencao
+          ? "border-amber-400/25 hover:border-amber-400/40"
+          : "border-white/[0.08] hover:border-white/20"
       )
     : cn(
-        "bg-white hover:bg-slate-50/80",
+        "bg-white hover:bg-slate-50/60",
         critico
-          ? "border-rose-300 shadow-[0_0_24px_-10px_rgba(225,29,72,0.35)]"
-          : `${ui.borda} shadow-sm`
+          ? "border-rose-300 shadow-[0_0_24px_-10px_rgba(225,29,72,0.3)] hover:border-rose-400"
+          : atencao
+          ? "border-amber-200 hover:border-amber-300"
+          : "border-slate-200 hover:border-slate-300"
       );
 
   return (
@@ -62,11 +70,22 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       onClick={() => onAbrir(leitura)}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onAbrir(leitura)}
       className={cn(
-        "group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border transition-all duration-300",
-        "hover:-translate-y-1",
+        "group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border transition-all duration-300",
+        "hover:-translate-y-0.5",
         cardCor
       )}
     >
+      {/* sheen bem sutil no topo — só textura, não deve chamar atenção sozinho */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 h-24",
+          escuro
+            ? "bg-gradient-to-b from-white/[0.03] to-transparent"
+            : "bg-gradient-to-b from-slate-900/[0.02] to-transparent"
+        )}
+        aria-hidden
+      />
+
       {/* pulso sutil de fundo só quando crítico — chama atenção sem gritar */}
       {critico && (
         <span
@@ -79,22 +98,25 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       )}
 
       {/* ESTADO + NOME */}
-      <div className="relative flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+      <div className="relative flex items-start justify-between gap-3 px-5 pt-5 pb-4">
         <div className="min-w-0">
-          <span className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em]",
+              ui.suave
+            )}
+          >
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
               {critico && (
                 <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-75", ui.ponto)} />
               )}
-              <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full", ui.ponto)} />
+              <span className={cn("relative inline-flex h-1.5 w-1.5 rounded-full", ui.ponto)} />
             </span>
-            <span className={cn("text-[13px] font-bold tracking-[0.15em]", ui.texto)}>
-              {rotulo}
-            </span>
+            {rotulo}
           </span>
           <h3
             className={cn(
-              "mt-1 truncate text-2xl font-bold tracking-tight",
+              "mt-2.5 truncate text-xl font-semibold tracking-tight",
               escuro ? "text-slate-50" : "text-slate-900"
             )}
           >
@@ -102,9 +124,9 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           </h3>
         </div>
         <ChevronRight
-          size={22}
+          size={18}
           className={cn(
-            "mt-1 shrink-0 transition-transform group-hover:translate-x-1",
+            "mt-1.5 shrink-0 transition-transform group-hover:translate-x-0.5",
             escuro ? "text-slate-600 group-hover:text-slate-400" : "text-slate-300 group-hover:text-slate-500"
           )}
         />
@@ -114,10 +136,11 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       <div
         className={cn(
           "relative grid grid-cols-3 border-t",
-          escuro ? "border-white/5" : "border-slate-100"
+          escuro ? "border-white/[0.06]" : "border-slate-100"
         )}
       >
         <Metrica
+          icone={Thermometer}
           rotulo="Temperatura"
           valor={formatarNumero(leitura.temperatura, 1)}
           unidade="°C"
@@ -126,6 +149,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           escuro={escuro}
         />
         <Metrica
+          icone={Activity}
           rotulo="Vibração"
           valor={formatarNumero(leitura.vibracao, 2)}
           unidade="mm/s"
@@ -134,6 +158,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           escuro={escuro}
         />
         <Metrica
+          icone={Clock}
           rotulo="Horas"
           valor={formatarNumero(leitura.horas_ligadas, 0)}
           unidade="h"
@@ -148,15 +173,16 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       <div
         className={cn(
           "relative flex items-center justify-between gap-2 border-t px-5 py-3",
-          escuro ? "border-white/5" : "border-slate-100 bg-slate-50/40"
+          escuro ? "border-white/[0.06]" : "border-slate-100 bg-slate-50/30"
         )}
       >
-        <span className={cn("text-[12px] font-medium", escuro ? "text-slate-500" : "text-slate-400")}>
+        <span className={cn("flex items-center gap-1.5 text-[11px] font-medium", escuro ? "text-slate-500" : "text-slate-400")}>
+          <span className={cn("h-1 w-1 rounded-full", aoVivo ? ui.ponto : escuro ? "bg-slate-600" : "bg-slate-300")} />
           {tempoRelativo(leitura.atualizado_em)}
         </span>
         <span
           className={cn(
-            "text-[12px] font-semibold opacity-0 transition-opacity group-hover:opacity-100",
+            "text-[11px] font-semibold opacity-0 transition-opacity group-hover:opacity-100",
             escuro ? "text-blue-400" : "text-blue-600"
           )}
         >
@@ -168,6 +194,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
 });
 
 function Metrica({
+  icone: Icone,
   rotulo,
   valor,
   unidade,
@@ -176,6 +203,7 @@ function Metrica({
   neutro = false,
   escuro = false,
 }: {
+  icone: typeof Thermometer;
   rotulo: string;
   valor: string;
   unidade: string;
@@ -191,17 +219,18 @@ function Metrica({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-col gap-1 overflow-hidden px-4 py-4",
-        escuro ? "not-first:border-l not-first:border-white/5" : "not-first:border-l not-first:border-slate-100"
+        "flex min-w-0 flex-col gap-1.5 overflow-hidden px-4 py-4",
+        escuro ? "not-first:border-l not-first:border-white/[0.06]" : "not-first:border-l not-first:border-slate-100"
       )}
     >
       <span
         className={cn(
-          "truncate text-[11px] font-semibold uppercase tracking-wide",
+          "flex items-center gap-1 truncate text-[10px] font-medium uppercase tracking-wide",
           escuro ? "text-slate-500" : "text-slate-400"
         )}
       >
-        {rotulo}
+        <Icone size={11} className="shrink-0" />
+        <span className="truncate">{rotulo}</span>
       </span>
       <div className="flex min-w-0 items-baseline gap-1">
         <span
@@ -216,7 +245,7 @@ function Metrica({
           {unidade}
         </span>
       </div>
-      <Sparkline valores={serie} cor={cor} altura={40} espessura={2.5} className="mt-1" />
+      <Sparkline valores={serie} cor={cor} altura={36} espessura={2} className="mt-0.5 opacity-90" />
     </div>
   );
 }
