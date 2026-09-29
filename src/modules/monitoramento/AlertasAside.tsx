@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { notify } from "@/lib/notify";
 import { getUser } from "@/modules/login/loginStorage";
+import { createOrdemServico } from "@/modules/ordemServico/ordemServicoService";
 import { NIVEL_UI, NIVEL_UI_ESCURO, type Nivel } from "./monitoramentoHelpers";
 import {
   getAlertas,
@@ -79,11 +80,44 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
   const { pode } = usePermissoes();
   const [ocupado, setOcupado] = useState<number | null>(null);
 
-  if (alertas.length === 0) return null;
+  // alerta simulado (id < 0) não existe no banco — resolverAlerta/
+  // abrirOSDoAlerta chamariam a API por um id que não existe. "Abrir O.S."
+  // continua de verdade (a máquina é real, só o alerta é simulado), só que
+  // criando a ordem direto em vez de converter um alerta inexistente;
+  // guarda por maquina_id porque a lista é recalculada a cada leitura nova
+  // e o alerta em si não tem identidade estável entre uma leitura e outra.
+  const [demoConvertidos, setDemoConvertidos] = useState<Record<number, number>>({});
+  const [demoDispensados, setDemoDispensados] = useState<Set<number>>(new Set());
+
+  const visiveis = alertas.filter(
+    (a) => !(a.id < 0 && demoDispensados.has(a.maquina_id))
+  );
+
+  if (visiveis.length === 0) return null;
 
   async function abrirOS(a: AlertaMonitoramento) {
     try {
       setOcupado(a.id);
+      if (a.id < 0) {
+        // mesma descrição/prioridade que o backend monta pro alerta real
+        // (MonitoramentoService.abrirOSDoAlerta), só que criando a O.S.
+        // direto pela máquina em vez de converter um alerta que não existe
+        const descricao =
+          a.chave === "sinal"
+            ? `Máquina ${a.maquina_nome} está sem comunicação (sensor/ESP32) — verificar dispositivo, rede WiFi e alimentação.`
+            : `Alerta de monitoramento — ${a.chave.toUpperCase()} ${a.valor ?? "?"} (limite ${a.limite ?? "?"}) na máquina ${a.maquina_nome}.`;
+        const os: any = await createOrdemServico({
+          maquina_id: a.maquina_id,
+          descricao,
+          status: "ABERTA",
+          tipo_manutencao: "CORRETIVA",
+          prioridade: a.nivel === "critico" ? "ALTA" : "MEDIA",
+        });
+        const osId = os?.id ?? os?.ordem?.id;
+        if (osId) setDemoConvertidos((prev) => ({ ...prev, [a.maquina_id]: osId }));
+        notify.success(osId ? `O.S. #${osId} aberta` : "O.S. aberta");
+        return;
+      }
       const r = await abrirOSDoAlerta(a.id, getUser()?.id);
       notify.success(
         r.ordem_servico_id ? `O.S. #${r.ordem_servico_id} aberta` : "O.S. aberta"
@@ -97,6 +131,12 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
   }
 
   async function resolver(a: AlertaMonitoramento) {
+    if (a.id < 0) {
+      // não existe de verdade pra "resolver" no banco — só tira da lista
+      // (some por completo até a simulação gerar outro alerta pra ela)
+      setDemoDispensados((prev) => new Set(prev).add(a.maquina_id));
+      return;
+    }
     try {
       setOcupado(a.id);
       await resolverAlerta(a.id);
@@ -141,7 +181,7 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
             escuro ? "bg-white/10 text-slate-300" : "bg-slate-200/70 text-slate-600"
           )}
         >
-          {alertas.length}
+          {visiveis.length}
         </span>
       </div>
 
@@ -151,7 +191,7 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
           escuro ? "divide-white/[0.06]" : "divide-slate-100"
         )}
       >
-        {alertas.map((a) => {
+        {visiveis.map((a) => {
           const busy = ocupado === a.id;
           const nivel = nivelDoAlerta(a);
           const ui = escuro ? NIVEL_UI_ESCURO[nivel] : NIVEL_UI[nivel];
@@ -199,60 +239,61 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
                 )}
               </p>
 
-              {/* alerta simulado (Demonstração) — id negativo, não existe no banco.
-                  Resolver/Abrir O.S. chamariam a API por um id que não existe
-                  (404), então só avisa em vez de oferecer ação que quebra */}
-              {a.id < 0 ? (
-                <p className={cn("mt-2.5 pl-7 text-[10px] italic", escuro ? "text-slate-600" : "text-slate-400")}>
-                  Simulado — ação disponível quando o dado for real
-                </p>
-              ) : (
-                <div className="mt-2.5 flex flex-wrap gap-1.5 pl-7">
-                  {a.status === "convertido" && a.ordem_servico_id ? (
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/ordens-servico/${a.ordem_servico_id}`)}
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
-                        escuro
-                          ? "border-blue-500/25 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15"
-                          : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                      )}
-                    >
-                      <ExternalLink size={12} /> Ver O.S. #{a.ordem_servico_id}
-                    </button>
-                  ) : pode("monitoramento.abrir_os") ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => abrirOS(a)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white shadow-sm disabled:opacity-60"
-                    >
-                      {busy ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <Wrench size={12} />
-                      )}
-                      Abrir O.S.
-                    </button>
-                  ) : null}
-                  {pode("monitoramento.resolver_alertas") && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => resolver(a)}
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
-                        escuro
-                          ? "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                          : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                      )}
-                    >
-                      <Check size={12} /> Resolver
-                    </button>
-                  )}
-                </div>
-              )}
+              {(() => {
+                // alerta real convertido vem do backend (a.ordem_servico_id);
+                // alerta simulado (id < 0) vira "convertido" localmente
+                // assim que Abrir O.S. cria a ordem de verdade pra máquina
+                const ordemId =
+                  a.id < 0 ? demoConvertidos[a.maquina_id] : a.ordem_servico_id;
+
+                return (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5 pl-7">
+                    {ordemId ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/ordens-servico/${ordemId}`)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+                          escuro
+                            ? "border-blue-500/25 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15"
+                            : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        )}
+                      >
+                        <ExternalLink size={12} /> Ver O.S. #{ordemId}
+                      </button>
+                    ) : pode("monitoramento.abrir_os") ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => abrirOS(a)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white shadow-sm disabled:opacity-60"
+                      >
+                        {busy ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Wrench size={12} />
+                        )}
+                        Abrir O.S.
+                      </button>
+                    ) : null}
+                    {pode("monitoramento.resolver_alertas") && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => resolver(a)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
+                          escuro
+                            ? "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                            : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                        )}
+                      >
+                        <Check size={12} /> Resolver
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
