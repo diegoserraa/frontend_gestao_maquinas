@@ -106,7 +106,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           (o gestor precisa bater o olho e já saber qual máquina é, de longe);
           sem foto, fica no layout compacto de sempre, só texto */}
       {temFoto ? (
-        <div className="relative h-40 w-full shrink-0 overflow-hidden">
+        <div className="relative h-32 w-full shrink-0 overflow-hidden">
           <img
             src={leitura.imagem_url!}
             alt=""
@@ -116,11 +116,11 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           />
           {/* scrim só na faixa debaixo — o resto da foto fica limpo, sem lavar
               o que o gestor precisa "bater o olho e reconhecer" */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
           <span
             className={cn(
-              "absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] shadow-sm",
+              "absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-[0.08em] shadow-sm",
               ui.suave
             )}
           >
@@ -133,20 +133,20 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
             {rotulo}
           </span>
 
-          <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm transition-transform group-hover:translate-x-0.5">
-            <ChevronRight size={13} />
+          <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm transition-transform group-hover:translate-x-0.5">
+            <ChevronRight size={11} />
           </span>
 
-          <h3 className="absolute inset-x-3 bottom-2 truncate text-base font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+          <h3 className="absolute inset-x-2.5 bottom-1.5 truncate text-sm font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
             {leitura.maquina_nome ?? `Máquina #${leitura.maquina_id}`}
           </h3>
         </div>
       ) : (
-        <div className="relative flex items-start gap-3 px-5 pt-5 pb-4">
+        <div className="relative flex items-start gap-2.5 px-4 pt-4 pb-3">
           <div className="min-w-0 flex-1">
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.1em]",
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-[0.08em]",
                 ui.suave
               )}
             >
@@ -160,7 +160,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
             </span>
             <h3
               className={cn(
-                "mt-2.5 truncate text-xl font-semibold tracking-tight",
+                "mt-2 truncate text-base font-semibold tracking-tight",
                 escuro ? "text-slate-50" : "text-slate-900"
               )}
             >
@@ -168,9 +168,9 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
             </h3>
           </div>
           <ChevronRight
-            size={18}
+            size={15}
             className={cn(
-              "mt-1.5 shrink-0 transition-transform group-hover:translate-x-0.5",
+              "mt-1 shrink-0 transition-transform group-hover:translate-x-0.5",
               escuro ? "text-slate-600 group-hover:text-slate-400" : "text-slate-300 group-hover:text-slate-500"
             )}
           />
@@ -186,7 +186,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       >
         <Metrica
           icone={Thermometer}
-          rotulo="Temperatura"
+          rotulo="Temp."
           valor={formatarNumero(leitura.temperatura, 1)}
           unidade="°C"
           nivel={nivelTemperatura(leitura.temperatura, leitura.limites?.temperatura)}
@@ -217,17 +217,17 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
       {/* RODAPÉ */}
       <div
         className={cn(
-          "relative flex items-center justify-between gap-2 border-t px-5 py-3",
+          "relative flex items-center justify-between gap-2 border-t px-4 py-2.5",
           escuro ? "border-white/[0.06]" : "border-slate-100 bg-slate-50/30"
         )}
       >
-        <span className={cn("flex items-center gap-1.5 text-[11px] font-medium", escuro ? "text-slate-500" : "text-slate-400")}>
+        <span className={cn("flex items-center gap-1.5 text-[10px] font-medium", escuro ? "text-slate-500" : "text-slate-400")}>
           <span className={cn("h-1 w-1 rounded-full", aoVivo ? ui.ponto : escuro ? "bg-slate-600" : "bg-slate-300")} />
           {tempoRelativo(leitura.atualizado_em)}
         </span>
         <span
           className={cn(
-            "text-[11px] font-semibold opacity-0 transition-opacity group-hover:opacity-100",
+            "text-[10px] font-semibold opacity-0 transition-opacity group-hover:opacity-100",
             escuro ? "text-blue-400" : "text-blue-600"
           )}
         >
@@ -264,33 +264,33 @@ function Metrica({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-col gap-1.5 overflow-hidden px-4 py-4",
+        "flex min-w-0 flex-col gap-1 overflow-hidden px-3 py-3",
         escuro ? "not-first:border-l not-first:border-white/[0.06]" : "not-first:border-l not-first:border-slate-100"
       )}
     >
       <span
         className={cn(
-          "flex items-center gap-1 truncate text-[10px] font-medium uppercase tracking-wide",
+          "flex items-center gap-1 truncate text-[9px] font-medium uppercase tracking-wide",
           escuro ? "text-slate-500" : "text-slate-400"
         )}
       >
-        <Icone size={11} className="shrink-0" />
+        <Icone size={10} className="shrink-0" />
         <span className="truncate">{rotulo}</span>
       </span>
       <div className="flex min-w-0 items-baseline gap-1">
         <span
           className={cn(
-            "truncate text-3xl font-bold tabular-nums tracking-tight",
+            "truncate text-2xl font-bold tabular-nums tracking-tight",
             neutro ? (escuro ? "text-slate-200" : "text-slate-700") : ui.texto
           )}
         >
           {valor}
         </span>
-        <span className={cn("shrink-0 text-xs font-medium", escuro ? "text-slate-500" : "text-slate-400")}>
+        <span className={cn("shrink-0 text-[11px] font-medium", escuro ? "text-slate-500" : "text-slate-400")}>
           {unidade}
         </span>
       </div>
-      <Sparkline valores={serie} cor={cor} altura={36} espessura={2} className="mt-0.5 opacity-90" />
+      <Sparkline valores={serie} cor={cor} altura={28} espessura={1.8} className="mt-0.5 opacity-90" />
     </div>
   );
 }

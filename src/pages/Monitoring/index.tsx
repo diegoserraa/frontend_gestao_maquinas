@@ -34,11 +34,11 @@ import type { TelemetriaAtual } from "@/modules/monitoramento/monitoramentoTypes
 
 const PESO: Record<Nivel, number> = { critico: 0, atencao: 1, "sem-dado": 2, ok: 3 };
 const CHAVE_SEM_SETOR = "__sem_setor__";
-// cards sempre grandes: em vez de forçar um número fixo de colunas por
-// breakpoint (que sobra estreito quando o painel de alertas está aberto do
-// lado, espremendo os números até sobrepor), cada card garante pelo menos
-// 300px — o navegador decide sozinho quantos cabem por linha nesse espaço
-const GRID = "grid gap-4 grid-cols-[repeat(auto-fill,minmax(360px,1fr))]";
+// em vez de forçar um número fixo de colunas por breakpoint (que sobra
+// estreito quando o painel de alertas está aberto do lado, espremendo os
+// números até sobrepor), cada card garante pelo menos 288px — o navegador
+// decide sozinho quantos cabem por linha nesse espaço
+const GRID = "grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(288px,1fr))]";
 
 const CHAVE_TEMA = "mymaq360_monitoramento_escuro";
 
