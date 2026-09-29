@@ -6,6 +6,7 @@ import {
   WifiOff,
   Wrench,
   Check,
+  X,
   Loader2,
   ExternalLink,
   Thermometer,
@@ -246,9 +247,15 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
                 const ordemId =
                   a.id < 0 ? demoConvertidos[a.maquina_id] : a.ordem_servico_id;
 
+                // pré-O.S.: quem pode agir escolhe entre abrir de verdade ou
+                // ignorar (não é "resolver" nada ainda, é descartar o alerta
+                // sem virar trabalho). Só depois que existe uma O.S. é que
+                // faz sentido falar em "Resolver" — o gestor abriu e agora só
+                // acompanha (Ver O.S.); quem resolve de fato é o técnico, na
+                // O.S. em si — o botão aqui só confirma que o alerta acabou.
                 return (
                   <div className="mt-2.5 flex flex-wrap gap-1.5 pl-7">
-                    {ordemId ? (
+                    {ordemId && (
                       <button
                         type="button"
                         onClick={() => navigate(`/ordens-servico/${ordemId}`)}
@@ -261,7 +268,8 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
                       >
                         <ExternalLink size={12} /> Ver O.S. #{ordemId}
                       </button>
-                    ) : pode("monitoramento.abrir_os") ? (
+                    )}
+                    {!ordemId && pode("monitoramento.abrir_os") && (
                       <button
                         type="button"
                         disabled={busy}
@@ -275,22 +283,37 @@ export function AlertasAside({ alertas, onMudou, escuro = false }: Props) {
                         )}
                         Abrir O.S.
                       </button>
-                    ) : null}
-                    {pode("monitoramento.resolver_alertas") && (
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => resolver(a)}
-                        className={cn(
-                          "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
-                          escuro
-                            ? "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                            : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                        )}
-                      >
-                        <Check size={12} /> Resolver
-                      </button>
                     )}
+                    {pode("monitoramento.resolver_alertas") &&
+                      (ordemId ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => resolver(a)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
+                            escuro
+                              ? "border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/10"
+                              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                          )}
+                        >
+                          <Check size={12} /> Resolver
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => resolver(a)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60",
+                            escuro
+                              ? "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                              : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                          )}
+                        >
+                          <X size={12} /> Ignorar
+                        </button>
+                      ))}
                   </div>
                 );
               })()}
