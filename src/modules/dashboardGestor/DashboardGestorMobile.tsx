@@ -493,16 +493,20 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
               </div>
             </div>
 
-            {/* LISTA */}
+            {/* LISTA — clica e vai pra máquina (não pra uma O.S.: a preventiva
+                vencida vem da data cadastrada na máquina, pode não ter O.S.
+                aberta ainda; lá o gestor já tem "Nova OS" à mão) */}
             <div className="space-y-2">
               {preventivasVisiveis.map((maquina) => {
                 const sev = severidadePreventiva(maquina.dias_atraso);
                 const styles = SEVERIDADE_STYLES[sev];
 
                 return (
-                  <div
+                  <button
                     key={maquina.maquina_id}
-                    className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm hover:shadow-md transition-all border-l-4 ${styles.accent}`}
+                    type="button"
+                    onClick={() => navigate(`/machines/${maquina.maquina_id}`)}
+                    className={`w-full text-left flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm active:shadow-md transition-all border-l-4 ${styles.accent}`}
                   >
                     <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
                       <Wrench size={15} />
@@ -514,7 +518,7 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                     <span className={`text-xs font-bold rounded-full px-2.5 py-1 shrink-0 ${styles.pill}`}>
                       {maquina.dias_atraso}d
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>

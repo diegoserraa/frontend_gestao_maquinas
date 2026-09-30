@@ -539,20 +539,27 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
               </div>
 
               {/* LISTA — cards individuais com acento lateral, em vez da
-                  barra de fundo proporcional usada no Ranking de Técnicos */}
+                  barra de fundo proporcional usada no Ranking de Técnicos.
+                  Clica e vai pra máquina (não pra uma O.S. — a preventiva
+                  vencida é calculada pela data cadastrada na máquina, pode
+                  não ter nenhuma O.S. aberta ainda; na página da máquina
+                  o gestor já tem "Nova OS" à mão) */}
               <div className="space-y-2 shrink-0">
                 {preventivasVisiveis.map((maquina) => {
                   const sev = severidadePreventiva(maquina.dias_atraso);
                   const styles = SEVERIDADE_STYLES[sev];
 
                   return (
-                    <div
+                    <button
                       key={maquina.maquina_id}
+                      type="button"
+                      onClick={() => navigate(`/machines/${maquina.maquina_id}`)}
                       className={`
-                        flex items-center gap-3 rounded-xl border border-slate-100 bg-white
+                        w-full flex items-center gap-3 rounded-xl border border-slate-100 bg-white
                         pl-3 pr-3 py-2.5 border-l-4 ${styles.accent}
                         shadow-sm hover:shadow-md hover:-translate-y-0.5
-                        transition-all duration-200
+                        transition-all duration-200 text-left
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
                       `}
                     >
                       <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
@@ -565,7 +572,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                       <span className={`text-xs font-bold rounded-full px-2.5 py-1 shrink-0 ${styles.pill}`}>
                         {maquina.dias_atraso}d
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
