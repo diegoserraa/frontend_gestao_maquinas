@@ -120,10 +120,7 @@ export function useDashboardGestor(
           dataFim
         ),
 
-        getResumoParadas(
-          dataInicio,
-          dataFim
-        ),
+        getResumoParadas(),
 
       ]);
 

@@ -26,7 +26,6 @@ import {
   TrendingDown,
   Minus,
   OctagonPause,
-  TimerOff,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -36,6 +35,7 @@ import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 import { MaquinasParadasModal } from "./MaquinasParadasModal";
 
 import {
+  KpiCard,
   KpiCardDupla,
   SectionCard,
   DashboardSkeleton,
@@ -326,26 +326,18 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         />
       </div>
 
-      {/* PARADAS — sozinho numa linha própria, com mais espaço que os outros:
-          é o número que responde de cara o diferencial do sistema
-          ("quanto tempo minha fábrica ficou parada"), merece destaque
-          maior que um KPI de rotina (v1 enxuto: só os dois números, sem
-          detalhe por máquina ainda — ver ResumoParadas) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <KpiCardDupla
-          esquerda={{
-            label: "Máquinas paradas agora",
-            value: formatCompactNumber(resumoParadas?.paradasAgora ?? 0),
-            icon: <OctagonPause size={17} />,
-            accent: "rose",
-            onClick: () => setParadasAberto(true),
-          }}
-          direita={{
-            label: "Horas paradas no período",
-            value: `${(resumoParadas?.horasParadas ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}h`,
-            icon: <TimerOff size={17} />,
-            accent: "orange",
-          }}
+      {/* PARADAS — só a contagem ao vivo; clicar mostra QUAIS máquinas e há quanto
+          tempo cada uma (ver MaquinasParadasModal). Somar horas de máquinas
+          diferentes num "X horas no período" só confundia (feedback real de uso)
+          — o tempo parado que importa é o de cada máquina, não uma soma agregada. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <KpiCard
+          label="Máquinas paradas agora"
+          value={formatCompactNumber(resumoParadas?.paradasAgora ?? 0)}
+          icon={<OctagonPause size={17} />}
+          accent="rose"
+          highlight={(resumoParadas?.paradasAgora ?? 0) > 0}
+          onClick={() => setParadasAberto(true)}
         />
       </div>
 

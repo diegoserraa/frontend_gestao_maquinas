@@ -51,12 +51,13 @@ export interface MaquinaParadaAgora {
 }
 
 /** Não confundir com MaquinaParada acima (esse é ranking por Nº de
- * chamados). Este é o resumo de tempo parado de verdade — v1 enxuto,
- * sem timeline histórica ainda, mas já traz quais máquinas estão
- * paradas agora pra o gestor não precisar adivinhar. */
+ * chamados). Este é o estado ATUAL de máquinas paradas — v1 enxuto,
+ * sem timeline histórica ainda. Sem período: "horas paradas no período"
+ * somando máquinas diferentes foi tentado e não fez sentido pro gestor
+ * (feedback real de uso), então cada máquina mostra o próprio tempo
+ * parado (ver MaquinasParadasModal), não um agregado. */
 export interface ResumoParadas {
   paradasAgora: number;
-  horasParadas: number;
   maquinas: MaquinaParadaAgora[];
 }
 

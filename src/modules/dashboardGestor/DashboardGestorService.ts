@@ -155,15 +155,10 @@ export function getCustos(
 
 // não confundir com getMaquinasParadas acima (ranking por Nº de chamados) —
 // esse é o resumo de tempo parado de verdade
-export function getResumoParadas(
-  dataInicio?: string,
-  dataFim?: string
-): Promise<ResumoParadas> {
+/** Sem período — é sempre o estado atual, não um agregado por data (ver ResumoParadas). */
+export function getResumoParadas(): Promise<ResumoParadas> {
   return fetchJson<ResumoParadas>(
-    `/dashboard/gestor/resumo-paradas${buildQuery(
-      dataInicio,
-      dataFim
-    )}`
+    `/dashboard/gestor/resumo-paradas`
   );
 }
 

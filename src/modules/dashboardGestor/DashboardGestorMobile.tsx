@@ -26,13 +26,13 @@ import {
   TrendingDown,
   Minus,
   OctagonPause,
-  TimerOff,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 import { MaquinasParadasModal } from "./MaquinasParadasModal";
 import {
+  KpiCard,
   KpiCardDupla,
   DashboardSkeleton,
   DashboardErrorState,
@@ -373,22 +373,16 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         />
       </div>
 
-      {/* PARADAS — próprio destaque, mesmo motivo do desktop (ver comentário lá) */}
-      <div className="grid grid-cols-1 gap-2">
-        <KpiCardDupla
-          esquerda={{
-            label: "Máquinas paradas agora",
-            value: formatCompactNumber(resumoParadas?.paradasAgora ?? 0),
-            icon: <OctagonPause size={16} />,
-            accent: "rose",
-            onClick: () => setParadasAberto(true),
-          }}
-          direita={{
-            label: "Horas paradas no período",
-            value: `${(resumoParadas?.horasParadas ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}h`,
-            icon: <TimerOff size={16} />,
-            accent: "orange",
-          }}
+      {/* PARADAS — só a contagem ao vivo; clicar mostra quais máquinas (ver
+          comentário no desktop sobre a soma de horas ter sido removida) */}
+      <div className="grid grid-cols-2 gap-2">
+        <KpiCard
+          label="Máquinas paradas agora"
+          value={formatCompactNumber(resumoParadas?.paradasAgora ?? 0)}
+          icon={<OctagonPause size={16} />}
+          accent="rose"
+          highlight={(resumoParadas?.paradasAgora ?? 0) > 0}
+          onClick={() => setParadasAberto(true)}
         />
       </div>
 
