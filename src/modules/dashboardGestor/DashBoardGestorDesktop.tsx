@@ -26,13 +26,14 @@ import {
   TrendingDown,
   Minus,
   OctagonPause,
+  Eye,
 } from "lucide-react";
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
-import { MaquinasParadasModal } from "./MaquinasParadasModal";
 
 import {
   KpiCard,
@@ -48,6 +49,7 @@ import {
   formatCompactNumber,
   formatDiaCurto,
   formatMesCurto,
+  formatTempoParado,
   calcularTendenciaCustos,
   calcularProporcao,
 } from "./DashboardGestorParts";
@@ -131,6 +133,8 @@ type Props = {
 };
 
 export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
+  const navigate = useNavigate();
+
   const {
     loading,
     erro,
@@ -147,7 +151,6 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
 
   const [cardAberto, setCardAberto] = useState<{ titulo: string; filtro: FiltroDoCard } | null>(null);
-  const [paradasAberto, setParadasAberto] = useState(false);
 
   if (erro) return <DashboardErrorState onRetry={refetch} />;
   if (loading || !kpis) return <DashboardSkeleton />;
@@ -326,10 +329,10 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         />
       </div>
 
-      {/* PARADAS — só a contagem ao vivo; clicar mostra QUAIS máquinas e há quanto
-          tempo cada uma (ver MaquinasParadasModal). Somar horas de máquinas
-          diferentes num "X horas no período" só confundia (feedback real de uso)
-          — o tempo parado que importa é o de cada máquina, não uma soma agregada. */}
+      {/* PARADAS — só a contagem ao vivo, sem "Ver ordens" (não é botão): o
+          detalhe (quais máquinas, motivo, há quanto tempo) já fica sempre
+          visível no card "Máquinas Paradas" mais abaixo, então um clique
+          aqui só duplicaria a mesma informação numa segunda UI. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard
           label="Máquinas paradas agora"
@@ -337,16 +340,15 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
           icon={<OctagonPause size={17} />}
           accent="rose"
           highlight={(resumoParadas?.paradasAgora ?? 0) > 0}
-          onClick={() => setParadasAberto(true)}
         />
       </div>
 
-      {/* EVOLUÇÃO + TEMPO MÉDIO — 50/50 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {/* EVOLUÇÃO + TEMPO MÉDIO (mesma largura entre si) + RANKING (mais estreito) */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
         <SectionCard
           title="Evolução de Ordens de Serviço"
           subtitle="Total de OS abertas por dia, no período"
-          className="border-t-4 border-t-blue-400 min-w-0"
+          className="border-t-4 border-t-blue-400 min-w-0 lg:col-span-2"
         >
           {evolucaoData.length === 0 ? (
             <ChartEmptyState />
@@ -408,7 +410,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         <SectionCard
           title="Tempo Médio de Resolução"
           subtitle={`Média geral: ${tempoMedioResolucao?.resumo?.formatado ?? "0min"}`}
-          className="border-t-4 border-t-violet-400 min-w-0"
+          className="border-t-4 border-t-violet-400 min-w-0 lg:col-span-2"
         >
           {tempoMedioData.length === 0 ? (
             <ChartEmptyState />
@@ -470,9 +472,40 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
             </div>
           )}
         </SectionCard>
+
+        <SectionCard
+          title="Ranking de Técnicos"
+          subtitle="OS finalizadas no período"
+          className="border-t-4 border-t-emerald-400 lg:col-span-1"
+        >
+          {rankingTecnicos.length === 0 ? (
+            <ChartEmptyState />
+          ) : (
+            <div className="space-y-1.5">
+              {rankingTecnicos.slice(0, 6).map((tec, i) => {
+                const pct = (toNumber(tec.total) / maxTecnicoTotal) * 100;
+                return (
+                  <div key={tec.id} className="relative rounded-lg overflow-hidden group">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-emerald-50 transition-all duration-300 group-hover:bg-emerald-100"
+                      style={{ width: `${pct}%` }}
+                    />
+                    <div className="relative flex items-center gap-3 py-2 px-2">
+                      <span className="w-6 text-center text-sm shrink-0">
+                        {i < 3 ? MEDALHA[i] : <span className="text-slate-400 font-medium">{i + 1}º</span>}
+                      </span>
+                      <span className="flex-1 text-sm text-slate-700 truncate font-medium">{tec.nome}</span>
+                      <span className="text-sm font-bold text-slate-800 shrink-0">{formatCompactNumber(tec.total)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SectionCard>
       </div>
 
-      {/* PREVENTIVAS VENCIDAS + RANKING + MÁQUINAS PARADAS */}
+      {/* PREVENTIVAS VENCIDAS + MÁQUINAS PARADAS + MÁQUINAS COM MAIS CHAMADOS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <SectionCard
           title="Preventivas Vencidas"
@@ -574,32 +607,56 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         </SectionCard>
 
         <SectionCard
-          title="Ranking de Técnicos"
-          subtitle="OS finalizadas no período"
-          className="border-t-4 border-t-emerald-400"
+          title="Máquinas Paradas"
+          subtitle={
+            resumoParadas && resumoParadas.paradasAgora > 0
+              ? `${resumoParadas.paradasAgora} máquina${resumoParadas.paradasAgora === 1 ? "" : "s"} parada${resumoParadas.paradasAgora === 1 ? "" : "s"} agora`
+              : "Nenhuma máquina parada agora"
+          }
+          className="border-t-4 border-t-rose-400"
         >
-          {rankingTecnicos.length === 0 ? (
-            <ChartEmptyState />
+          {!resumoParadas || resumoParadas.maquinas.length === 0 ? (
+            <ChartEmptyState label="Tudo funcionando — nenhuma máquina parada 🎉" />
           ) : (
-            <div className="space-y-1.5">
-              {rankingTecnicos.slice(0, 6).map((tec, i) => {
-                const pct = (toNumber(tec.total) / maxTecnicoTotal) * 100;
-                return (
-                  <div key={tec.id} className="relative rounded-lg overflow-hidden group">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-emerald-50 transition-all duration-300 group-hover:bg-emerald-100"
-                      style={{ width: `${pct}%` }}
-                    />
-                    <div className="relative flex items-center gap-3 py-2 px-2">
-                      <span className="w-6 text-center text-sm shrink-0">
-                        {i < 3 ? MEDALHA[i] : <span className="text-slate-400 font-medium">{i + 1}º</span>}
-                      </span>
-                      <span className="flex-1 text-sm text-slate-700 truncate font-medium">{tec.nome}</span>
-                      <span className="text-sm font-bold text-slate-800 shrink-0">{formatCompactNumber(tec.total)}</span>
-                    </div>
+            <div className="space-y-2">
+              {resumoParadas.maquinas.map((m) => (
+                <div
+                  key={m.osId}
+                  className="
+                    flex items-center gap-3 rounded-xl border border-slate-100 bg-white
+                    pl-3 pr-3 py-2.5 border-l-4 border-l-rose-400
+                    shadow-sm hover:shadow-md hover:-translate-y-0.5
+                    transition-all duration-200
+                  "
+                >
+                  <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-600">
+                    <OctagonPause size={15} />
                   </div>
-                );
-              })}
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{m.maquinaNome}</p>
+                    <p className="text-[11px] text-rose-500 font-medium truncate">
+                      {formatTempoParado(m.dataAbertura)}
+                      {m.motivoParada ? ` · ${m.motivoParada}` : ""}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/ordens-servico/${m.osId}`)}
+                    className="
+                      inline-flex shrink-0 items-center gap-1
+                      rounded-lg px-2.5 py-1.5
+                      text-[11px] font-semibold text-rose-600
+                      hover:bg-rose-50
+                      transition-colors
+                    "
+                  >
+                    <Eye size={13} />
+                    OS #{m.osId}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </SectionCard>
@@ -765,12 +822,6 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         onClose={() => setCardAberto(null)}
         titulo={cardAberto?.titulo ?? ""}
         filtro={cardAberto?.filtro ?? null}
-      />
-
-      <MaquinasParadasModal
-        aberto={paradasAberto}
-        onClose={() => setParadasAberto(false)}
-        maquinas={resumoParadas?.maquinas ?? []}
       />
     </div>
   );

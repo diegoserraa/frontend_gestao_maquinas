@@ -26,11 +26,11 @@ import {
   TrendingDown,
   Minus,
   OctagonPause,
+  Eye,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
-import { MaquinasParadasModal } from "./MaquinasParadasModal";
 import {
   KpiCard,
   KpiCardDupla,
@@ -44,6 +44,7 @@ import {
   formatCompactNumber,
   formatDiaCurto,
   formatMesCurto,
+  formatTempoParado,
   calcularTendenciaCustos,
   calcularProporcao,
 } from "../dashboardGestor/DashboardGestorParts";
@@ -160,7 +161,6 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
   const [scannerAberto, setScannerAberto] = useState(false);
   const [cardAberto, setCardAberto] = useState<{ titulo: string; filtro: FiltroDoCard } | null>(null);
-  const [paradasAberto, setParadasAberto] = useState(false);
   const navigate = useNavigate();
 
   if (erro) return <DashboardErrorState onRetry={refetch} />;
@@ -373,8 +373,9 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         />
       </div>
 
-      {/* PARADAS — só a contagem ao vivo; clicar mostra quais máquinas (ver
-          comentário no desktop sobre a soma de horas ter sido removida) */}
+      {/* PARADAS — só a contagem ao vivo, sem clique: o detalhe já fica sempre
+          visível na seção "Máquinas Paradas" mais abaixo (ver comentário no
+          desktop sobre a soma de horas ter sido removida) */}
       <div className="grid grid-cols-2 gap-2">
         <KpiCard
           label="Máquinas paradas agora"
@@ -382,7 +383,6 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
           icon={<OctagonPause size={16} />}
           accent="rose"
           highlight={(resumoParadas?.paradasAgora ?? 0) > 0}
-          onClick={() => setParadasAberto(true)}
         />
       </div>
 
@@ -443,6 +443,25 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* RANKING TÉCNICOS */}
+      <CollapsibleSection title="Ranking de Técnicos" subtitle="OS finalizadas no período" borderClass="border-t-emerald-400">
+        {rankingTecnicos.length === 0 ? (
+          <ChartEmptyState />
+        ) : (
+          <div className="space-y-1">
+            {rankingTecnicos.slice(0, 6).map((tec, i) => (
+              <div key={tec.id} className="flex items-center gap-3 py-2 px-1 rounded-lg active:bg-slate-50 transition">
+                <span className="w-6 text-center text-sm shrink-0">
+                  {i < 3 ? MEDALHA[i] : <span className="text-slate-400 font-medium">{i + 1}º</span>}
+                </span>
+                <span className="flex-1 text-sm text-slate-700 truncate">{tec.nome}</span>
+                <span className="text-sm font-semibold text-slate-800 shrink-0">{formatCompactNumber(tec.total)}</span>
+              </div>
+            ))}
           </div>
         )}
       </CollapsibleSection>
@@ -523,19 +542,45 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         )}
       </CollapsibleSection>
 
-      {/* RANKING TÉCNICOS */}
-      <CollapsibleSection title="Ranking de Técnicos" subtitle="OS finalizadas no período" borderClass="border-t-emerald-400">
-        {rankingTecnicos.length === 0 ? (
-          <ChartEmptyState />
+      {/* MÁQUINAS PARADAS */}
+      <CollapsibleSection
+        title="Máquinas Paradas"
+        subtitle={
+          resumoParadas && resumoParadas.paradasAgora > 0
+            ? `${resumoParadas.paradasAgora} máquina${resumoParadas.paradasAgora === 1 ? "" : "s"} parada${resumoParadas.paradasAgora === 1 ? "" : "s"} agora`
+            : "Nenhuma máquina parada agora"
+        }
+        borderClass="border-t-rose-400"
+      >
+        {!resumoParadas || resumoParadas.maquinas.length === 0 ? (
+          <ChartEmptyState label="Tudo funcionando — nenhuma máquina parada 🎉" />
         ) : (
-          <div className="space-y-1">
-            {rankingTecnicos.slice(0, 6).map((tec, i) => (
-              <div key={tec.id} className="flex items-center gap-3 py-2 px-1 rounded-lg active:bg-slate-50 transition">
-                <span className="w-6 text-center text-sm shrink-0">
-                  {i < 3 ? MEDALHA[i] : <span className="text-slate-400 font-medium">{i + 1}º</span>}
-                </span>
-                <span className="flex-1 text-sm text-slate-700 truncate">{tec.nome}</span>
-                <span className="text-sm font-semibold text-slate-800 shrink-0">{formatCompactNumber(tec.total)}</span>
+          <div className="space-y-2">
+            {resumoParadas.maquinas.map((m) => (
+              <div
+                key={m.osId}
+                className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm hover:shadow-md transition-all border-l-4 border-l-rose-400"
+              >
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-600">
+                  <OctagonPause size={15} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{m.maquinaNome}</p>
+                  <p className="text-[11px] text-rose-500 font-medium truncate">
+                    {formatTempoParado(m.dataAbertura)}
+                    {m.motivoParada ? ` · ${m.motivoParada}` : ""}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/ordens-servico/${m.osId}`)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 active:bg-rose-50 transition-colors"
+                >
+                  <Eye size={13} />
+                  OS #{m.osId}
+                </button>
               </div>
             ))}
           </div>
@@ -650,12 +695,6 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         onClose={() => setCardAberto(null)}
         titulo={cardAberto?.titulo ?? ""}
         filtro={cardAberto?.filtro ?? null}
-      />
-
-      <MaquinasParadasModal
-        aberto={paradasAberto}
-        onClose={() => setParadasAberto(false)}
-        maquinas={resumoParadas?.maquinas ?? []}
       />
     </div>
   );

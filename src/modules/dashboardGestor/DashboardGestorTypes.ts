@@ -55,7 +55,7 @@ export interface MaquinaParadaAgora {
  * sem timeline histórica ainda. Sem período: "horas paradas no período"
  * somando máquinas diferentes foi tentado e não fez sentido pro gestor
  * (feedback real de uso), então cada máquina mostra o próprio tempo
- * parado (ver MaquinasParadasModal), não um agregado. */
+ * parado (ver o card "Máquinas Paradas" no Dashboard), não um agregado. */
 export interface ResumoParadas {
   paradasAgora: number;
   maquinas: MaquinaParadaAgora[];

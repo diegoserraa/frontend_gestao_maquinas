@@ -63,6 +63,21 @@ export function formatMesCurto(mes: string): string {
   return `${label.replace(".", "")}/${ano.slice(2)}`;
 }
 
+// "2026-09-29T23:36:44.089Z" -> "há 15h 8min" — só pra dar noção de urgência,
+// sem cronômetro rodando (v1 enxuto)
+export function formatTempoParado(dataAbertura: string): string {
+  const inicio = new Date(dataAbertura).getTime();
+  if (Number.isNaN(inicio)) return "";
+
+  const minutosTotais = Math.max(0, Math.floor((Date.now() - inicio) / 60000));
+  const horas = Math.floor(minutosTotais / 60);
+  const minutos = minutosTotais % 60;
+
+  if (horas === 0) return `há ${minutos} min`;
+  if (minutos === 0) return `há ${horas}h`;
+  return `há ${horas}h ${minutos}min`;
+}
+
 // intervalo padrão: últimos 30 dias
 export function getDefaultPeriodo() {
   const fim = new Date();
