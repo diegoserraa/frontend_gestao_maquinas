@@ -36,7 +36,6 @@ import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 
 import {
-  KpiCard,
   KpiCardDupla,
   SectionCard,
   DashboardSkeleton,
@@ -326,20 +325,6 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
             icon: <Wrench size={17} />,
             accent: "rose",
           }}
-        />
-      </div>
-
-      {/* PARADAS — só a contagem ao vivo, sem "Ver ordens" (não é botão): o
-          detalhe (quais máquinas, motivo, há quanto tempo) já fica sempre
-          visível no card "Máquinas Paradas" mais abaixo, então um clique
-          aqui só duplicaria a mesma informação numa segunda UI. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard
-          label="Máquinas paradas agora"
-          value={formatCompactNumber(resumoParadas?.paradasAgora ?? 0)}
-          icon={<OctagonPause size={17} />}
-          accent="rose"
-          highlight={(resumoParadas?.paradasAgora ?? 0) > 0}
         />
       </div>
 

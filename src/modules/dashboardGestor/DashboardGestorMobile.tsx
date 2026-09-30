@@ -32,7 +32,6 @@ import {
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 import {
-  KpiCard,
   KpiCardDupla,
   DashboardSkeleton,
   DashboardErrorState,
@@ -373,18 +372,6 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         />
       </div>
 
-      {/* PARADAS — só a contagem ao vivo, sem clique: o detalhe já fica sempre
-          visível na seção "Máquinas Paradas" mais abaixo (ver comentário no
-          desktop sobre a soma de horas ter sido removida) */}
-      <div className="grid grid-cols-2 gap-2">
-        <KpiCard
-          label="Máquinas paradas agora"
-          value={formatCompactNumber(resumoParadas?.paradasAgora ?? 0)}
-          icon={<OctagonPause size={16} />}
-          accent="rose"
-          highlight={(resumoParadas?.paradasAgora ?? 0) > 0}
-        />
-      </div>
 
       {/* EVOLUÇÃO */}
       <CollapsibleSection title="Evolução de OS" subtitle="Por dia, no período" borderClass="border-t-blue-400">
