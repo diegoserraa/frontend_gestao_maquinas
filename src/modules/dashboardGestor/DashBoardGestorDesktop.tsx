@@ -33,6 +33,7 @@ import { useState } from "react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
 import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
+import { MaquinasParadasModal } from "./MaquinasParadasModal";
 
 import {
   KpiCardDupla,
@@ -146,6 +147,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
 
   const [cardAberto, setCardAberto] = useState<{ titulo: string; filtro: FiltroDoCard } | null>(null);
+  const [paradasAberto, setParadasAberto] = useState(false);
 
   if (erro) return <DashboardErrorState onRetry={refetch} />;
   if (loading || !kpis) return <DashboardSkeleton />;
@@ -336,6 +338,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
             value: formatCompactNumber(resumoParadas?.paradasAgora ?? 0),
             icon: <OctagonPause size={17} />,
             accent: "rose",
+            onClick: () => setParadasAberto(true),
           }}
           direita={{
             label: "Horas paradas no período",
@@ -770,6 +773,12 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         onClose={() => setCardAberto(null)}
         titulo={cardAberto?.titulo ?? ""}
         filtro={cardAberto?.filtro ?? null}
+      />
+
+      <MaquinasParadasModal
+        aberto={paradasAberto}
+        onClose={() => setParadasAberto(false)}
+        maquinas={resumoParadas?.maquinas ?? []}
       />
     </div>
   );

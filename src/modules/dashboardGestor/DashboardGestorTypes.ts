@@ -42,12 +42,22 @@ export interface MaquinaParada {
   total: string;
 }
 
+export interface MaquinaParadaAgora {
+  osId: number;
+  maquinaId: number;
+  maquinaNome: string;
+  motivoParada: string | null;
+  dataAbertura: string;
+}
+
 /** Não confundir com MaquinaParada acima (esse é ranking por Nº de
  * chamados). Este é o resumo de tempo parado de verdade — v1 enxuto,
- * sem detalhe por máquina ainda. */
+ * sem timeline histórica ainda, mas já traz quais máquinas estão
+ * paradas agora pra o gestor não precisar adivinhar. */
 export interface ResumoParadas {
   paradasAgora: number;
   horasParadas: number;
+  maquinas: MaquinaParadaAgora[];
 }
 
 export interface PreventivaVencida {
