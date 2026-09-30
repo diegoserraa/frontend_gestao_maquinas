@@ -493,20 +493,18 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
               </div>
             </div>
 
-            {/* LISTA — clica e vai pra máquina (não pra uma O.S.: a preventiva
-                vencida vem da data cadastrada na máquina, pode não ter O.S.
-                aberta ainda; lá o gestor já tem "Nova OS" à mão) */}
+            {/* LISTA — botão à direita: se já tem O.S. de preventiva aberta,
+                vai direto nela; senão cai no fallback (página da máquina,
+                com "Nova OS" à mão) */}
             <div className="space-y-2">
               {preventivasVisiveis.map((maquina) => {
                 const sev = severidadePreventiva(maquina.dias_atraso);
                 const styles = SEVERIDADE_STYLES[sev];
 
                 return (
-                  <button
+                  <div
                     key={maquina.maquina_id}
-                    type="button"
-                    onClick={() => navigate(`/machines/${maquina.maquina_id}`)}
-                    className={`w-full text-left flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm active:shadow-md transition-all border-l-4 ${styles.accent}`}
+                    className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm active:shadow-md transition-all border-l-4 ${styles.accent}`}
                   >
                     <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
                       <Wrench size={15} />
@@ -515,10 +513,28 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                       <p className="text-sm font-semibold text-slate-800 truncate">{maquina.nome}</p>
                       <p className="text-[11px] text-slate-400">Manutenção preventiva vencida</p>
                     </div>
-                    <span className={`text-xs font-bold rounded-full px-2.5 py-1 shrink-0 ${styles.pill}`}>
-                      {maquina.dias_atraso}d
-                    </span>
-                  </button>
+
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`text-xs font-bold rounded-full px-2.5 py-1 ${styles.pill}`}>
+                        {maquina.dias_atraso}d
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            maquina.os_id
+                              ? `/ordens-servico/${maquina.os_id}`
+                              : `/machines/${maquina.maquina_id}`
+                          )
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 active:bg-slate-50"
+                      >
+                        <Eye size={12} />
+                        {maquina.os_id ? `OS #${maquina.os_id}` : "Ver máquina"}
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>

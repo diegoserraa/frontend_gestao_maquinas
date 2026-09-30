@@ -540,26 +540,22 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
 
               {/* LISTA — cards individuais com acento lateral, em vez da
                   barra de fundo proporcional usada no Ranking de Técnicos.
-                  Clica e vai pra máquina (não pra uma O.S. — a preventiva
-                  vencida é calculada pela data cadastrada na máquina, pode
-                  não ter nenhuma O.S. aberta ainda; na página da máquina
-                  o gestor já tem "Nova OS" à mão) */}
+                  Botão à direita: se já tem O.S. de preventiva aberta, vai
+                  direto nela (mesmo padrão do card "Máquinas Paradas`); senão
+                  cai no fallback — a página da máquina, com "Nova OS" à mão. */}
               <div className="space-y-2 shrink-0">
                 {preventivasVisiveis.map((maquina) => {
                   const sev = severidadePreventiva(maquina.dias_atraso);
                   const styles = SEVERIDADE_STYLES[sev];
 
                   return (
-                    <button
+                    <div
                       key={maquina.maquina_id}
-                      type="button"
-                      onClick={() => navigate(`/machines/${maquina.maquina_id}`)}
                       className={`
-                        w-full flex items-center gap-3 rounded-xl border border-slate-100 bg-white
+                        flex items-center gap-3 rounded-xl border border-slate-100 bg-white
                         pl-3 pr-3 py-2.5 border-l-4 ${styles.accent}
                         shadow-sm hover:shadow-md hover:-translate-y-0.5
-                        transition-all duration-200 text-left
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+                        transition-all duration-200
                       `}
                     >
                       <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
@@ -569,10 +565,28 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                         <p className="text-sm font-semibold text-slate-800 truncate">{maquina.nome}</p>
                         <p className="text-[11px] text-slate-400">Manutenção preventiva vencida</p>
                       </div>
-                      <span className={`text-xs font-bold rounded-full px-2.5 py-1 shrink-0 ${styles.pill}`}>
-                        {maquina.dias_atraso}d
-                      </span>
-                    </button>
+
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-xs font-bold rounded-full px-2.5 py-1 ${styles.pill}`}>
+                          {maquina.dias_atraso}d
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              maquina.os_id
+                                ? `/ordens-servico/${maquina.os_id}`
+                                : `/machines/${maquina.maquina_id}`
+                            )
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors"
+                        >
+                          <Eye size={12} />
+                          {maquina.os_id ? `OS #${maquina.os_id}` : "Ver máquina"}
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>

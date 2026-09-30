@@ -66,6 +66,10 @@ export interface PreventivaVencida {
   nome: string;
   proxima_manutencao: string;
   dias_atraso: number;
+  /** id de uma O.S. de preventiva já aberta pra essa máquina, se existir —
+   * "atrasada" é passou da data e não foi FINALIZADA, então continua na
+   * lista mesmo com O.S. em andamento; sem isso, cai no fallback (ver máquina) */
+  os_id: number | null;
 }
 
 export interface PreventivasVencidas {
