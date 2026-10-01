@@ -117,15 +117,10 @@ export function getMaquinasParadas(
   );
 }
 
-export function getPreventivasVencidas(
-  dataInicio?: string,
-  dataFim?: string
-): Promise<PreventivasVencidas> {
+/** Sem período — é o backlog atual (quem ainda não teve movimento), não um agregado por data. */
+export function getPreventivasVencidas(): Promise<PreventivasVencidas> {
   return fetchJson<PreventivasVencidas>(
-    `/dashboard/gestor/preventivas-vencidas${buildQuery(
-      dataInicio,
-      dataFim
-    )}`
+    `/dashboard/gestor/preventivas-vencidas`
   );
 }
 

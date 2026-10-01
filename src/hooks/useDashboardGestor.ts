@@ -105,10 +105,7 @@ export function useDashboardGestor(
           dataFim
         ),
 
-        getPreventivasVencidas(
-          dataInicio,
-          dataFim
-        ),
+        getPreventivasVencidas(),
 
         getRankingTecnicos(
           dataInicio,

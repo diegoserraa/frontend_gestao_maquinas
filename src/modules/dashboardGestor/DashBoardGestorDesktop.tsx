@@ -540,9 +540,8 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
 
               {/* LISTA — cards individuais com acento lateral, em vez da
                   barra de fundo proporcional usada no Ranking de Técnicos.
-                  Botão à direita: se já tem O.S. de preventiva aberta, vai
-                  direto nela (mesmo padrão do card "Máquinas Paradas`); senão
-                  cai no fallback — a página da máquina, com "Nova OS" à mão. */}
+                  Botão à direita sempre vai pra O.S. (a lista já parte das
+                  O.S. de preventiva abertas — ver obterPreventivasVencidas). */}
               <div className="space-y-2 shrink-0">
                 {preventivasVisiveis.map((maquina) => {
                   const sev = severidadePreventiva(maquina.dias_atraso);
@@ -573,17 +572,11 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            navigate(
-                              maquina.os_id
-                                ? `/ordens-servico/${maquina.os_id}`
-                                : `/machines/${maquina.maquina_id}`
-                            )
-                          }
+                          onClick={() => navigate(`/ordens-servico/${maquina.os_id}`)}
                           className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors"
                         >
                           <Eye size={12} />
-                          {maquina.os_id ? `OS #${maquina.os_id}` : "Ver máquina"}
+                          OS #{maquina.os_id}
                         </button>
                       </div>
                     </div>

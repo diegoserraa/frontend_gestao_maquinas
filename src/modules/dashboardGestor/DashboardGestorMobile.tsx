@@ -493,9 +493,8 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
               </div>
             </div>
 
-            {/* LISTA — botão à direita: se já tem O.S. de preventiva aberta,
-                vai direto nela; senão cai no fallback (página da máquina,
-                com "Nova OS" à mão) */}
+            {/* LISTA — botão à direita sempre vai pra O.S. (a lista já parte
+                das O.S. de preventiva abertas — ver obterPreventivasVencidas) */}
             <div className="space-y-2">
               {preventivasVisiveis.map((maquina) => {
                 const sev = severidadePreventiva(maquina.dias_atraso);
@@ -521,17 +520,11 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
 
                       <button
                         type="button"
-                        onClick={() =>
-                          navigate(
-                            maquina.os_id
-                              ? `/ordens-servico/${maquina.os_id}`
-                              : `/machines/${maquina.maquina_id}`
-                          )
-                        }
+                        onClick={() => navigate(`/ordens-servico/${maquina.os_id}`)}
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 active:bg-slate-50"
                       >
                         <Eye size={12} />
-                        {maquina.os_id ? `OS #${maquina.os_id}` : "Ver máquina"}
+                        OS #{maquina.os_id}
                       </button>
                     </div>
                   </div>
