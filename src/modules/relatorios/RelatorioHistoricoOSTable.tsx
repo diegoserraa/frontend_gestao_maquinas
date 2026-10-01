@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Wrench, CalendarDays, User, PauseCircle } from "lucide-react";
+import { Wrench, CalendarDays, User, PauseCircle, OctagonPause } from "lucide-react";
 
 import {
   Table,
@@ -19,6 +19,10 @@ import { formatarSegundos } from "../ordemServico/pausaOSLogica";
 
 // segundos pausados da O.S. (a API pode mandar como texto); 0 quando nunca foi pausada
 const pausadoDe = (item: OrdemServicoRelatorioItem): number => Number(item.tempo_pausado_segundos ?? 0) || 0;
+
+// segundos parado (só quando maquina_parada=true); 0/null = não se aplica, não "zero tempo parado"
+const paradoDe = (item: OrdemServicoRelatorioItem): number =>
+  item.maquina_parada ? Number(item.tempo_parado_segundos ?? 0) || 0 : 0;
 
 const STATUS_STYLES: Record<string, string> = {
   aberta: "bg-blue-50 text-blue-700 border-blue-100",
@@ -183,6 +187,16 @@ function OrdemServicoCardRelatorio({
           </Badge>
 
           <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            {item.maquina_parada && (
+              <span
+                className="inline-flex items-center gap-1 text-rose-600"
+                title={item.motivo_parada ?? "Máquina parada"}
+              >
+                <OctagonPause size={12} strokeWidth={1.8} />
+                {formatarSegundos(paradoDe(item))}
+              </span>
+            )}
+
             {pausadoDe(item) > 0 && (
               <span className="inline-flex items-center gap-1 text-orange-600" title="Tempo em que a O.S. ficou pausada">
                 <PauseCircle size={12} strokeWidth={1.8} />
@@ -293,6 +307,10 @@ export function RelatorioHistoricoOSTable({
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                   Pausas
                 </TableHead>
+
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Parada
+                </TableHead>
               </TableRow>
             </TableHeader>
 
@@ -300,7 +318,7 @@ export function RelatorioHistoricoOSTable({
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={10}
                     className="h-24 text-center text-sm text-slate-500"
                   >
                     Nenhuma ordem de serviço encontrada.
@@ -365,6 +383,20 @@ export function RelatorioHistoricoOSTable({
                           <span className="inline-flex items-center gap-1 text-orange-600">
                             <PauseCircle size={12} strokeWidth={1.8} />
                             {formatarSegundos(pausadoDe(item))}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-xs whitespace-nowrap max-w-40">
+                        {item.maquina_parada ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-rose-600 truncate"
+                            title={item.motivo_parada ?? undefined}
+                          >
+                            <OctagonPause size={12} strokeWidth={1.8} className="shrink-0" />
+                            {formatarSegundos(paradoDe(item))}
                           </span>
                         ) : (
                           <span className="text-slate-300">-</span>

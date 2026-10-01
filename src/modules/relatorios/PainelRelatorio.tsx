@@ -44,6 +44,12 @@ type PainelRelatorioProps<T> = {
   renderTabela: (dados: T[]) => ReactNode;
 
   nomeArquivoPadrao: string;
+
+  /** só o Histórico de O.S. usa — Indicadores por Máquina não tem esse filtro */
+  mostrarFiltroParada?: boolean;
+
+  /** conteúdo extra ao lado de "X registro(s)" (ex.: total de horas paradas) */
+  resumoExtra?: ReactNode;
 };
 
 export function PainelRelatorio<T>({
@@ -60,6 +66,8 @@ export function PainelRelatorio<T>({
   onExportar,
   renderTabela,
   nomeArquivoPadrao,
+  mostrarFiltroParada = false,
+  resumoExtra,
 }: PainelRelatorioProps<T>) {
   return (
     <div className="space-y-4">
@@ -78,6 +86,7 @@ export function PainelRelatorio<T>({
         loading={loading}
         exportando={exportando}
         nomeArquivoPadrao={nomeArquivoPadrao}
+        mostrarFiltroParada={mostrarFiltroParada}
       />
 
       {/* =====================================================
@@ -100,9 +109,12 @@ export function PainelRelatorio<T>({
             !loading &&
             !erro &&
             dados.length > 0 && (
-              <span className="text-xs text-slate-400">
-                {dados.length} registro(s)
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-400">
+                  {dados.length} registro(s)
+                </span>
+                {resumoExtra}
+              </div>
             )}
 
         </div>

@@ -31,6 +31,10 @@ function montarQueryString(filtros: FiltrosRelatorio): string {
     params.set("maquinaId", String(filtros.maquinaId));
   }
 
+  if (filtros.apenasParada) {
+    params.set("apenasParada", "true");
+  }
+
   const query = params.toString();
 
   return query ? `?${query}` : "";
