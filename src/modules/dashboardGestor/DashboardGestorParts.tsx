@@ -362,11 +362,15 @@ export function KpiCardDupla({ esquerda, direita }: { esquerda: KpiMetade; direi
 export function SectionCard({
   title,
   subtitle,
+  headerRight,
   children,
   className = "",
 }: {
   title: string;
   subtitle?: string;
+  /** conteúdo opcional alinhado à direita do título (ex.: resumo/chips) — fica
+   * na mesma linha em telas largas, quebra pra baixo em telas estreitas */
+  headerRight?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
@@ -383,16 +387,20 @@ export function SectionCard({
         ${className}
       `}
     >
-      <div className="mb-3 sm:mb-4">
-        <h3 className="font-semibold text-sm sm:text-base text-slate-800">
-          {title}
-        </h3>
+      <div className="mb-3 sm:mb-4 flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 className="font-semibold text-sm sm:text-base text-slate-800">
+            {title}
+          </h3>
 
-        {subtitle && (
-          <p className="text-xs text-slate-400 mt-0.5">
-            {subtitle}
-          </p>
-        )}
+          {subtitle && (
+            <p className="text-xs text-slate-400 mt-0.5">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        {headerRight}
       </div>
 
       {children}

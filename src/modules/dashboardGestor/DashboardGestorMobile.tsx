@@ -98,12 +98,15 @@ function chartScrollWidth(count: number, perItem: number, min: number) {
 function CollapsibleSection({
   title,
   subtitle,
+  headerRight,
   borderClass,
   defaultOpen = true,
   children,
 }: {
   title: string;
   subtitle?: string;
+  /** conteúdo opcional abaixo do título, antes do chevron (ex.: resumo/chips) */
+  headerRight?: ReactNode;
   borderClass: string;
   defaultOpen?: boolean;
   children: ReactNode;
@@ -115,15 +118,16 @@ function CollapsibleSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 text-left"
+        className="w-full flex items-start justify-between gap-3 text-left"
       >
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-sm text-slate-800">{title}</h3>
           {subtitle && <p className="text-xs text-slate-400 mt-0.5 truncate">{subtitle}</p>}
+          {headerRight && <div className="mt-1.5">{headerRight}</div>}
         </div>
         <ChevronDown
           size={18}
-          className={`shrink-0 text-slate-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 mt-0.5 text-slate-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -197,8 +201,8 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
   const hero = HERO_STYLES[heroSeveridade];
   const preventivasBorderColor = preventivasMaquinas.length === 0 ? "border-t-emerald-400" : hero.topBorder;
 
-  const preventivasVisiveis = [...preventivasMaquinas].sort((a, b) => b.dias_atraso - a.dias_atraso).slice(0, 5);
-  const preventivasRestantes = Math.max(0, preventivasMaquinas.length - preventivasVisiveis.length);
+  // sem limite de itens: mostra todas, dentro de uma área com scroll (ver JSX)
+  const preventivasOrdenadas = [...preventivasMaquinas].sort((a, b) => b.dias_atraso - a.dias_atraso);
 
   const maquinasData = [...maquinasParadas]
     .map((m) => ({ nome: m.nome, total: toNumber(m.total) }))
@@ -456,47 +460,49 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
       {/* PREVENTIVAS VENCIDAS */}
       <CollapsibleSection
         title="Preventivas Vencidas"
-        subtitle={`${preventivasTotal} máquina${preventivasTotal === 1 ? "" : "s"} com manutenção atrasada`}
         borderClass={preventivasBorderColor}
+        headerRight={
+          preventivasMaquinas.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 shrink-0">
+                <span className="relative flex h-2 w-2">
+                  <span className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`} />
+                  <span className={`relative inline-flex h-2 w-2 rounded-full ${hero.dot}`} />
+                </span>
+                <span className="text-sm font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
+                <span className="text-xs text-slate-400">atrasada{preventivasTotal === 1 ? "" : "s"}</span>
+              </span>
+
+              {preventivasCriticas > 0 && (
+                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
+                  {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
+                </span>
+              )}
+              {preventivasAlertas > 0 && (
+                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
+                  {preventivasAlertas} atenção
+                </span>
+              )}
+              {preventivasRecentes > 0 && (
+                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
+                  {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+          ) : undefined
+        }
       >
         {preventivasMaquinas.length === 0 ? (
           <ChartEmptyState label="Nenhuma preventiva vencida — tudo em dia 🎉" />
         ) : (
           <div className="h-full flex flex-col gap-4">
-            {/* RESUMO */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`} />
-                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${hero.dot}`} />
-                </span>
-                <span className="text-2xl font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
-                <span className="text-sm text-slate-400">atrasada{preventivasTotal === 1 ? "" : "s"}</span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                {preventivasCriticas > 0 && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
-                    {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
-                  </span>
-                )}
-                {preventivasAlertas > 0 && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
-                    {preventivasAlertas} atenção
-                  </span>
-                )}
-                {preventivasRecentes > 0 && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
-                    {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
-                  </span>
-                )}
-              </div>
-            </div>
-
             {/* LISTA — botão à direita sempre vai pra O.S. (a lista já parte
-                das O.S. de preventiva abertas — ver obterPreventivasVencidas) */}
-            <div className="space-y-2">
-              {preventivasVisiveis.map((maquina) => {
+                das O.S. de preventiva abertas — ver obterPreventivasVencidas).
+                Mostra todas, com altura travada em ~3 linhas + scroll. */}
+            {/* altura medida pra caber exatamente 3 linhas (ver comentário
+                equivalente no Desktop sobre a escala de fonte global) */}
+            <div className="space-y-2 max-h-[216px] overflow-y-auto pr-1 -mr-1">
+              {preventivasOrdenadas.map((maquina) => {
                 const sev = severidadePreventiva(maquina.dias_atraso);
                 const styles = SEVERIDADE_STYLES[sev];
 
@@ -531,13 +537,6 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                 );
               })}
             </div>
-
-            {preventivasRestantes > 0 && (
-              <p className="text-center text-xs text-slate-400">
-                +{preventivasRestantes} outra{preventivasRestantes === 1 ? "" : "s"} máquina
-                {preventivasRestantes === 1 ? "" : "s"} atrasada{preventivasRestantes === 1 ? "" : "s"}
-              </p>
-            )}
           </div>
         )}
       </CollapsibleSection>

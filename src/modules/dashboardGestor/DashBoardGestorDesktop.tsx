@@ -212,10 +212,10 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
   const preventivasBorderColor =
     preventivasMaquinas.length === 0 ? "border-t-emerald-400" : HERO_STYLES[heroSeveridade].topBorder;
 
-  // cópia antes de ordenar — sort() muta o array original
+  // cópia antes de ordenar — sort() muta o array original. Sem limite de
+  // itens: mostra todas, dentro de uma área com scroll (ver JSX) — pedido do
+  // usuário pra não deixar o card gigante quando tem muita preventiva vencida.
   const preventivasOrdenadas = [...preventivasMaquinas].sort((a, b) => b.dias_atraso - a.dias_atraso);
-  const preventivasVisiveis = preventivasOrdenadas.slice(0, 6);
-  const preventivasRestantes = preventivasOrdenadas.length - preventivasVisiveis.length;
 
   return (
     <div className="space-y-6">
@@ -494,56 +494,58 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <SectionCard
           title="Preventivas Vencidas"
-          subtitle={`${preventivasTotal} máquina${preventivasTotal === 1 ? "" : "s"} com manutenção atrasada`}
+          headerRight={
+            preventivasMaquinas.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <span className="inline-flex items-center gap-1.5 shrink-0">
+                  <span className="relative flex h-2 w-2">
+                    <span
+                      className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`}
+                    />
+                    <span className={`relative inline-flex h-2 w-2 rounded-full ${hero.dot}`} />
+                  </span>
+                  <span className="text-sm font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
+                  <span className="text-xs text-slate-400">
+                    atrasada{preventivasTotal === 1 ? "" : "s"}
+                  </span>
+                </span>
+
+                {preventivasCriticas > 0 && (
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
+                    {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
+                  </span>
+                )}
+                {preventivasAlertas > 0 && (
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
+                    {preventivasAlertas} atenção
+                  </span>
+                )}
+                {preventivasRecentes > 0 && (
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
+                    {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
+            ) : undefined
+          }
           className={`border-t-4 ${preventivasBorderColor}`}
         >
           {preventivasMaquinas.length === 0 ? (
             <ChartEmptyState label="Nenhuma preventiva vencida — tudo em dia 🎉" />
           ) : (
             <div className="h-full flex flex-col gap-4">
-              {/* INDICADOR — sem bloco/banner, só um "status dot" pulsante
-                  (mesma linguagem de indicadores de status usada em
-                  dashboards premium) + o total e os chips de severidade,
-                  na mesma paleta neutra do resto do card */}
-              <div className="flex items-center justify-between flex-wrap gap-2 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span
-                      className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`}
-                    />
-                    <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${hero.dot}`} />
-                  </span>
-                  <span className="text-2xl font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
-                  <span className="text-sm text-slate-400">
-                    atrasada{preventivasTotal === 1 ? "" : "s"}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {preventivasCriticas > 0 && (
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
-                      {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
-                    </span>
-                  )}
-                  {preventivasAlertas > 0 && (
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
-                      {preventivasAlertas} atenção
-                    </span>
-                  )}
-                  {preventivasRecentes > 0 && (
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
-                      {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
-                    </span>
-                  )}
-                </div>
-              </div>
-
               {/* LISTA — cards individuais com acento lateral, em vez da
                   barra de fundo proporcional usada no Ranking de Técnicos.
                   Botão à direita sempre vai pra O.S. (a lista já parte das
-                  O.S. de preventiva abertas — ver obterPreventivasVencidas). */}
-              <div className="space-y-2 shrink-0">
-                {preventivasVisiveis.map((maquina) => {
+                  O.S. de preventiva abertas — ver obterPreventivasVencidas).
+                  Mostra todas, mas com altura travada em ~3 linhas + scroll
+                  — pedido do usuário pra não deixar o card gigante quando
+                  tem muita preventiva vencida. */}
+              {/* altura medida pra caber exatamente 3 linhas (o app tem uma
+                  escala de fonte global ~85%, então o valor em px real não
+                  bate com o que a escala "canônica" do Tailwind sugeriria) */}
+              <div className="space-y-2 shrink-0 max-h-[216px] overflow-y-auto pr-1 -mr-1">
+                {preventivasOrdenadas.map((maquina) => {
                   const sev = severidadePreventiva(maquina.dias_atraso);
                   const styles = SEVERIDADE_STYLES[sev];
 
@@ -584,22 +586,13 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                 })}
               </div>
 
-              {preventivasRestantes > 0 ? (
-                <p className="text-center text-xs text-slate-400 pt-1">
-                  +{preventivasRestantes} outra{preventivasRestantes === 1 ? "" : "s"} máquina
-                  {preventivasRestantes === 1 ? "" : "s"} atrasada{preventivasRestantes === 1 ? "" : "s"}
+              {preventivasOrdenadas.length <= 2 && (
+                // preenche o espaço sobrando quando a lista é curta, em
+                // vez de deixar um vão em branco embaixo (o grid estica
+                // o card pra mesma altura dos vizinhos)
+                <p className="text-xs text-slate-400 text-center px-4">
+                  As demais máquinas estão com a preventiva em dia ✅
                 </p>
-              ) : (
-                preventivasVisiveis.length <= 3 && (
-                  // preenche o espaço sobrando quando a lista é curta, em
-                  // vez de deixar um vão em branco embaixo (o grid estica
-                  // o card pra mesma altura dos vizinhos)
-                  
-                    <p className="text-xs text-slate-400 text-center px-4">
-                      As demais máquinas estão com a preventiva em dia ✅
-                    </p>
-                 
-                )
               )}
             </div>
           )}
