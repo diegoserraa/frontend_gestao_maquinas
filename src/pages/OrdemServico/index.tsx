@@ -22,27 +22,20 @@ import { OSPhotosGallery } from "../../modules/ordemServico/ordemServicoDetails/
 import { formatDateTime, getStatusStyle } from "../../modules/ordemServico/ordemServicoDetails/osDetailsHelpers";
 import { baixarOrdemServicoCompleta } from "../../modules/ordemServico/ordemServicoDetails/osDownload";
 
+// Mesma estrutura (sem max-w/padding extra) da tela carregada, logo abaixo —
+// senão o conteúdo real "pula" pra uma largura diferente assim que termina de
+// carregar (o <main> do MainLayout já dá o padding da página; aqui não é pra
+// somar outro por cima nem travar numa largura máxima que a tela real não tem).
 function DetailsSkeleton() {
   return (
-    <div
-      className="
-        min-h-screen
-        bg-gradient-to-br
-        from-slate-50
-        via-blue-50/40
-        to-indigo-50/40
-        px-2 sm:px-3 md:px-4
-        pb-6
-      "
-    >
+    <div className="space-y-4 w-full max-w-full overflow-x-hidden">
       <div
         className="
-          max-w-7xl mx-auto
-          rounded-3xl
-          border border-slate-200/70
-          bg-white/95
+          bg-white
+          rounded-2xl
+          border border-slate-200
+          shadow-sm
           overflow-hidden
-          shadow-[0_20px_60px_rgba(15,23,42,0.08)]
         "
       >
         {/* HEADER */}
