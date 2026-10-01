@@ -30,7 +30,7 @@ export type Machine = {
 // ORDEM DE SERVIÇO
 // =========================
 
-export type OrdemStatus = "ABERTA" | "EM_ANDAMENTO" | "FINALIZADA";
+export type OrdemStatus = "ABERTA" | "ATRIBUIDA" | "EM_ANDAMENTO" | "PAUSADA" | "FINALIZADA" | "CANCELADA";
 
 export type TipoManutencao = "CORRETIVA" | "PREVENTIVA";
 
@@ -46,7 +46,9 @@ export interface OrdemServico {
   resolucao?: string;
   data_resolucao?: string;
   prioridade?: string;
-  id_tecnico?: number;
+  id_tecnico?: number | null;
+  // true quando foi executada por parceiro externo (nesse caso não há técnico)
+  execucao_externa?: boolean;
   valor_gasto?: number;
 
   // campos novos
@@ -57,8 +59,14 @@ export interface OrdemServico {
   motivo_cancelamento?: string;
   data_cancelamento?: string;
 
-  // ── parceiro (preenchido só na finalização, quando id_tecnico
-  //    aponta pro registro placeholder "Técnico Externo") ──────
+  // pausa: tempo já pausado, pausa em curso (início/motivo) e quanto ela já durou
+  tempo_pausado_segundos?: number;
+  pausada_em?: string | null;
+  motivo_pausa?: string | null;
+  pausa_atual_segundos?: number;
+
+  // ── parceiro (preenchido só na finalização, quando a O.S. é
+  //    de execução externa) ──────────────────────────────────
   id_parceiro?: number | null;
   valor_parceiro?: number | null;
 }

@@ -4,6 +4,7 @@ import {
   Upload, X, Eye, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Download,
 } from "lucide-react";
 import type { ExistingAttachment } from "@/components/modals/machine/AdicionarEditarMachine";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 
 type PreviewState = {
   url: string;
@@ -143,6 +144,11 @@ export function AttachmentUploader({
   onRemoveExisting,
   onRestoreExisting,
 }: Props) {
+  // sem "anexos.enviar" não há como adicionar arquivos; sem "anexos.excluir" não há como remover os já salvos
+  const { pode } = usePermissoes();
+  const podeEnviar = pode("anexos.enviar");
+  const podeExcluir = pode("anexos.excluir");
+
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -359,6 +365,13 @@ export function AttachmentUploader({
     <div className="space-y-4">
 
       {/* DROPZONE */}
+      {!podeEnviar && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">
+          Você não tem permissão para enviar arquivos.
+        </div>
+      )}
+
+      {podeEnviar && (
       <div
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -400,6 +413,7 @@ export function AttachmentUploader({
           onChange={handleSelectFiles}
         />
       </div>
+      )}
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
@@ -449,10 +463,12 @@ export function AttachmentUploader({
                       <Download size={15} />
                     </a>
                   )}
-                  <button type="button" onClick={() => onRemoveExisting(att.id)}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 transition">
-                    <X size={15} />
-                  </button>
+                  {podeExcluir && (
+                    <button type="button" onClick={() => onRemoveExisting(att.id)} title="Remover" aria-label={`Remover ${att.nome}`}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 transition">
+                      <X size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -535,9 +551,11 @@ export function AttachmentUploader({
         </div>
       )}
 
+      {podeEnviar && (
       <p className="text-xs text-slate-400">
         Os arquivos serão enviados automaticamente após salvar a máquina.
       </p>
+      )}
 
       {/* MODAL DE PREVIEW — via portal, pra sair da árvore do Dialog
           (o DialogContent do shadcn tem "transform" pra centralizar,

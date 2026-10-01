@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Wrench, CalendarDays, User } from "lucide-react";
+import { Wrench, CalendarDays, User, PauseCircle, OctagonPause } from "lucide-react";
 
 import {
   Table,
@@ -15,6 +15,14 @@ import { Pagination } from "@/components/data/Pagination";
 import { DataTableLoading } from "@/components/data/DataTableLoading";
 
 import type { OrdemServicoRelatorioItem } from "../relatorios/types";
+import { formatarSegundos } from "../ordemServico/pausaOSLogica";
+
+// segundos pausados da O.S. (a API pode mandar como texto); 0 quando nunca foi pausada
+const pausadoDe = (item: OrdemServicoRelatorioItem): number => Number(item.tempo_pausado_segundos ?? 0) || 0;
+
+// segundos parado (só quando maquina_parada=true); 0/null = não se aplica, não "zero tempo parado"
+const paradoDe = (item: OrdemServicoRelatorioItem): number =>
+  item.maquina_parada ? Number(item.tempo_parado_segundos ?? 0) || 0 : 0;
 
 const STATUS_STYLES: Record<string, string> = {
   aberta: "bg-blue-50 text-blue-700 border-blue-100",
@@ -24,6 +32,8 @@ const STATUS_STYLES: Record<string, string> = {
 
   andamento: "bg-amber-50 text-amber-700 border-amber-100",
   em_andamento: "bg-amber-50 text-amber-700 border-amber-100",
+
+  pausada: "bg-orange-50 text-orange-700 border-orange-100",
 
   finalizada: "bg-emerald-50 text-emerald-700 border-emerald-100",
   finalizado: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -41,6 +51,7 @@ const STATUS_DOT: Record<string, string> = {
   atribuida: "bg-cyan-500",
   andamento: "bg-amber-500",
   em_andamento: "bg-amber-500",
+  pausada: "bg-orange-500",
   finalizada: "bg-emerald-500",
   finalizado: "bg-emerald-500",
   cancelada: "bg-slate-400",
@@ -175,9 +186,28 @@ function OrdemServicoCardRelatorio({
             {item.prioridade ?? "-"}
           </Badge>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-            <CalendarDays size={12} strokeWidth={1.8} />
-            <span>{formatarData(item.data_abertura)}</span>
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            {item.maquina_parada && (
+              <span
+                className="inline-flex items-center gap-1 text-rose-600"
+                title={item.motivo_parada ?? "Máquina parada"}
+              >
+                <OctagonPause size={12} strokeWidth={1.8} />
+                {formatarSegundos(paradoDe(item))}
+              </span>
+            )}
+
+            {pausadoDe(item) > 0 && (
+              <span className="inline-flex items-center gap-1 text-orange-600" title="Tempo em que a O.S. ficou pausada">
+                <PauseCircle size={12} strokeWidth={1.8} />
+                {formatarSegundos(pausadoDe(item))}
+              </span>
+            )}
+
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays size={12} strokeWidth={1.8} />
+              {formatarData(item.data_abertura)}
+            </span>
           </div>
         </div>
       </div>
@@ -273,6 +303,14 @@ export function RelatorioHistoricoOSTable({
                 <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                   Abertura
                 </TableHead>
+
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Pausas
+                </TableHead>
+
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Parada
+                </TableHead>
               </TableRow>
             </TableHeader>
 
@@ -280,7 +318,7 @@ export function RelatorioHistoricoOSTable({
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={10}
                     className="h-24 text-center text-sm text-slate-500"
                   >
                     Nenhuma ordem de serviço encontrada.
@@ -338,6 +376,31 @@ export function RelatorioHistoricoOSTable({
 
                       <TableCell className="text-xs text-slate-500 whitespace-nowrap">
                         {formatarData(item.data_abertura)}
+                      </TableCell>
+
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {pausadoDe(item) > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-orange-600">
+                            <PauseCircle size={12} strokeWidth={1.8} />
+                            {formatarSegundos(pausadoDe(item))}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-xs whitespace-nowrap max-w-40">
+                        {item.maquina_parada ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-rose-600 truncate"
+                            title={item.motivo_parada ?? undefined}
+                          >
+                            <OctagonPause size={12} strokeWidth={1.8} className="shrink-0" />
+                            {formatarSegundos(paradoDe(item))}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   ClipboardList,
   Gauge,
   ChevronRight,
+  OctagonPause,
 } from "lucide-react";
 
 import { useOpcoesFiltroRelatorio } from "../../hooks/useOpcoesFiltroRelatorio";
@@ -13,6 +14,7 @@ import { PainelRelatorio } from "../../modules/relatorios/PainelRelatorio";
 
 import { RelatorioHistoricoOSTable } from "../../modules/relatorios/RelatorioHistoricoOSTable";
 import { RelatorioIndicadoresTable } from "../../modules/relatorios/RelatorioIndicadoresTable";
+import { formatarSegundos } from "../../modules/ordemServico/pausaOSLogica";
 
 import { FILTROS_VAZIOS } from "../../modules/relatorios/types";
 
@@ -79,6 +81,20 @@ export function Relatorios() {
       "/manutencao",
       `${NOME_ARQUIVO_PADRAO_INDICADORES}.xlsx`
     );
+
+  // total de horas paradas nos dados já carregados (mesma conta do
+  // Dashboard) — só aparece quando pelo menos uma O.S. do resultado foi
+  // marcada como "máquina parada"
+  const totalSegundosParados = useMemo(
+    () =>
+      relatorioOS.dados.reduce((soma, item) => {
+        if (!item.maquina_parada) return soma;
+        return soma + (Number(item.tempo_parado_segundos ?? 0) || 0);
+      }, 0),
+    [relatorioOS.dados]
+  );
+
+  const temParadaNosDados = relatorioOS.dados.some((item) => item.maquina_parada);
 
   return (
     <div className="space-y-5 md:space-y-6 overflow-x-hidden">
@@ -293,6 +309,17 @@ export function Relatorios() {
 
           nomeArquivoPadrao={
             NOME_ARQUIVO_PADRAO_OS
+          }
+
+          mostrarFiltroParada
+
+          resumoExtra={
+            temParadaNosDados ? (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600">
+                <OctagonPause size={12} />
+                {formatarSegundos(totalSegundosParados)} parado no período
+              </span>
+            ) : undefined
           }
         />
       )}

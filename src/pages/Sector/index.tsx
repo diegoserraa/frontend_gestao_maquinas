@@ -24,6 +24,8 @@ import { getSectorCardColumns } from "../../modules/sector/sectorCardColumn";
 
 import { SectorModal } from "../../components/modals/sector/AdicionarEditarSector";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+
 export default function Sectors() {
   const [data, setData] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,9 @@ export default function Sectors() {
   const [pageSize, setPageSize] = useState(5);
 
   const [search, setSearch] = useState("");
+
+  const { pode } = usePermissoes();
+  const permitir = { editar: pode("setores.editar"), excluir: pode("setores.excluir") };
 
   const [openModal, setOpenModal] = useState(false);
 
@@ -154,8 +159,10 @@ export default function Sectors() {
         },
 
         onDelete: handleOpenDelete,
+
+        permitir,
       }),
-    []
+    [permitir.editar, permitir.excluir]
   );
 
   const cardColumns = useMemo(
@@ -166,9 +173,11 @@ export default function Sectors() {
           setOpenModal(true);
         },
 
-        handleOpenDelete
+        handleOpenDelete,
+
+        permitir
       ),
-    []
+    [permitir.editar, permitir.excluir]
   );
 
   return (
@@ -187,7 +196,8 @@ export default function Sectors() {
           </p>
         </div>
 
-        <button
+        {pode("setores.criar") && (
+<button
           onClick={() => {
             setSelectedSector(undefined);
             setOpenModal(true);
@@ -207,6 +217,7 @@ export default function Sectors() {
         >
           + Novo setor
         </button>
+)}
       </div>
 
       {/* CONTAINER */}

@@ -1,5 +1,6 @@
 import type { Column } from "@/components/data/DataTable";
 import type { Sector } from "./setorTypes";
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
 
 import {
   Pencil,
@@ -9,11 +10,13 @@ import {
 type Props = {
   onEdit: (sector: Sector) => void;
   onDelete: (sector: Sector) => void;
+  permitir?: AcoesPermitidas;
 };
 
 export function getSectorTableColumns({
   onEdit,
   onDelete,
+  permitir,
 }: Props): Column<Sector>[] {
   return [
     {
@@ -56,19 +59,23 @@ export function getSectorTableColumns({
       label: "Ações",
       render: (_, row) => (
         <div className="flex gap-1">
-          <button
+          {permitir?.editar !== false && (
+<button
             onClick={() => onEdit(row)}
             className="p-2 rounded-md hover:bg-blue-50 text-blue-600"
           >
             <Pencil size={14} />
           </button>
+)}
 
-          <button
+          {permitir?.excluir !== false && (
+<button
             onClick={() => onDelete(row)}
             className="p-2 rounded-md hover:bg-red-50 text-red-500"
           >
             <Trash2 size={14} />
           </button>
+)}
         </div>
       ),
     },

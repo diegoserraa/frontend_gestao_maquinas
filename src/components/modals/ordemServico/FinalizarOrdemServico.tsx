@@ -23,7 +23,7 @@ import {
 } from "@/modules/attachment/attachmentService";
 import { getPartners } from "@/modules/partner/partnerService";
 import type { Partner } from "@/modules/partner/partnerTypes";
-import { Loader2, DollarSign, Search, Building2, X as XIcon } from "lucide-react";
+import { Loader2, Search, Building2, X as XIcon } from "lucide-react";
 
 type Props = {
   open: boolean;

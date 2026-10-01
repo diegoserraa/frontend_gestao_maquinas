@@ -15,15 +15,24 @@ import {
   CheckCircle2,
   ShieldCheck,
   Wrench,
-  Wallet,
+  Boxes,
+  HardHat,
   QrCode,
   User,
   ChevronDown,
+  PauseCircle,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  OctagonPause,
+  Eye,
 } from "lucide-react";
 
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
+import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 import {
-  KpiCard,
+  KpiCardDupla,
   DashboardSkeleton,
   DashboardErrorState,
   ChartEmptyState,
@@ -34,6 +43,9 @@ import {
   formatCompactNumber,
   formatDiaCurto,
   formatMesCurto,
+  formatTempoParado,
+  calcularTendenciaCustos,
+  calcularProporcao,
 } from "../dashboardGestor/DashboardGestorParts";
 import type { FiltroPeriodo } from "./DashboardGestorTypes";
 import { Button } from "@/components/ui/button";
@@ -86,12 +98,15 @@ function chartScrollWidth(count: number, perItem: number, min: number) {
 function CollapsibleSection({
   title,
   subtitle,
+  headerRight,
   borderClass,
   defaultOpen = true,
   children,
 }: {
   title: string;
   subtitle?: string;
+  /** conteúdo opcional abaixo do título, antes do chevron (ex.: resumo/chips) */
+  headerRight?: ReactNode;
   borderClass: string;
   defaultOpen?: boolean;
   children: ReactNode;
@@ -103,15 +118,16 @@ function CollapsibleSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 text-left"
+        className="w-full flex items-start justify-between gap-3 text-left"
       >
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-sm text-slate-800">{title}</h3>
           {subtitle && <p className="text-xs text-slate-400 mt-0.5 truncate">{subtitle}</p>}
+          {headerRight && <div className="mt-1.5">{headerRight}</div>}
         </div>
         <ChevronDown
           size={18}
-          className={`shrink-0 text-slate-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 mt-0.5 text-slate-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -143,13 +159,19 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
     preventivasVencidas,
     rankingTecnicos,
     custos,
+    resumoParadas,
     refetch,
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
   const [scannerAberto, setScannerAberto] = useState(false);
+  const [cardAberto, setCardAberto] = useState<{ titulo: string; filtro: FiltroDoCard } | null>(null);
   const navigate = useNavigate();
 
   if (erro) return <DashboardErrorState onRetry={refetch} />;
   if (loading || !kpis) return <DashboardSkeleton />;
+
+  // clicar num card do topo já mostra quais OS estão por trás daquele número, sem sair da tela
+  const verOrdens = (titulo: string, filtro: Omit<FiltroDoCard, "dataInicio" | "dataFim">) =>
+    setCardAberto({ titulo, filtro: { ...filtro, dataInicio: periodo.dataInicio, dataFim: periodo.dataFim } });
 
   const evolucaoData = evolucao.map((p) => ({
     label: formatDiaCurto(p.dia),
@@ -179,8 +201,8 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
   const hero = HERO_STYLES[heroSeveridade];
   const preventivasBorderColor = preventivasMaquinas.length === 0 ? "border-t-emerald-400" : hero.topBorder;
 
-  const preventivasVisiveis = [...preventivasMaquinas].sort((a, b) => b.dias_atraso - a.dias_atraso).slice(0, 5);
-  const preventivasRestantes = Math.max(0, preventivasMaquinas.length - preventivasVisiveis.length);
+  // sem limite de itens: mostra todas, dentro de uma área com scroll (ver JSX)
+  const preventivasOrdenadas = [...preventivasMaquinas].sort((a, b) => b.dias_atraso - a.dias_atraso);
 
   const maquinasData = [...maquinasParadas]
     .map((m) => ({ nome: m.nome, total: toNumber(m.total) }))
@@ -195,6 +217,14 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
   const evolucaoWidth = chartScrollWidth(evolucaoData.length, 36, 320);
   const tempoMedioWidth = chartScrollWidth(tempoMedioData.length, 36, 320);
   const custosWidth = chartScrollWidth(custosEvolucaoData.length, 56, 280);
+
+  // ── CUSTOS — dados derivados (mesma conta do Desktop) ─────
+  const tendenciaCustos = custos ? calcularTendenciaCustos(custosEvolucaoData) : null;
+  const proporcaoCustos = custos
+    ? calcularProporcao(toNumber(custos.resumo.material), toNumber(custos.resumo.terceirizado))
+    : { pctA: 0, pctB: 0 };
+  const maxCustoMaquina = Math.max(...(custos?.maquinas ?? []).map((m) => toNumber(m.total)), 1);
+  const IconeTendencia = tendenciaCustos?.direcao === "alta" ? TrendingUp : tendenciaCustos?.direcao === "baixa" ? TrendingDown : Minus;
 
   return (
     <div className="space-y-4 overflow-x-hidden">
@@ -278,20 +308,74 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         </div>
       </div>
 
-      {/* KPIs — 3 colunas no mobile */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <KpiCard label="OS Abertas" value={formatCompactNumber(kpis.os_abertas)} icon={<Inbox size={17} />} colorClass="bg-blue-50 text-blue-600" />
-        <KpiCard label="Em Andamento" value={formatCompactNumber(kpis.os_andamento)} icon={<Clock size={17} />} colorClass="bg-amber-50 text-amber-600" />
-        <KpiCard
-          label="Atribuídas"
-          value={formatCompactNumber(kpis.os_atribuidas)}
-          icon={<User size={20} />}
-          colorClass="bg-gradient-to-br from-cyan-50 to-sky-100 text-cyan-700"
+      {/* KPIs — 2 cards por linha (2 linhas em vez de 4): a tela toda de celular
+          não pode virar só uma parede de números antes de chegar nos gráficos */}
+      <div className="grid grid-cols-2 gap-2">
+        <KpiCardDupla
+          esquerda={{
+            label: "OS Abertas",
+            value: formatCompactNumber(kpis.os_abertas),
+            icon: <Inbox size={16} />,
+            accent: "blue",
+            onClick: () => verOrdens("OS Abertas", { status: ["ABERTA"] }),
+          }}
+          direita={{
+            label: "Atribuídas",
+            value: formatCompactNumber(kpis.os_atribuidas),
+            icon: <User size={16} />,
+            accent: "cyan",
+            onClick: () => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] }),
+          }}
         />
-        <KpiCard label="Finalizadas" value={formatCompactNumber(kpis.os_finalizadas)} icon={<CheckCircle2 size={17} />} colorClass="bg-emerald-50 text-emerald-600" />
-        <KpiCard label="Preventivas" value={formatCompactNumber(kpis.preventivas)} icon={<ShieldCheck size={17} />} colorClass="bg-violet-50 text-violet-600" />
-        <KpiCard label="Corretivas" value={formatCompactNumber(kpis.corretivas)} icon={<Wrench size={17} />} colorClass="bg-rose-50 text-rose-600" />
+        <KpiCardDupla
+          esquerda={{
+            label: "Em Andamento",
+            value: formatCompactNumber(kpis.os_andamento),
+            icon: <Clock size={16} />,
+            accent: "amber",
+            onClick: () => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] }),
+          }}
+          direita={{
+            label: "Pausadas",
+            value: formatCompactNumber(kpis.os_pausadas ?? 0),
+            icon: <PauseCircle size={16} />,
+            accent: "orange",
+            onClick: () => verOrdens("Pausadas", { status: ["PAUSADA"] }),
+          }}
+        />
+        <KpiCardDupla
+          esquerda={{
+            label: "Finalizadas",
+            value: formatCompactNumber(kpis.os_finalizadas),
+            icon: <CheckCircle2 size={16} />,
+            accent: "emerald",
+            onClick: () => verOrdens("Finalizadas", { status: ["FINALIZADA"] }),
+          }}
+          direita={{
+            label: "Canceladas",
+            value: formatCompactNumber(kpis.os_canceladas ?? 0),
+            icon: <XCircle size={16} />,
+            accent: "slate",
+            onClick: () => verOrdens("Canceladas", { status: ["CANCELADA"] }),
+          }}
+        />
+        {/* só o número mesmo, sem "Ver ordens" — corretiva/preventiva é a maioria das O.S. */}
+        <KpiCardDupla
+          esquerda={{
+            label: "Preventivas",
+            value: formatCompactNumber(kpis.preventivas),
+            icon: <ShieldCheck size={16} />,
+            accent: "violet",
+          }}
+          direita={{
+            label: "Corretivas",
+            value: formatCompactNumber(kpis.corretivas),
+            icon: <Wrench size={16} />,
+            accent: "rose",
+          }}
+        />
       </div>
+
 
       {/* EVOLUÇÃO */}
       <CollapsibleSection title="Evolução de OS" subtitle="Por dia, no período" borderClass="border-t-blue-400">
@@ -354,82 +438,6 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         )}
       </CollapsibleSection>
 
-      {/* PREVENTIVAS VENCIDAS */}
-      <CollapsibleSection
-        title="Preventivas Vencidas"
-        subtitle={`${preventivasTotal} máquina${preventivasTotal === 1 ? "" : "s"} com manutenção atrasada`}
-        borderClass={preventivasBorderColor}
-      >
-        {preventivasMaquinas.length === 0 ? (
-          <ChartEmptyState label="Nenhuma preventiva vencida — tudo em dia 🎉" />
-        ) : (
-          <div className="h-full flex flex-col gap-4">
-            {/* RESUMO */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`} />
-                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${hero.dot}`} />
-                </span>
-                <span className="text-2xl font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
-                <span className="text-sm text-slate-400">atrasada{preventivasTotal === 1 ? "" : "s"}</span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                {preventivasCriticas > 0 && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
-                    {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
-                  </span>
-                )}
-                {preventivasAlertas > 0 && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
-                    {preventivasAlertas} atenção
-                  </span>
-                )}
-                {preventivasRecentes > 0 && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
-                    {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* LISTA */}
-            <div className="space-y-2">
-              {preventivasVisiveis.map((maquina) => {
-                const sev = severidadePreventiva(maquina.dias_atraso);
-                const styles = SEVERIDADE_STYLES[sev];
-
-                return (
-                  <div
-                    key={maquina.maquina_id}
-                    className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm hover:shadow-md transition-all border-l-4 ${styles.accent}`}
-                  >
-                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
-                      <Wrench size={15} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{maquina.nome}</p>
-                      <p className="text-[11px] text-slate-400">Manutenção preventiva vencida</p>
-                    </div>
-                    <span className={`text-xs font-bold rounded-full px-2.5 py-1 shrink-0 ${styles.pill}`}>
-                      {maquina.dias_atraso}d
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {preventivasRestantes > 0 && (
-              <p className="text-center text-xs text-slate-400">
-                +{preventivasRestantes} outra{preventivasRestantes === 1 ? "" : "s"} máquina
-                {preventivasRestantes === 1 ? "" : "s"} atrasada{preventivasRestantes === 1 ? "" : "s"}
-              </p>
-            )}
-          </div>
-        )}
-      </CollapsibleSection>
-
       {/* RANKING TÉCNICOS */}
       <CollapsibleSection title="Ranking de Técnicos" subtitle="OS finalizadas no período" borderClass="border-t-emerald-400">
         {rankingTecnicos.length === 0 ? (
@@ -443,6 +451,135 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                 </span>
                 <span className="flex-1 text-sm text-slate-700 truncate">{tec.nome}</span>
                 <span className="text-sm font-semibold text-slate-800 shrink-0">{formatCompactNumber(tec.total)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* PREVENTIVAS VENCIDAS */}
+      <CollapsibleSection
+        title="Preventivas Vencidas"
+        borderClass={preventivasBorderColor}
+        headerRight={
+          preventivasMaquinas.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 shrink-0">
+                <span className="relative flex h-2 w-2">
+                  <span className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`} />
+                  <span className={`relative inline-flex h-2 w-2 rounded-full ${hero.dot}`} />
+                </span>
+                <span className="text-sm font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
+                <span className="text-xs text-slate-400">atrasada{preventivasTotal === 1 ? "" : "s"}</span>
+              </span>
+
+              {preventivasCriticas > 0 && (
+                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
+                  {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
+                </span>
+              )}
+              {preventivasAlertas > 0 && (
+                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
+                  {preventivasAlertas} atenção
+                </span>
+              )}
+              {preventivasRecentes > 0 && (
+                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
+                  {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+          ) : undefined
+        }
+      >
+        {preventivasMaquinas.length === 0 ? (
+          <ChartEmptyState label="Nenhuma preventiva vencida — tudo em dia 🎉" />
+        ) : (
+          <div className="h-full flex flex-col gap-4">
+            {/* LISTA — botão à direita sempre vai pra O.S. (a lista já parte
+                das O.S. de preventiva abertas — ver obterPreventivasVencidas).
+                Mostra todas, com altura travada em ~3 linhas + scroll. */}
+            {/* altura medida pra caber exatamente 3 linhas (ver comentário
+                equivalente no Desktop sobre a escala de fonte global) */}
+            <div className="space-y-2 max-h-[216px] overflow-y-auto pr-1 -mr-1">
+              {preventivasOrdenadas.map((maquina) => {
+                const sev = severidadePreventiva(maquina.dias_atraso);
+                const styles = SEVERIDADE_STYLES[sev];
+
+                return (
+                  <div
+                    key={maquina.maquina_id}
+                    className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm active:shadow-md transition-all border-l-4 ${styles.accent}`}
+                  >
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
+                      <Wrench size={15} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{maquina.nome}</p>
+                      <p className="text-[11px] text-slate-400">Manutenção preventiva vencida</p>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`text-xs font-bold rounded-full px-2.5 py-1 ${styles.pill}`}>
+                        {maquina.dias_atraso}d
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/ordens-servico/${maquina.os_id}`)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 active:bg-slate-50"
+                      >
+                        <Eye size={12} />
+                        OS #{maquina.os_id}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* MÁQUINAS PARADAS */}
+      <CollapsibleSection
+        title="Máquinas Paradas"
+        subtitle={
+          resumoParadas && resumoParadas.paradasAgora > 0
+            ? `${resumoParadas.paradasAgora} máquina${resumoParadas.paradasAgora === 1 ? "" : "s"} parada${resumoParadas.paradasAgora === 1 ? "" : "s"} agora`
+            : "Nenhuma máquina parada agora"
+        }
+        borderClass="border-t-rose-400"
+      >
+        {!resumoParadas || resumoParadas.maquinas.length === 0 ? (
+          <ChartEmptyState label="Tudo funcionando — nenhuma máquina parada 🎉" />
+        ) : (
+          <div className="space-y-2">
+            {resumoParadas.maquinas.map((m) => (
+              <div
+                key={m.osId}
+                className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm hover:shadow-md transition-all border-l-4 border-l-rose-400"
+              >
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-600">
+                  <OctagonPause size={15} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{m.maquinaNome}</p>
+                  <p className="text-[11px] text-rose-500 font-medium truncate">
+                    {formatTempoParado(m.dataAbertura)}
+                    {m.motivoParada ? ` · ${m.motivoParada}` : ""}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/ordens-servico/${m.osId}`)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 active:bg-rose-50 transition-colors"
+                >
+                  <Eye size={13} />
+                  OS #{m.osId}
+                </button>
               </div>
             ))}
           </div>
@@ -466,29 +603,46 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
         )}
       </CollapsibleSection>
 
-      {/* CUSTOS */}
+      {/* CUSTOS — índigo (mesma cor do gradiente da marca), mesmo padrão do Desktop */}
       {custos && (
-        <CollapsibleSection title="Custos de Manutenção" borderClass="border-t-slate-300">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
-              <p className="text-[10px] text-slate-500">Material</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.material)}</p>
+        <CollapsibleSection title="Custos de Manutenção" borderClass="border-t-indigo-400">
+          {/* HERO — total em destaque + tendência vs mês anterior */}
+          <div>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Total no período</span>
+              {tendenciaCustos && (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tendenciaCustos.classe}`}>
+                  <IconeTendencia size={10} />
+                  {tendenciaCustos.texto}
+                </span>
+              )}
             </div>
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
-              <p className="text-[10px] text-slate-500">Terceiriz.</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.terceirizado)}</p>
+
+            <p className="text-2xl font-bold text-indigo-700 tabular-nums leading-tight">
+              {formatCurrency(custos.resumo.total)}
+            </p>
+
+            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 flex">
+              <div className="h-full bg-indigo-500" style={{ width: `${proporcaoCustos.pctA}%` }} />
+              <div className="h-full bg-sky-300" style={{ width: `${proporcaoCustos.pctB}%` }} />
             </div>
-            <div className="rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-2">
-              <div className="flex items-center gap-1">
-                <Wallet size={10} className="text-blue-500" />
-                <p className="text-[10px] text-blue-500">Total</p>
-              </div>
-              <p className="text-sm font-bold text-blue-700 truncate">{formatCurrency(custos.resumo.total)}</p>
+
+            <div className="mt-2 flex flex-col gap-1 text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Boxes size={12} className="text-indigo-500 shrink-0" />
+                Material <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.material)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctA}%)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <HardHat size={12} className="text-sky-400 shrink-0" />
+                Terceirizado <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.terceirizado)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctB}%)</span>
+              </span>
             </div>
           </div>
 
           {custosEvolucaoData.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4 pt-3 border-t border-slate-100">
               <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mb-1.5">Evolução mensal</p>
               <div className="chart-scroll overflow-x-auto">
                 <div style={{ minWidth: custosWidth }}>
@@ -502,7 +656,7 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
                         contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
                         cursor={{ fill: "#f8fafc" }}
                       />
-                      <Bar dataKey="total" name="Custo" fill={CHART_COLORS.violeta} radius={[4, 4, 0, 0]} barSize={20} />
+                      <Bar dataKey="total" name="Custo" fill={CHART_COLORS.indigo} radius={[4, 4, 0, 0]} barSize={20} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -513,21 +667,34 @@ export function DashboardGestorMobile({ periodo, onPeriodoChange }: Props) {
           {custos.maquinas.length > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-100">
               <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mb-2">Custo por máquina</p>
-              <div className="divide-y divide-slate-100 max-h-[150px] overflow-y-auto pr-1">
+              <div className="space-y-1 max-h-[150px] overflow-y-auto pr-1">
                 {[...custos.maquinas]
                   .sort((a, b) => toNumber(b.total) - toNumber(a.total))
                   .slice(0, 5)
-                  .map((m) => (
-                    <div key={m.nome} className="flex items-center justify-between py-1.5 text-xs">
-                      <span className="text-slate-700 truncate">{m.nome}</span>
-                      <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">{formatCurrency(m.total)}</span>
-                    </div>
-                  ))}
+                  .map((m) => {
+                    const pct = (toNumber(m.total) / maxCustoMaquina) * 100;
+                    return (
+                      <div key={m.nome} className="relative rounded-lg overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 bg-indigo-50" style={{ width: `${pct}%` }} />
+                        <div className="relative flex items-center justify-between py-1.5 px-2 text-xs">
+                          <span className="text-slate-700 truncate">{m.nome}</span>
+                          <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">{formatCurrency(m.total)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
         </CollapsibleSection>
       )}
+
+      <OrdensDoStatusModal
+        aberto={cardAberto !== null}
+        onClose={() => setCardAberto(null)}
+        titulo={cardAberto?.titulo ?? ""}
+        filtro={cardAberto?.filtro ?? null}
+      />
     </div>
   );
 }

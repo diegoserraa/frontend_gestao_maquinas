@@ -1,15 +1,8 @@
 import { cn } from "@/lib/utils";
 import { NavLink, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Cpu,
-  Users,
-  Building2,
-  Handshake,
-  Menu,
-  LogOut,
-  FileBarChart
-} from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
+import { useItensDoMenu } from "./menuItens";
+import { Logo } from "@/components/brand/Logo";
 
 interface Props {
   isCollapsed: boolean;
@@ -27,38 +20,7 @@ export default function Sidebar({
     navigate("/login");
   };
 
-  const items = [
-    {
-      label: "Dashboard",
-      path: "/",
-      icon: LayoutDashboard,
-    },
-    {
-      label: "Máquinas",
-      path: "/machines",
-      icon: Cpu,
-    },
-    {
-      label: "Setores",
-      path: "/sector",
-      icon: Building2,
-    },
-    {
-      label: "Parceiros",
-      path: "/partner",
-      icon: Handshake,
-    },
-    {
-      label: "Usuários",
-      path: "/user",
-      icon: Users,
-    },
-   {
-  label: "Relatórios",
-  path: "/reports",
-  icon: FileBarChart,
-},
-  ];
+  const items = useItensDoMenu();
 
   return (
     <aside
@@ -78,14 +40,7 @@ export default function Sidebar({
               : "justify-between px-3"
           )}
         >
-          {!isCollapsed && (
-            <div className="text-sm font-semibold text-slate-800">
-              ZDM{" "}
-              <span className="text-blue-600">
-                SaaS
-              </span>
-            </div>
-          )}
+          {!isCollapsed && <Logo size={24} textoClassName="text-sm" />}
 
           <button
             onClick={toggleCollapse}
@@ -169,7 +124,7 @@ export default function Sidebar({
         <div className="h-10 flex items-center justify-center">
           {!isCollapsed ? (
             <span className="text-xs text-slate-500">
-              v1.0 SaaS
+              v1.0
             </span>
           ) : (
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
