@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, Cpu, CircleCheck, TriangleAlert } from "lucide-react";
 
@@ -93,6 +93,40 @@ export default function Monitoring() {
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [escuro, setEscuroState] = useState<boolean>(lerTemaSalvo);
   const [telaCheia, setTelaCheia] = useState(false);
+
+  // sangria do fundo escuro (modo normal, não tela cheia) — ver useLayoutEffect
+  // logo abaixo pro porquê de não usar só "-m-6" fixo
+  const fundoEscuroRef = useRef<HTMLDivElement>(null);
+  const [sangria, setSangria] = useState({ esquerda: 24, direita: 24 }); // 24px = p-6, mesmo valor do MainLayout
+
+  // o fundo escuro "sangra" por cima do padding do <main> do MainLayout pra
+  // cobrir a tela toda (ver comentário no JSX). Isso funciona com "-m-6" fixo
+  // SE <main> não tiver barra de rolagem — mas <main> é quem rola (overflow-auto),
+  // e em alguns navegadores/aparelhos (confirmado no Android) a barra de rolagem
+  // consome espaço real, sobrando uma faixa clara do lado direito que a margem
+  // fixa não cobre. offsetWidth - clientWidth mede exatamente essa largura
+  // (0 quando a barra é "flutuante"/não ocupa espaço, como no desktop) — sem
+  // isso, o valor ficaria hardcoded e quebraria em qualquer aparelho diferente.
+  useLayoutEffect(() => {
+    function medir() {
+      const main = fundoEscuroRef.current?.parentElement;
+      if (!main) return;
+
+      const larguraScrollbar = main.offsetWidth - main.clientWidth;
+      const estilo = getComputedStyle(main);
+      const padEsquerda = parseFloat(estilo.paddingLeft) || 0;
+      const padDireita = parseFloat(estilo.paddingRight) || 0;
+
+      setSangria({
+        esquerda: padEsquerda,
+        direita: padDireita + larguraScrollbar,
+      });
+    }
+
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  }, [escuro]);
 
   // lembra o tema escolhido — não precisa reativar toda vez que abrir a tela de novo
   function setEscuro(v: boolean) {
@@ -431,13 +465,31 @@ export default function Monitoring() {
 
   return (
     <div
+      ref={fundoEscuroRef}
       className={cn(
-        "w-full transition-colors duration-300",
+        "transition-colors duration-300",
+        // sem "w-full" no modo escuro: com width:100% travado, a margem
+        // negativa só desloca a caixa pra esquerda sem esticar a largura —
+        // sobra um vão do lado direito (bug real, não era a barra de rolagem).
+        // Em width:auto (padrão), o navegador resolve a largura JUNTO com as
+        // margens, exatamente o que a sangria por baixo precisa.
+        !escuro && "w-full",
         // sangra por cima do padding do MainLayout (p-6) pra tomar conta da
         // área de conteúdo inteira — uma seção escura com borda clara ao
-        // redor não convence ninguém
-        escuro && "relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden bg-slate-950 p-6"
+        // redor não convence ninguém. O valor exato vem de "sangria" (medido
+        // em useLayoutEffect acima) em vez de "-m-6" fixo, porque <main> rola
+        // (overflow-auto) e em alguns aparelhos a barra de rolagem consome
+        // espaço real — sem medir, sobraria uma faixa clara também por isso.
+        escuro && "relative min-h-[calc(100vh-4rem)] overflow-hidden bg-slate-950 p-6"
       )}
+      style={
+        escuro
+          ? {
+              marginLeft: -sangria.esquerda,
+              marginRight: -sangria.direita,
+            }
+          : undefined
+      }
     >
       {escuro && (
         <>
