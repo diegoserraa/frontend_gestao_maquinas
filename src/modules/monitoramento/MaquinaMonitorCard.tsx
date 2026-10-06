@@ -197,7 +197,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           icone={Activity}
           rotulo="Vibração"
           valor={formatarNumero(leitura.vibracao, 2)}
-          unidade="mm/s"
+          unidade="m/s²"
           nivel={nivelVibracao(leitura.vibracao, leitura.limites?.vibracao)}
           serie={historico.map((p) => p.vibracao)}
           escuro={escuro}

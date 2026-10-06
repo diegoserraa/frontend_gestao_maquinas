@@ -42,7 +42,7 @@ const METRICAS: {
   icone: typeof Thermometer;
 }[] = [
   { chave: "temperatura", rotulo: "Temperatura", cor: "#e11d48", unidade: "°C", icone: Thermometer },
-  { chave: "vibracao", rotulo: "Vibração", cor: "#2563eb", unidade: "mm/s", icone: Activity },
+  { chave: "vibracao", rotulo: "Vibração", cor: "#2563eb", unidade: "m/s²", icone: Activity },
   { chave: "horas_ligadas", rotulo: "Horas ligadas", cor: "#0f766e", unidade: "h", icone: Clock },
 ];
 
