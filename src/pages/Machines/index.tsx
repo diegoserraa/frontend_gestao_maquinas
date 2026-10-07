@@ -33,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { QrCode } from "lucide-react";
 import { ExportarQrModal } from "../../modules/machine/ExportarQrModal";
+import { PareamentoModal } from "../../modules/machine/PareamentoModal";
 import { ImagemAmpliadaModal, type ImagemAmpliada } from "../../modules/machine/ImagemAmpliadaModal";
 
 export default function Machines() {
@@ -67,6 +68,7 @@ export default function Machines() {
 
   // exportar QR Codes: aberto=true; maquina definida = só a etiqueta dela
   const [qr, setQr] = useState<{ aberto: boolean; maquina: Machine | null }>({ aberto: false, maquina: null });
+  const [pareamento, setPareamento] = useState<Machine | null>(null);
 
   // visualizador em tela cheia da foto/QR de uma linha (substitui o hover:scale antigo)
   const [imagemAmpliada, setImagemAmpliada] = useState<ImagemAmpliada>(null);
@@ -231,6 +233,7 @@ setExistingAttachments(
         onViewOS: (id) => navigate(`/machines/${id}?tab=os`),
         onQr: (machine) => setQr({ aberto: true, maquina: machine }),
         onAmpliar: setImagemAmpliada,
+        onParear: setPareamento,
         permitir,
       }),
     [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
@@ -245,7 +248,8 @@ setExistingAttachments(
         (machine) => navigate(`/machines/${machine.id}?tab=history`),
         permitir,
         (machine) => setQr({ aberto: true, maquina: machine }),
-        setImagemAmpliada
+        setImagemAmpliada,
+        setPareamento
       ),
     [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
   );
@@ -335,6 +339,12 @@ setExistingAttachments(
         setores={setores}
         maquinas={data}
         maquina={qr.maquina}
+      />
+
+      <PareamentoModal
+        open={pareamento !== null}
+        onClose={() => setPareamento(null)}
+        maquina={pareamento}
       />
 
       <ConfirmDialog

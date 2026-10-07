@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   QrCode,
   ZoomIn,
+  Wifi,
 } from "lucide-react";
 
 import type { Column } from "@/components/data/DataTable";
@@ -29,6 +30,8 @@ type Props = {
   onQr?: (machine: Machine) => void;
   /** amplia a foto/QR num visualizador em tela cheia, em vez do hover:scale antigo (cortava na última linha) */
   onAmpliar: (imagem: ImagemAmpliada) => void;
+  /** gera o PIN de pareamento de sensor (ESP32) desta máquina */
+  onParear?: (machine: Machine) => void;
 };
 
 export function getMachineTableColumns({
@@ -39,6 +42,7 @@ export function getMachineTableColumns({
   onViewOS,
   onQr,
   onAmpliar,
+  onParear,
   permitir,
 }: Props): Column<Machine>[] {
   return [
@@ -320,6 +324,17 @@ export function getMachineTableColumns({
             aria-label={`Exportar QR Code de ${row.nome}`}
           >
             <QrCode size={15} />
+          </button>
+)}
+
+          {permitir?.editar !== false && onParear && (
+<button
+            onClick={() => onParear(row)}
+            className="p-2 rounded-md hover:bg-slate-50 text-slate-600"
+            title="Vincular sensor (ESP32)"
+            aria-label={`Vincular sensor à ${row.nome}`}
+          >
+            <Wifi size={15} />
           </button>
 )}
 

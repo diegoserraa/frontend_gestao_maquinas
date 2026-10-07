@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   QrCode,
   ZoomIn,
+  Wifi,
 } from "lucide-react";
 
 import {
@@ -27,7 +28,8 @@ export function getMachineCardColumns(
   permitir?: AcoesPermitidas,
   onQr?: (machine: Machine) => void,
   /** amplia a foto/QR num visualizador em tela cheia */
-  onAmpliar?: (imagem: ImagemAmpliada) => void
+  onAmpliar?: (imagem: ImagemAmpliada) => void,
+  onParear?: (machine: Machine) => void
 ): CardColumn<Machine>[] {
   return [
     {
@@ -243,6 +245,17 @@ export function getMachineCardColumns(
                     aria-label={`Exportar QR Code de ${m.nome}`}
                   >
                     <QrCode size={14} />
+                  </button>
+)}
+
+                  {permitir?.editar !== false && onParear && (
+<button
+                    onClick={() => onParear(m)}
+                    className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                    title="Vincular sensor (ESP32)"
+                    aria-label={`Vincular sensor à ${m.nome}`}
+                  >
+                    <Wifi size={14} />
                   </button>
 )}
 

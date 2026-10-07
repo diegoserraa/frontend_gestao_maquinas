@@ -1,5 +1,5 @@
-import { apiGet, apiUpload, apiDelete, apiPatch } from "@/lib/apiClient";
-import type { EtiquetasResposta, Machine, Setor } from "./machineTypes";
+import { apiGet, apiUpload, apiDelete, apiPatch, apiPost } from "@/lib/apiClient";
+import type { EtiquetasResposta, Machine, PareamentoGerado, Setor } from "./machineTypes";
 
 export async function getMachines(): Promise<Machine[]> {
   return apiGet<Machine[]>("/maquinas");
@@ -53,6 +53,15 @@ export async function toggleMachineStatus(id: number): Promise<Machine> {
     return await apiPatch<Machine>(`/maquinas/${id}/status`);
   } catch {
     throw new Error("Erro ao alterar status da máquina");
+  }
+}
+
+/** Gera um PIN de 6 dígitos (válido 10min) pra vincular um ESP32 a esta máquina. */
+export async function gerarPareamento(id: number): Promise<PareamentoGerado> {
+  try {
+    return await apiPost<PareamentoGerado>(`/maquinas/${id}/pareamento`);
+  } catch {
+    throw new Error("Erro ao gerar código de pareamento");
   }
 }
 

@@ -34,6 +34,11 @@ export type Etiqueta = {
   qr: string;
 };
 
+export type PareamentoGerado = {
+  codigo: string;
+  expira_em: string;
+};
+
 export type EtiquetasResposta = {
   base_url: string;
   /** o endereço configurado é de teste (localhost, sem HTTPS...): o QR não serve para colar na máquina */
