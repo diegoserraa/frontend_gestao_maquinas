@@ -64,6 +64,21 @@ export type ProdutividadeTecnicoItem = {
   os_em_aberto: number | string;
 };
 
+export type AlertaMonitoramentoItem = {
+  id: number;
+  maquina_nome: string;
+  setor_nome?: string | null;
+  chave: string; // "temperatura" | "vibracao" | "sinal"
+  nivel: string; // "atencao" | "critico" | "sem_sinal"
+  valor?: number | string | null;
+  limite?: number | string | null;
+  status: string; // "aberto" | "resolvido" | "convertido"
+  ordem_servico_id?: number | null;
+  aberto_em: string;
+  resolvido_em?: string | null;
+  duracao_segundos: number | string;
+};
+
 export type IndicadorMaquinaItem = {
   maquina_nome: string;
   setor_nome?: string | null;

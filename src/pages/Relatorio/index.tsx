@@ -6,6 +6,7 @@ import {
   ChevronRight,
   OctagonPause,
   UserRound,
+  BellRing,
 } from "lucide-react";
 
 import { useOpcoesFiltroRelatorio } from "../../hooks/useOpcoesFiltroRelatorio";
@@ -16,6 +17,7 @@ import { PainelRelatorio } from "../../modules/relatorios/PainelRelatorio";
 import { RelatorioHistoricoOSTable } from "../../modules/relatorios/RelatorioHistoricoOSTable";
 import { RelatorioIndicadoresTable } from "../../modules/relatorios/RelatorioIndicadoresTable";
 import { RelatorioProdutividadeTecnicoTable } from "../../modules/relatorios/RelatorioProdutividadeTecnicoTable";
+import { RelatorioAlertasTable } from "../../modules/relatorios/RelatorioAlertasTable";
 import { formatarSegundos } from "../../modules/ordemServico/pausaOSLogica";
 
 import { FILTROS_VAZIOS } from "../../modules/relatorios/types";
@@ -25,9 +27,10 @@ import type {
   IndicadorMaquinaItem,
   OrdemServicoRelatorioItem,
   ProdutividadeTecnicoItem,
+  AlertaMonitoramentoItem,
 } from "../../modules/relatorios/types";
 
-type TipoRelatorio = "historico-os" | "indicadores" | "produtividade-tecnico";
+type TipoRelatorio = "historico-os" | "indicadores" | "produtividade-tecnico" | "alertas";
 
 const RELATORIOS: {
   id: TipoRelatorio;
@@ -57,6 +60,13 @@ const RELATORIOS: {
     icon: UserRound,
     accent: "from-amber-600 to-orange-600",
   },
+  {
+    id: "alertas",
+    titulo: "Alertas de Monitoramento",
+    descricao: "Temperatura, vibração e sinal no período",
+    icon: BellRing,
+    accent: "from-rose-600 to-red-600",
+  },
 ];
 
 const NOME_ARQUIVO_PADRAO_OS =
@@ -67,6 +77,9 @@ const NOME_ARQUIVO_PADRAO_INDICADORES =
 
 const NOME_ARQUIVO_PADRAO_TECNICOS =
   "produtividade-por-tecnico";
+
+const NOME_ARQUIVO_PADRAO_ALERTAS =
+  "alertas-de-monitoramento";
 
 export function Relatorios() {
   const [relatorioAtivo, setRelatorioAtivo] =
@@ -82,6 +95,9 @@ export function Relatorios() {
     useState<FiltrosRelatorioType>(FILTROS_VAZIOS);
 
   const [filtrosTecnicos, setFiltrosTecnicos] =
+    useState<FiltrosRelatorioType>(FILTROS_VAZIOS);
+
+  const [filtrosAlertas, setFiltrosAlertas] =
     useState<FiltrosRelatorioType>(FILTROS_VAZIOS);
 
   const relatorioOS =
@@ -103,6 +119,13 @@ export function Relatorios() {
       "/tecnicos/preview",
       "/tecnicos",
       `${NOME_ARQUIVO_PADRAO_TECNICOS}.xlsx`
+    );
+
+  const relatorioAlertas =
+    useRelatorio<AlertaMonitoramentoItem>(
+      "/alertas/preview",
+      "/alertas",
+      `${NOME_ARQUIVO_PADRAO_ALERTAS}.xlsx`
     );
 
   // total de horas paradas nos dados já carregados (mesma conta do
@@ -140,7 +163,7 @@ export function Relatorios() {
           SELETOR DE RELATÓRIO
       ===================================================== */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
         {RELATORIOS.map((rel) => {
           const Icon = rel.icon;
@@ -452,6 +475,58 @@ export function Relatorios() {
 
           nomeArquivoPadrao={
             NOME_ARQUIVO_PADRAO_TECNICOS
+          }
+        />
+      )}
+
+      {/* =====================================================
+          ALERTAS DE MONITORAMENTO
+      ===================================================== */}
+
+      {relatorioAtivo === "alertas" && (
+        <PainelRelatorio
+          filtros={filtrosAlertas}
+
+          onFiltrosChange={
+            setFiltrosAlertas
+          }
+
+          setores={setores}
+          maquinas={maquinas}
+
+          dados={relatorioAlertas.dados}
+
+          loading={relatorioAlertas.loading}
+          erro={relatorioAlertas.erro}
+          buscou={relatorioAlertas.buscou}
+          exportando={
+            relatorioAlertas.exportando
+          }
+
+          onVisualizar={() =>
+            relatorioAlertas.visualizar(
+              filtrosAlertas
+            )
+          }
+
+          onExportar={(nomeArquivo) =>
+            relatorioAlertas.exportar(
+              filtrosAlertas,
+              nomeArquivo
+            )
+          }
+
+          renderTabela={(dados) => (
+            <RelatorioAlertasTable
+              dados={dados}
+              loading={
+                relatorioAlertas.loading
+              }
+            />
+          )}
+
+          nomeArquivoPadrao={
+            NOME_ARQUIVO_PADRAO_ALERTAS
           }
         />
       )}
