@@ -52,6 +52,18 @@ export type OrdemServicoRelatorioItem = {
   tempo_parado_segundos?: number | string | null;
 };
 
+export type ProdutividadeTecnicoItem = {
+  tecnico_id: number;
+  tecnico_nome: string;
+
+  os_finalizadas: number | string;
+  os_finalizadas_prioritarias: number | string;
+  tempo_medio_atendimento_segundos?: number | string | null;
+
+  // estado ATUAL — nunca filtrado por período, é a fila de hoje
+  os_em_aberto: number | string;
+};
+
 export type IndicadorMaquinaItem = {
   maquina_nome: string;
   setor_nome?: string | null;
