@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiPost } from "@/lib/apiClient";
+
 const VAPID_PUBLIC_KEY =
   import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
@@ -51,20 +52,10 @@ export async function registrarPush(
 
   const json = subscription.toJSON();
 
-  await fetch(
-    `${API_URL}/push-subscriptions`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        usuario_id,
-        endpoint: json.endpoint,
-        p256dh: json.keys?.p256dh,
-        auth: json.keys?.auth,
-      }),
-    }
-  );
+  await apiPost("/push-subscriptions", {
+    usuario_id,
+    endpoint: json.endpoint,
+    p256dh: json.keys?.p256dh,
+    auth: json.keys?.auth,
+  });
 }

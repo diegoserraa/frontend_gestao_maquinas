@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   ClipboardList,
   Gauge,
   ChevronRight,
+  OctagonPause,
+  UserRound,
 } from "lucide-react";
 
 import { useOpcoesFiltroRelatorio } from "../../hooks/useOpcoesFiltroRelatorio";
@@ -13,6 +15,8 @@ import { PainelRelatorio } from "../../modules/relatorios/PainelRelatorio";
 
 import { RelatorioHistoricoOSTable } from "../../modules/relatorios/RelatorioHistoricoOSTable";
 import { RelatorioIndicadoresTable } from "../../modules/relatorios/RelatorioIndicadoresTable";
+import { RelatorioProdutividadeTecnicoTable } from "../../modules/relatorios/RelatorioProdutividadeTecnicoTable";
+import { formatarSegundos } from "../../modules/ordemServico/pausaOSLogica";
 
 import { FILTROS_VAZIOS } from "../../modules/relatorios/types";
 
@@ -20,9 +24,10 @@ import type {
   FiltrosRelatorio as FiltrosRelatorioType,
   IndicadorMaquinaItem,
   OrdemServicoRelatorioItem,
+  ProdutividadeTecnicoItem,
 } from "../../modules/relatorios/types";
 
-type TipoRelatorio = "historico-os" | "indicadores";
+type TipoRelatorio = "historico-os" | "indicadores" | "produtividade-tecnico";
 
 const RELATORIOS: {
   id: TipoRelatorio;
@@ -45,6 +50,13 @@ const RELATORIOS: {
     icon: Gauge,
     accent: "from-violet-600 to-purple-600",
   },
+  {
+    id: "produtividade-tecnico",
+    titulo: "Produtividade por Técnico",
+    descricao: "Carga atual e atendimento no período",
+    icon: UserRound,
+    accent: "from-amber-600 to-orange-600",
+  },
 ];
 
 const NOME_ARQUIVO_PADRAO_OS =
@@ -52,6 +64,9 @@ const NOME_ARQUIVO_PADRAO_OS =
 
 const NOME_ARQUIVO_PADRAO_INDICADORES =
   "indicadores-por-maquina";
+
+const NOME_ARQUIVO_PADRAO_TECNICOS =
+  "produtividade-por-tecnico";
 
 export function Relatorios() {
   const [relatorioAtivo, setRelatorioAtivo] =
@@ -64,6 +79,9 @@ export function Relatorios() {
     useState<FiltrosRelatorioType>(FILTROS_VAZIOS);
 
   const [filtrosIndicadores, setFiltrosIndicadores] =
+    useState<FiltrosRelatorioType>(FILTROS_VAZIOS);
+
+  const [filtrosTecnicos, setFiltrosTecnicos] =
     useState<FiltrosRelatorioType>(FILTROS_VAZIOS);
 
   const relatorioOS =
@@ -79,6 +97,27 @@ export function Relatorios() {
       "/manutencao",
       `${NOME_ARQUIVO_PADRAO_INDICADORES}.xlsx`
     );
+
+  const relatorioTecnicos =
+    useRelatorio<ProdutividadeTecnicoItem>(
+      "/tecnicos/preview",
+      "/tecnicos",
+      `${NOME_ARQUIVO_PADRAO_TECNICOS}.xlsx`
+    );
+
+  // total de horas paradas nos dados já carregados (mesma conta do
+  // Dashboard) — só aparece quando pelo menos uma O.S. do resultado foi
+  // marcada como "máquina parada"
+  const totalSegundosParados = useMemo(
+    () =>
+      relatorioOS.dados.reduce((soma, item) => {
+        if (!item.maquina_parada) return soma;
+        return soma + (Number(item.tempo_parado_segundos ?? 0) || 0);
+      }, 0),
+    [relatorioOS.dados]
+  );
+
+  const temParadaNosDados = relatorioOS.dados.some((item) => item.maquina_parada);
 
   return (
     <div className="space-y-5 md:space-y-6 overflow-x-hidden">
@@ -101,7 +140,7 @@ export function Relatorios() {
           SELETOR DE RELATÓRIO
       ===================================================== */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
         {RELATORIOS.map((rel) => {
           const Icon = rel.icon;
@@ -294,6 +333,17 @@ export function Relatorios() {
           nomeArquivoPadrao={
             NOME_ARQUIVO_PADRAO_OS
           }
+
+          mostrarFiltroParada
+
+          resumoExtra={
+            temParadaNosDados ? (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600">
+                <OctagonPause size={12} />
+                {formatarSegundos(totalSegundosParados)} parado no período
+              </span>
+            ) : undefined
+          }
         />
       )}
 
@@ -350,6 +400,58 @@ export function Relatorios() {
 
           nomeArquivoPadrao={
             NOME_ARQUIVO_PADRAO_INDICADORES
+          }
+        />
+      )}
+
+      {/* =====================================================
+          PRODUTIVIDADE POR TÉCNICO
+      ===================================================== */}
+
+      {relatorioAtivo === "produtividade-tecnico" && (
+        <PainelRelatorio
+          filtros={filtrosTecnicos}
+
+          onFiltrosChange={
+            setFiltrosTecnicos
+          }
+
+          setores={setores}
+          maquinas={maquinas}
+
+          dados={relatorioTecnicos.dados}
+
+          loading={relatorioTecnicos.loading}
+          erro={relatorioTecnicos.erro}
+          buscou={relatorioTecnicos.buscou}
+          exportando={
+            relatorioTecnicos.exportando
+          }
+
+          onVisualizar={() =>
+            relatorioTecnicos.visualizar(
+              filtrosTecnicos
+            )
+          }
+
+          onExportar={(nomeArquivo) =>
+            relatorioTecnicos.exportar(
+              filtrosTecnicos,
+              nomeArquivo
+            )
+          }
+
+          renderTabela={(dados) => (
+            <RelatorioProdutividadeTecnicoTable
+              dados={dados}
+              loading={
+                relatorioTecnicos.loading
+              }
+            />
+          )}
+
+          nomeArquivoPadrao={
+            NOME_ARQUIVO_PADRAO_TECNICOS
           }
         />
       )}

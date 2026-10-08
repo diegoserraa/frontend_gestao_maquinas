@@ -14,18 +14,29 @@ import {
 import {
   Inbox,
   Clock,
-  AlertTriangle,
   CheckCircle2,
   ShieldCheck,
   Wrench,
-  Wallet,
-  User
+  Boxes,
+  HardHat,
+  User,
+  PauseCircle,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  OctagonPause,
+  Eye,
 } from "lucide-react";
 
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { useDashboardGestor } from "../../hooks/useDashboardGestor";
+import { OrdensDoStatusModal, type FiltroDoCard } from "./OrdensDoStatusModal";
 
 import {
-  KpiCard,
+  KpiCardDupla,
   SectionCard,
   DashboardSkeleton,
   DashboardErrorState,
@@ -37,6 +48,9 @@ import {
   formatCompactNumber,
   formatDiaCurto,
   formatMesCurto,
+  formatTempoParado,
+  calcularTendenciaCustos,
+  calcularProporcao,
 } from "./DashboardGestorParts";
 
 import type { FiltroPeriodo } from "./DashboardGestorTypes";
@@ -118,6 +132,8 @@ type Props = {
 };
 
 export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
+  const navigate = useNavigate();
+
   const {
     loading,
     erro,
@@ -129,11 +145,18 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
     preventivasVencidas,
     rankingTecnicos,
     custos,
+    resumoParadas,
     refetch,
   } = useDashboardGestor(periodo.dataInicio, periodo.dataFim);
 
+  const [cardAberto, setCardAberto] = useState<{ titulo: string; filtro: FiltroDoCard } | null>(null);
+
   if (erro) return <DashboardErrorState onRetry={refetch} />;
   if (loading || !kpis) return <DashboardSkeleton />;
+
+  // clicar num card do topo já mostra quais OS estão por trás daquele número, sem sair da tela
+  const verOrdens = (titulo: string, filtro: Omit<FiltroDoCard, "dataInicio" | "dataFim">) =>
+    setCardAberto({ titulo, filtro: { ...filtro, dataInicio: periodo.dataInicio, dataFim: periodo.dataFim } });
 
   const evolucaoData = evolucao.map((p) => ({
     label: formatDiaCurto(p.dia),
@@ -157,13 +180,19 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
     total: toNumber(p.total),
   }));
 
-  const atribuidas = toNumber(kpis.os_atribuidas);
-
   const maxTecnicoTotal = Math.max(...rankingTecnicos.map((t) => toNumber(t.total)), 1);
 
   const evolucaoWidth = chartScrollWidth(evolucaoData.length, 42, 480);
   const tempoMedioWidth = chartScrollWidth(tempoMedioData.length, 42, 480);
   const custosWidth = chartScrollWidth(custosEvolucaoData.length, 70, 320);
+
+  // ── CUSTOS — dados derivados ───────────────────────────────
+  const tendenciaCustos = custos ? calcularTendenciaCustos(custosEvolucaoData) : null;
+  const proporcaoCustos = custos
+    ? calcularProporcao(toNumber(custos.resumo.material), toNumber(custos.resumo.terceirizado))
+    : { pctA: 0, pctB: 0 };
+  const maxCustoMaquina = Math.max(...(custos?.maquinas ?? []).map((m) => toNumber(m.total)), 1);
+  const IconeTendencia = tendenciaCustos?.direcao === "alta" ? TrendingUp : tendenciaCustos?.direcao === "baixa" ? TrendingDown : Minus;
 
   // ── PREVENTIVAS VENCIDAS — dados derivados ────────────────
   const preventivasMaquinas = preventivasVencidas?.maquinas ?? [];
@@ -183,10 +212,10 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
   const preventivasBorderColor =
     preventivasMaquinas.length === 0 ? "border-t-emerald-400" : HERO_STYLES[heroSeveridade].topBorder;
 
-  // cópia antes de ordenar — sort() muta o array original
+  // cópia antes de ordenar — sort() muta o array original. Sem limite de
+  // itens: mostra todas, dentro de uma área com scroll (ver JSX) — pedido do
+  // usuário pra não deixar o card gigante quando tem muita preventiva vencida.
   const preventivasOrdenadas = [...preventivasMaquinas].sort((a, b) => b.dias_atraso - a.dias_atraso);
-  const preventivasVisiveis = preventivasOrdenadas.slice(0, 6);
-  const preventivasRestantes = preventivasOrdenadas.length - preventivasVisiveis.length;
 
   return (
     <div className="space-y-6">
@@ -214,62 +243,97 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
       `}</style>
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
+        <div className="shrink-0">
           <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-slate-500">
-            Visão geral 
+          <p className="text-sm text-slate-500 whitespace-nowrap">
+            Visão geral
+            {atualizadoEm && (
+              <span className="text-slate-400">
+                {" "}
+                · atualizado às {atualizadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </p>
         </div>
 
         <PeriodoFilter dataInicio={periodo.dataInicio} dataFim={periodo.dataFim} onChange={onPeriodoChange} />
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <KpiCard
-          label="OS Abertas"
-          value={formatCompactNumber(kpis.os_abertas)}
-          icon={<Inbox size={20} />}
-          colorClass="bg-blue-50 text-blue-600"
+      {/* KPIs — 4 cards, cada um com 2 números lado a lado (status que andam
+          juntos na cabeça do gestor), pra caber numa linha só em vez de duas */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCardDupla
+          esquerda={{
+            label: "OS Abertas",
+            value: formatCompactNumber(kpis.os_abertas),
+            icon: <Inbox size={17} />,
+            accent: "blue",
+            onClick: () => verOrdens("OS Abertas", { status: ["ABERTA"] }),
+          }}
+          direita={{
+            label: "Atribuídas",
+            value: formatCompactNumber(kpis.os_atribuidas),
+            icon: <User size={17} />,
+            accent: "cyan",
+            onClick: () => verOrdens("Atribuídas", { status: ["ATRIBUIDA"] }),
+          }}
         />
-        <KpiCard
-          label="Em Andamento"
-          value={formatCompactNumber(kpis.os_andamento)}
-          icon={<Clock size={20} />}
-          colorClass="bg-amber-50 text-amber-600"
+        <KpiCardDupla
+          esquerda={{
+            label: "Em Andamento",
+            value: formatCompactNumber(kpis.os_andamento),
+            icon: <Clock size={17} />,
+            accent: "amber",
+            onClick: () => verOrdens("Em Andamento", { status: ["EM_ANDAMENTO"] }),
+          }}
+          direita={{
+            label: "Pausadas",
+            value: formatCompactNumber(kpis.os_pausadas ?? 0),
+            icon: <PauseCircle size={17} />,
+            accent: "orange",
+            onClick: () => verOrdens("Pausadas", { status: ["PAUSADA"] }),
+          }}
         />
-        <KpiCard
-          label="Atribuídas"
-          value={formatCompactNumber(kpis.os_atribuidas)}
-          icon={<User size={20} />}
-          colorClass="bg-gradient-to-br from-cyan-50 to-sky-100 text-cyan-700"
+        <KpiCardDupla
+          esquerda={{
+            label: "Finalizadas",
+            value: formatCompactNumber(kpis.os_finalizadas),
+            icon: <CheckCircle2 size={17} />,
+            accent: "emerald",
+            onClick: () => verOrdens("Finalizadas", { status: ["FINALIZADA"] }),
+          }}
+          direita={{
+            label: "Canceladas",
+            value: formatCompactNumber(kpis.os_canceladas ?? 0),
+            icon: <XCircle size={17} />,
+            accent: "slate",
+            onClick: () => verOrdens("Canceladas", { status: ["CANCELADA"] }),
+          }}
         />
-        <KpiCard
-          label="Finalizadas"
-          value={formatCompactNumber(kpis.os_finalizadas)}
-          icon={<CheckCircle2 size={20} />}
-          colorClass="bg-emerald-50 text-emerald-600"
-        />
-        <KpiCard
-          label="Preventivas"
-          value={formatCompactNumber(kpis.preventivas)}
-          icon={<ShieldCheck size={20} />}
-          colorClass="bg-violet-50 text-violet-600"
-        />
-        <KpiCard
-          label="Corretivas"
-          value={formatCompactNumber(kpis.corretivas)}
-          icon={<Wrench size={20} />}
-          colorClass="bg-rose-50 text-rose-600"
+        {/* só o número mesmo, sem "Ver ordens" — corretiva/preventiva é a maioria
+            das O.S., a lista por trás não ajuda tanto quanto nos outros cards */}
+        <KpiCardDupla
+          esquerda={{
+            label: "Preventivas",
+            value: formatCompactNumber(kpis.preventivas),
+            icon: <ShieldCheck size={17} />,
+            accent: "violet",
+          }}
+          direita={{
+            label: "Corretivas",
+            value: formatCompactNumber(kpis.corretivas),
+            icon: <Wrench size={17} />,
+            accent: "rose",
+          }}
         />
       </div>
 
-      {/* EVOLUÇÃO + TEMPO MÉDIO — 50/50 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {/* EVOLUÇÃO + TEMPO MÉDIO (mesma largura entre si) + RANKING (mais estreito) */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
         <SectionCard
           title="Evolução de Ordens de Serviço"
           subtitle="Total de OS abertas por dia, no período"
-          className="border-t-4 border-t-blue-400 min-w-0"
+          className="border-t-4 border-t-blue-400 min-w-0 lg:col-span-2"
         >
           {evolucaoData.length === 0 ? (
             <ChartEmptyState />
@@ -331,7 +395,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         <SectionCard
           title="Tempo Médio de Resolução"
           subtitle={`Média geral: ${tempoMedioResolucao?.resumo?.formatado ?? "0min"}`}
-          className="border-t-4 border-t-violet-400 min-w-0"
+          className="border-t-4 border-t-violet-400 min-w-0 lg:col-span-2"
         >
           {tempoMedioData.length === 0 ? (
             <ChartEmptyState />
@@ -393,113 +457,11 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
             </div>
           )}
         </SectionCard>
-      </div>
-
-      {/* PREVENTIVAS VENCIDAS + RANKING + MÁQUINAS PARADAS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <SectionCard
-          title="Preventivas Vencidas"
-          subtitle={`${preventivasTotal} máquina${preventivasTotal === 1 ? "" : "s"} com manutenção atrasada`}
-          className={`border-t-4 ${preventivasBorderColor}`}
-        >
-          {preventivasMaquinas.length === 0 ? (
-            <ChartEmptyState label="Nenhuma preventiva vencida — tudo em dia 🎉" />
-          ) : (
-            <div className="h-full flex flex-col gap-4">
-              {/* INDICADOR — sem bloco/banner, só um "status dot" pulsante
-                  (mesma linguagem de indicadores de status usada em
-                  dashboards premium) + o total e os chips de severidade,
-                  na mesma paleta neutra do resto do card */}
-              <div className="flex items-center justify-between flex-wrap gap-2 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span
-                      className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`}
-                    />
-                    <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${hero.dot}`} />
-                  </span>
-                  <span className="text-2xl font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
-                  <span className="text-sm text-slate-400">
-                    atrasada{preventivasTotal === 1 ? "" : "s"}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {preventivasCriticas > 0 && (
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
-                      {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
-                    </span>
-                  )}
-                  {preventivasAlertas > 0 && (
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
-                      {preventivasAlertas} atenção
-                    </span>
-                  )}
-                  {preventivasRecentes > 0 && (
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
-                      {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* LISTA — cards individuais com acento lateral, em vez da
-                  barra de fundo proporcional usada no Ranking de Técnicos */}
-              <div className="space-y-2 shrink-0">
-                {preventivasVisiveis.map((maquina) => {
-                  const sev = severidadePreventiva(maquina.dias_atraso);
-                  const styles = SEVERIDADE_STYLES[sev];
-
-                  return (
-                    <div
-                      key={maquina.maquina_id}
-                      className={`
-                        flex items-center gap-3 rounded-xl border border-slate-100 bg-white
-                        pl-3 pr-3 py-2.5 border-l-4 ${styles.accent}
-                        shadow-sm hover:shadow-md hover:-translate-y-0.5
-                        transition-all duration-200
-                      `}
-                    >
-                      <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
-                        <Wrench size={15} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{maquina.nome}</p>
-                        <p className="text-[11px] text-slate-400">Manutenção preventiva vencida</p>
-                      </div>
-                      <span className={`text-xs font-bold rounded-full px-2.5 py-1 shrink-0 ${styles.pill}`}>
-                        {maquina.dias_atraso}d
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {preventivasRestantes > 0 ? (
-                <p className="text-center text-xs text-slate-400 pt-1">
-                  +{preventivasRestantes} outra{preventivasRestantes === 1 ? "" : "s"} máquina
-                  {preventivasRestantes === 1 ? "" : "s"} atrasada{preventivasRestantes === 1 ? "" : "s"}
-                </p>
-              ) : (
-                preventivasVisiveis.length <= 3 && (
-                  // preenche o espaço sobrando quando a lista é curta, em
-                  // vez de deixar um vão em branco embaixo (o grid estica
-                  // o card pra mesma altura dos vizinhos)
-                  
-                    <p className="text-xs text-slate-400 text-center px-4">
-                      As demais máquinas estão com a preventiva em dia ✅
-                    </p>
-                 
-                )
-              )}
-            </div>
-          )}
-        </SectionCard>
 
         <SectionCard
           title="Ranking de Técnicos"
           subtitle="OS finalizadas no período"
-          className="border-t-4 border-t-emerald-400"
+          className="border-t-4 border-t-emerald-400 lg:col-span-1"
         >
           {rankingTecnicos.length === 0 ? (
             <ChartEmptyState />
@@ -523,6 +485,170 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </SectionCard>
+      </div>
+
+      {/* PREVENTIVAS VENCIDAS + MÁQUINAS PARADAS + MÁQUINAS COM MAIS CHAMADOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <SectionCard
+          title="Preventivas Vencidas"
+          headerRight={
+            preventivasMaquinas.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <span className="inline-flex items-center gap-1.5 shrink-0">
+                  <span className="relative flex h-2 w-2">
+                    <span
+                      className={`absolute inline-flex h-full w-full rounded-full ${hero.dot} opacity-75 animate-ping`}
+                    />
+                    <span className={`relative inline-flex h-2 w-2 rounded-full ${hero.dot}`} />
+                  </span>
+                  <span className="text-sm font-bold text-slate-800 tabular-nums">{preventivasTotal}</span>
+                  <span className="text-xs text-slate-400">
+                    atrasada{preventivasTotal === 1 ? "" : "s"}
+                  </span>
+                </span>
+
+                {preventivasCriticas > 0 && (
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.critico.pill}`}>
+                    {preventivasCriticas} crítica{preventivasCriticas === 1 ? "" : "s"}
+                  </span>
+                )}
+                {preventivasAlertas > 0 && (
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.alerta.pill}`}>
+                    {preventivasAlertas} atenção
+                  </span>
+                )}
+                {preventivasRecentes > 0 && (
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${SEVERIDADE_STYLES.recente.pill}`}>
+                    {preventivasRecentes} recente{preventivasRecentes === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
+            ) : undefined
+          }
+          className={`border-t-4 ${preventivasBorderColor}`}
+        >
+          {preventivasMaquinas.length === 0 ? (
+            <ChartEmptyState label="Nenhuma preventiva vencida — tudo em dia 🎉" />
+          ) : (
+            <div className="h-full flex flex-col gap-4">
+              {/* LISTA — cards individuais com acento lateral, em vez da
+                  barra de fundo proporcional usada no Ranking de Técnicos.
+                  Botão à direita sempre vai pra O.S. (a lista já parte das
+                  O.S. de preventiva abertas — ver obterPreventivasVencidas).
+                  Mostra todas, mas com altura travada em ~3 linhas + scroll
+                  — pedido do usuário pra não deixar o card gigante quando
+                  tem muita preventiva vencida. */}
+              {/* altura medida pra caber exatamente 3 linhas (o app tem uma
+                  escala de fonte global ~85%, então o valor em px real não
+                  bate com o que a escala "canônica" do Tailwind sugeriria) */}
+              <div className="space-y-2 shrink-0 max-h-[216px] overflow-y-auto pr-1 -mr-1">
+                {preventivasOrdenadas.map((maquina) => {
+                  const sev = severidadePreventiva(maquina.dias_atraso);
+                  const styles = SEVERIDADE_STYLES[sev];
+
+                  return (
+                    <div
+                      key={maquina.maquina_id}
+                      className={`
+                        flex items-center gap-3 rounded-xl border border-slate-100 bg-white
+                        pl-3 pr-3 py-2.5 border-l-4 ${styles.accent}
+                        shadow-sm hover:shadow-md hover:-translate-y-0.5
+                        transition-all duration-200
+                      `}
+                    >
+                      <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${styles.icone}`}>
+                        <Wrench size={15} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{maquina.nome}</p>
+                        <p className="text-[11px] text-slate-400">Manutenção preventiva vencida</p>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-xs font-bold rounded-full px-2.5 py-1 ${styles.pill}`}>
+                          {maquina.dias_atraso}d
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/ordens-servico/${maquina.os_id}`)}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors"
+                        >
+                          <Eye size={12} />
+                          OS #{maquina.os_id}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {preventivasOrdenadas.length <= 2 && (
+                // preenche o espaço sobrando quando a lista é curta, em
+                // vez de deixar um vão em branco embaixo (o grid estica
+                // o card pra mesma altura dos vizinhos)
+                <p className="text-xs text-slate-400 text-center px-4">
+                  As demais máquinas estão com a preventiva em dia ✅
+                </p>
+              )}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Máquinas Paradas"
+          subtitle={
+            resumoParadas && resumoParadas.paradasAgora > 0
+              ? `${resumoParadas.paradasAgora} máquina${resumoParadas.paradasAgora === 1 ? "" : "s"} parada${resumoParadas.paradasAgora === 1 ? "" : "s"} agora`
+              : "Nenhuma máquina parada agora"
+          }
+          className="border-t-4 border-t-rose-400"
+        >
+          {!resumoParadas || resumoParadas.maquinas.length === 0 ? (
+            <ChartEmptyState label="Tudo funcionando — nenhuma máquina parada 🎉" />
+          ) : (
+            <div className="space-y-2">
+              {resumoParadas.maquinas.map((m) => (
+                <div
+                  key={m.osId}
+                  className="
+                    flex items-center gap-3 rounded-xl border border-slate-100 bg-white
+                    pl-3 pr-3 py-2.5 border-l-4 border-l-rose-400
+                    shadow-sm hover:shadow-md hover:-translate-y-0.5
+                    transition-all duration-200
+                  "
+                >
+                  <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-600">
+                    <OctagonPause size={15} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{m.maquinaNome}</p>
+                    <p className="text-[11px] text-rose-500 font-medium truncate">
+                      {formatTempoParado(m.dataAbertura)}
+                      {m.motivoParada ? ` · ${m.motivoParada}` : ""}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/ordens-servico/${m.osId}`)}
+                    className="
+                      inline-flex shrink-0 items-center gap-1
+                      rounded-lg px-2.5 py-1.5
+                      text-[11px] font-semibold text-rose-600
+                      hover:bg-rose-50
+                      transition-colors
+                    "
+                  >
+                    <Eye size={13} />
+                    OS #{m.osId}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </SectionCard>
@@ -562,29 +688,58 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
         </SectionCard>
       </div>
 
-      {/* CUSTOS — gráfico e lista lado a lado, em vez de empilhados,
-          pra ocupar bem menos altura na tela */}
+      {/* CUSTOS — índigo (mesma cor do gradiente da marca) pra destacar
+          como um cartão "premium", em vez do cinza neutro de antes */}
       {custos && (
         <SectionCard
           title="Custos de Manutenção"
           subtitle="Material, terceirizado e evolução mensal"
-          className="border-t-4 border-t-slate-300"
+          className="border-t-4 border-t-indigo-400"
         >
-          {/* resumo — linha única e compacta */}
-          <div className="grid grid-cols-3 gap-2.5 mb-4">
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-              <p className="text-[11px] text-slate-500">Material</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.material)}</p>
+          {/* HERO — total em destaque + tendência vs mês anterior, igual em
+              espírito ao número grande das Preventivas Vencidas */}
+          <div className="mb-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Total no período
+              </span>
+
+              {tendenciaCustos && (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${tendenciaCustos.classe}`}
+                >
+                  <IconeTendencia size={11} />
+                  {tendenciaCustos.texto}
+                </span>
+              )}
             </div>
-            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-              <p className="text-[11px] text-slate-500">Terceirizado</p>
-              <p className="text-sm font-bold text-slate-800 truncate">{formatCurrency(custos.resumo.terceirizado)}</p>
+
+            <p className="text-3xl font-bold text-indigo-700 tabular-nums leading-tight">
+              {formatCurrency(custos.resumo.total)}
+            </p>
+
+            {/* barra material x terceirizado — mesma ideia de "proporção visual"
+                do gráfico de Máquinas com Mais Chamados, só que horizontal e dupla */}
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 flex">
+              <div className="h-full bg-indigo-500" style={{ width: `${proporcaoCustos.pctA}%` }} />
+              <div className="h-full bg-sky-300" style={{ width: `${proporcaoCustos.pctB}%` }} />
             </div>
-            <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-              <p className="text-[11px] text-blue-500">Total</p>
-              <p className="text-sm font-bold text-blue-700 truncate">{formatCurrency(custos.resumo.total)}</p>
+
+            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Boxes size={13} className="text-indigo-500" />
+                Material <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.material)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctA}%)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <HardHat size={13} className="text-sky-400" />
+                Terceirizado <span className="font-semibold text-slate-800">{formatCurrency(custos.resumo.terceirizado)}</span>
+                <span className="text-slate-400">({proporcaoCustos.pctB}%)</span>
+              </span>
             </div>
           </div>
+
+          <div className="border-t border-slate-100 pt-4" />
 
           {/* evolução mensal + custo por máquina, lado a lado */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -597,7 +752,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
               ) : (
                 <div className="chart-scroll overflow-x-auto -mx-1 px-1">
                   <div style={{ minWidth: custosWidth }}>
-                    <ResponsiveContainer width="100%" height={150}>
+                    <ResponsiveContainer width="100%" height={180}>
                       <BarChart
                         data={custosEvolucaoData}
                         margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
@@ -611,7 +766,7 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                           contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
                           cursor={{ fill: "#f8fafc" }}
                         />
-                        <Bar dataKey="total" name="Custo" fill={CHART_COLORS.violeta} radius={[4, 4, 0, 0]} barSize={24} />
+                        <Bar dataKey="total" name="Custo" fill={CHART_COLORS.indigo} radius={[4, 4, 0, 0]} barSize={24} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -624,24 +779,42 @@ export function DashboardGestorDesktop({ periodo, onPeriodoChange }: Props) {
                 <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1.5">
                   Custo por máquina
                 </p>
-                <div className="divide-y divide-slate-100 max-h-[150px] overflow-y-auto pr-1">
+                {/* barra proporcional atrás do texto — mesmo padrão visual do
+                    Ranking de Técnicos, só na cor índigo deste card */}
+                <div className="space-y-1 max-h-[180px] overflow-y-auto pr-1">
                   {[...custos.maquinas]
                     .sort((a, b) => toNumber(b.total) - toNumber(a.total))
                     .slice(0, 6)
-                    .map((m) => (
-                      <div key={m.nome} className="flex items-center justify-between py-1.5 text-sm">
-                        <span className="text-slate-700 truncate">{m.nome}</span>
-                        <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">
-                          {formatCurrency(m.total)}
-                        </span>
-                      </div>
-                    ))}
+                    .map((m) => {
+                      const pct = (toNumber(m.total) / maxCustoMaquina) * 100;
+                      return (
+                        <div key={m.nome} className="relative rounded-lg overflow-hidden group">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-indigo-50 transition-all duration-300 group-hover:bg-indigo-100"
+                            style={{ width: `${pct}%` }}
+                          />
+                          <div className="relative flex items-center justify-between py-1.5 px-2 text-sm">
+                            <span className="text-slate-700 truncate">{m.nome}</span>
+                            <span className="font-semibold text-slate-800 tabular-nums shrink-0 pl-2">
+                              {formatCurrency(m.total)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
           </div>
         </SectionCard>
       )}
+
+      <OrdensDoStatusModal
+        aberto={cardAberto !== null}
+        onClose={() => setCardAberto(null)}
+        titulo={cardAberto?.titulo ?? ""}
+        filtro={cardAberto?.filtro ?? null}
+      />
     </div>
   );
 }

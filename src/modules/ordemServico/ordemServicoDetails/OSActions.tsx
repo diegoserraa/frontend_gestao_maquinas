@@ -8,26 +8,30 @@ import {
   UserPlus,
   Bell,
   Loader2,
+  PauseCircle,
+  Play,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import {
   atribuirTecnicoOS,
+  atribuirExternoOS,
   iniciarAtendimentoOS,
+  pausarOS,
+  retomarOS,
   finalizarOS,
   cancelarOS,
 } from "@/modules/ordemServico/ordemServicoService";
-import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants";
-import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
+import type { OrdemServico, Tecnico } from "@/modules/ordemServico/ordemServicoType";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { acoesDaOS } from "@/modules/ordemServico/regrasAcoesOS";
 import { FinalizarOrdemServicoModal } from "@/components/modals/ordemServico/FinalizarOrdemServico";
 import { CancelarOrdemServicoModal } from "@/components/modals/ordemServico/CancelarOrdemServico";
+import { PausarOrdemServicoModal } from "@/components/modals/ordemServico/PausarOrdemServico";
 import { OrdemServicoTimeline } from "@/modules/ordemServico/ordemDeServicoTimeline";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
 
 type Props = {
   os: OrdemServico;
@@ -41,6 +45,7 @@ const BUTTON_COLORS = {
   slate: "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700",
   blue: "bg-blue-600 hover:bg-blue-700 text-white",
   amber: "bg-amber-500 hover:bg-amber-600 text-white",
+  orange: "bg-orange-500 hover:bg-orange-600 text-white",
   emerald: "bg-emerald-600 hover:bg-emerald-700 text-white",
   red: "bg-red-600 hover:bg-red-700 text-white",
   violet: "border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-700",
@@ -79,10 +84,14 @@ function ActionButton({
 }
 
 export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) {
+  const { pode } = usePermissoes();
   const [assumindo, setAssumindo] = useState(false);
   const [iniciando, setIniciando] = useState(false);
+  const [retomando, setRetomando] = useState(false);
+  const [openPausar, setOpenPausar] = useState(false);
   const [definindoExterno, setDefinindoExterno] = useState(false);
   const [atribuindo, setAtribuindo] = useState(false);
+  const [tecnicoSelecionado, setTecnicoSelecionado] = useState("");
 
   const [openFinalizar, setOpenFinalizar] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
@@ -91,48 +100,34 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
   const [timelineAberta, setTimelineAberta] = useState(false);
 
   // ── mesmas regras de sempre, copiadas 1:1 do OrdemServicoActions ──
-  const isAdmin = userRole === "ADMIN";
-  const isGestor = userRole === "GESTOR" || isAdmin;
-  const isTecnico = userRole === "TECNICO";
 
-  const status = String(os.status ?? "").toUpperCase();
-  const isExterno = os.id_tecnico === ID_TECNICO_EXTERNO;
+  const isExterno = os.execucao_externa === true;
 
  const tecnicoAtual = tecnicos.find(
   (t) => Number(t.id) === Number(os.id_tecnico)
 );
 
-  const podeAssumir = isTecnico && status === "ABERTA" && !isExterno;
-
-  const podeIniciar =
-    isTecnico && status === "ATRIBUIDA" && os.id_tecnico === userId && !isExterno;
-
-  const podeFinalizar =
-    (isTecnico && status === "EM_ANDAMENTO" && os.id_tecnico === userId && !isExterno) ||
-    (isGestor && status === "EM_ANDAMENTO") ||
-    (isGestor && isExterno && !["FINALIZADA", "CANCELADA"].includes(status));
-
-  const tecnicoJaDefinido = !!os.id_tecnico && os.id_tecnico !== 0;
-
-  const podeAtribuir =
-    isGestor && !["FINALIZADA", "CANCELADA"].includes(status) && !tecnicoJaDefinido;
-
-  const podeDefinirExterno =
-    isGestor && !tecnicoJaDefinido && !["FINALIZADA", "CANCELADA"].includes(status);
-
-  const podeCancelar =
-  isGestor &&
-  !["FINALIZADA", "CANCELADA"].includes(status);
+  // quais botões mostrar: permissões do usuário + estado da O.S. (ver regrasAcoesOS.ts)
+  const {
+    assumir: podeAssumir,
+    iniciar: podeIniciar,
+    pausar: podePausar,
+    retomar: podeRetomar,
+    finalizar: podeFinalizar,
+    atribuir: podeAtribuir,
+    definirExterno: podeDefinirExterno,
+    cancelar: podeCancelar,
+  } = acoesDaOS(os, userId, pode, userRole);
 
   const semNenhumaAcao =
-    !podeAssumir && !podeIniciar && !podeFinalizar && !podeCancelar && !podeAtribuir && !podeDefinirExterno;
+    !podeAssumir && !podeIniciar && !podePausar && !podeRetomar && !podeFinalizar && !podeCancelar && !podeAtribuir && !podeDefinirExterno;
 
   // ── handlers — mesma sequência de chamadas do componente original ──
   async function handleAssumir(e: React.MouseEvent) {
     e.stopPropagation();
     setAssumindo(true);
     try {
-      await atribuirTecnicoOS(os.id, userId, userId);
+      await atribuirTecnicoOS(os.id, userId);
       onRefresh("ATRIBUIDA");
     } catch (err) {
       console.error(err);
@@ -154,6 +149,24 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     }
   }
 
+  async function handlePausar(motivo: string) {
+    await pausarOS(os.id, motivo);
+    onRefresh("PAUSADA");
+  }
+
+  async function handleRetomar(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRetomando(true);
+    try {
+      await retomarOS(os.id);
+      onRefresh("EM_ANDAMENTO");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRetomando(false);
+    }
+  }
+
   async function handleFinalizar(
     resolucao: string,
     valorGasto: number,
@@ -168,8 +181,8 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     e.stopPropagation();
     setDefinindoExterno(true);
     try {
-      await atribuirTecnicoOS(os.id, ID_TECNICO_EXTERNO, userId);
-      await iniciarAtendimentoOS(os.id);
+      // o parceiro já está executando: o servidor coloca a O.S. em andamento (o gestor não "inicia" atendimento)
+      await atribuirExternoOS(os.id);
       onRefresh("EM_ANDAMENTO");
     } catch (err) {
       console.error(err);
@@ -178,19 +191,19 @@ export function OSActions({ os, userRole, userId, tecnicos, onRefresh }: Props) 
     }
   }
 
-  async function handleAtribuirTecnico(e: React.ChangeEvent<HTMLSelectElement>) {
-    const tecnicoId = Number(e.target.value);
+  async function handleAtribuirTecnico(valor: string) {
+    const tecnicoId = Number(valor);
     if (!tecnicoId) return;
 
     setAtribuindo(true);
     try {
-      await atribuirTecnicoOS(os.id, tecnicoId, userId);
+      await atribuirTecnicoOS(os.id, tecnicoId);
       onRefresh();
     } catch (err) {
       console.error(err);
     } finally {
       setAtribuindo(false);
-      e.target.value = "";
+      setTecnicoSelecionado(""); // volta pro placeholder — é uma ação de disparo único, não um campo de formulário
     }
   }
 
@@ -262,6 +275,18 @@ async function handleConfirmarCancelamento(motivo: string) {
           </ActionButton>
         )}
 
+        {podePausar && (
+          <ActionButton color="orange" icon={<PauseCircle size={16} />} onClick={(e) => { e.stopPropagation(); setOpenPausar(true); }}>
+            Pausar atendimento
+          </ActionButton>
+        )}
+
+        {podeRetomar && (
+          <ActionButton color="blue" icon={<Play size={16} />} loading={retomando} onClick={handleRetomar}>
+            Retomar atendimento
+          </ActionButton>
+        )}
+
         {podeDefinirExterno && (
           <ActionButton color="violet" icon={<HardHat size={16} />} loading={definindoExterno} onClick={handleDefinirExterno}>
             Definir técnico externo
@@ -270,26 +295,18 @@ async function handleConfirmarCancelamento(motivo: string) {
 
         {podeAtribuir && (
           <div className="relative flex-1 min-w-[150px]">
-            <select
-              defaultValue=""
-              disabled={atribuindo}
-              onChange={handleAtribuirTecnico}
-              className="
-                w-full h-11 rounded-xl border border-slate-200 bg-white
-                pl-9 pr-3 text-sm font-semibold text-slate-700
-                outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400
-                disabled:opacity-60 appearance-none cursor-pointer
-              "
-            >
-              <option value="" disabled>
-                Atribuir técnico
-              </option>
-              {tecnicos.map((tecnico) => (
-                <option key={tecnico.id} value={tecnico.id}>
-                  {tecnico.nome}
-                </option>
-              ))}
-            </select>
+            <Select value={tecnicoSelecionado} onValueChange={handleAtribuirTecnico} disabled={atribuindo}>
+              <SelectTrigger className="h-11 pl-9 font-semibold text-slate-700">
+                <SelectValue placeholder="Atribuir técnico" />
+              </SelectTrigger>
+              <SelectContent>
+                {tecnicos.map((tecnico) => (
+                  <SelectItem key={tecnico.id} value={String(tecnico.id)}>
+                    {tecnico.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-blue-600">
               {atribuindo ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
             </div>
@@ -322,6 +339,12 @@ async function handleConfirmarCancelamento(motivo: string) {
           </ActionButton>
         )}
       </div>
+
+      <PausarOrdemServicoModal
+        open={openPausar}
+        onClose={() => setOpenPausar(false)}
+        onConfirm={handlePausar}
+      />
 
       {/* MODAL FINALIZAR — já existente, reaproveitado sem alteração */}
       <FinalizarOrdemServicoModal

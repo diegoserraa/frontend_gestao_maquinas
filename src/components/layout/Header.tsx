@@ -1,12 +1,16 @@
 import { Menu } from "lucide-react";
 
 import { NotificationBell } from "@/modules/notificacao/notificacaoBell";
+import { getUser } from "@/modules/login/loginStorage";
+import { MenuDoUsuario } from "@/modules/conta/MenuDoUsuario";
 
 interface Props {
   openSidebar: () => void;
 }
 
 export default function Header({ openSidebar }: Props) {
+  const usuario = getUser();
+
   return (
     <header
       className="
@@ -44,20 +48,11 @@ export default function Header({ openSidebar }: Props) {
 
       {/* RIGHT */}
       <div className="flex items-center gap-3">
-        <NotificationBell />
+        {/* o administrador não tem notificações de manutenção */}
+        {usuario?.role !== "ADMIN" && <NotificationBell />}
 
-        {/* AVATAR */}
-        <div
-          className="
-            w-9 h-9 rounded-full
-            bg-gradient-to-br from-blue-500 to-blue-700
-            flex items-center justify-center
-            text-white text-sm font-medium
-            shadow-md border border-white
-          "
-        >
-          D
-        </div>
+        {/* AVATAR: dados da conta, alterar senha e sair */}
+        <MenuDoUsuario />
       </div>
     </header>
   );

@@ -1,5 +1,75 @@
 @import "tailwindcss";
 
+/*
+ * Cores base do sistema. O Tailwind v4 usa "currentColor" (preto) como cor de borda padrão e os componentes
+ * (shadcn) esperam tokens de tema que o projeto nunca definiu: sem isto, toda divisória de modal, borda de
+ * botão "Cancelar" (outline) e fundo de menu saía preto ou transparente. Tudo mapeado para a paleta slate
+ * que o resto do sistema já usa; classes explícitas (border-blue-200, bg-white...) continuam mandando.
+ */
+/* o sistema não tem modo escuro: "dark:" só valeria com a classe .dark (nunca usada), não pela preferência do computador */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-slate-200);
+  }
+}
+
+@theme inline {
+  --color-border: var(--color-slate-200);
+  --color-background: #ffffff;
+  --color-foreground: var(--color-slate-900);
+  --color-muted: var(--color-slate-100);
+  --color-muted-foreground: var(--color-slate-500);
+  --color-accent: var(--color-slate-100);
+  --color-accent-foreground: var(--color-slate-900);
+  --color-popover: #ffffff;
+  --color-popover-foreground: var(--color-slate-700);
+}
+
 html {
   font-size: 85%;
+}
+
+/* margem consistente do papel impresso, independente do padrão de cada navegador/impressora */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
+/* ── Notificações em tempo real ─────────────────────────────── */
+@keyframes sino-balanco {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(16deg); }
+  30% { transform: rotate(-14deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-8deg); }
+  75% { transform: rotate(4deg); }
+}
+
+@keyframes selo-pulo {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@keyframes notificacao-chegando {
+  0% { opacity: 0; transform: translateY(-10px); background-color: rgb(191 219 254); }
+  40% { opacity: 1; transform: translateY(0); }
+  100% { background-color: transparent; }
+}
+
+.animate-sino { animation: sino-balanco 0.9s ease-in-out; transform-origin: 50% 0; }
+.animate-selo-pulo { animation: selo-pulo 0.4s ease-out; }
+.animate-notificacao-chegando { animation: notificacao-chegando 2.4s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sino,
+  .animate-selo-pulo,
+  .animate-notificacao-chegando { animation: none; }
 }

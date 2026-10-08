@@ -1,28 +1,18 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/apiClient";
+import type { Sector } from "./setorTypes";
 
-export async function getSectors() {
-  const res = await fetch(`${API_URL}/setores`);
-  return res.json();
+export async function getSectors(): Promise<Sector[]> {
+  return apiGet<Sector[]>("/setores");
 }
 
-export async function createSector(payload: unknown) {
-  return fetch(`${API_URL}/setores`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function createSector(payload: unknown): Promise<Sector> {
+  return apiPost<Sector>("/setores", payload);
 }
 
-export async function updateSector(id: number, payload: unknown) {
-  return fetch(`${API_URL}/setores/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function updateSector(id: number, payload: unknown): Promise<Sector> {
+  return apiPut<Sector>(`/setores/${id}`, payload);
 }
 
-export async function deleteSector(id: number) {
-  return fetch(`${API_URL}/setores/${id}`, {
-    method: "DELETE" as const,
-  });
+export async function deleteSector(id: number): Promise<void> {
+  return apiDelete(`/setores/${id}`);
 }

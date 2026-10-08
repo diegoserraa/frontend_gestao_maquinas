@@ -14,6 +14,8 @@ export type FiltrosRelatorio = {
   dataFinal: string; // yyyy-MM-dd
   setorId: string; // "" = todos
   maquinaId: string; // "" = todas
+  // só usado no Histórico de O.S. — Indicadores por Máquina ignora
+  apenasParada?: boolean;
 };
 
 export const FILTROS_VAZIOS: FiltrosRelatorio = {
@@ -21,6 +23,7 @@ export const FILTROS_VAZIOS: FiltrosRelatorio = {
   dataFinal: "",
   setorId: "",
   maquinaId: "",
+  apenasParada: false,
 };
 
 export type OrdemServicoRelatorioItem = {
@@ -41,6 +44,24 @@ export type OrdemServicoRelatorioItem = {
   motivo_cancelamento?: string | null;
   valor_gasto?: number | string | null;
   valor_parceiro?: number | string | null;
+  // soma das pausas da O.S. (o servidor já desconta isso do tempo de reparo)
+  tempo_pausado_segundos?: number | string | null;
+  // "máquina parada" (v1 enxuto) — respondido só na abertura, ver OrdemServicoForm
+  maquina_parada?: boolean;
+  motivo_parada?: string | null;
+  tempo_parado_segundos?: number | string | null;
+};
+
+export type ProdutividadeTecnicoItem = {
+  tecnico_id: number;
+  tecnico_nome: string;
+
+  os_finalizadas: number | string;
+  os_finalizadas_prioritarias: number | string;
+  tempo_medio_atendimento_segundos?: number | string | null;
+
+  // estado ATUAL — nunca filtrado por período, é a fila de hoje
+  os_em_aberto: number | string;
 };
 
 export type IndicadorMaquinaItem = {

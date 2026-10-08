@@ -1,39 +1,49 @@
 import {
   ArrowLeft,
-  Wrench,
-  Flag,
-  HardHat,
   Clock,
+  ChevronDown,
+  Printer,
+  FileDown,
+  Loader2,
+  OctagonPause,
 } from "lucide-react";
 
 import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
-import { ID_TECNICO_EXTERNO } from "@/modules/ordemServico/ordemServicoConstants";
 
 import {
-  formatDateTime,
-  getStatusStyle,
-  getPrioridadeAccent,
-} from "./osDetailsHelpers";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { formatDateTime, getStatusStyle } from "./osDetailsHelpers";
 
 type Props = {
   os: OrdemServico;
   maquinaNome?: string;
   onBack: () => void;
+  /** abre o diálogo de impressão do navegador — pra quem quer só ver/imprimir na hora */
+  onImprimir: () => void;
+  /** gera o PDF da O.S. (+ um .zip com as fotos, se houver) e baixa na hora */
+  onBaixarCompleto: () => void;
+  /** true enquanto o PDF/zip está sendo montado — evita clique duplicado */
+  baixando?: boolean;
 };
 
 export function OSHeader({
   os,
   maquinaNome,
   onBack,
+  onImprimir,
+  onBaixarCompleto,
+  baixando = false,
 }: Props) {
   const statusStyle = getStatusStyle(os.status);
   const StatusIcon = statusStyle.icon;
 
-  const prioridadeAccent =
-    getPrioridadeAccent(os.prioridade);
-
   const isExterno =
-    os.id_tecnico === ID_TECNICO_EXTERNO;
+    os.execucao_externa === true;
 
 return (
   <div className="relative overflow-hidden">
@@ -82,10 +92,23 @@ return (
         "
       >
 
-        {/* Voltar */}
-  
-
-
+        {/* Voltar — some no papel, é só navegação */}
+        <button
+          type="button"
+          onClick={onBack}
+          title="Voltar"
+          className="
+            print:hidden
+            flex h-9 w-9 shrink-0 items-center justify-center
+            rounded-xl border border-slate-200
+            bg-white/70 backdrop-blur
+            text-slate-500
+            hover:bg-white hover:text-slate-700 hover:border-slate-300
+            transition
+          "
+        >
+          <ArrowLeft size={16} />
+        </button>
 
         <div className="flex-1 min-w-0">
 
@@ -150,50 +173,108 @@ return (
 
 
 
-            {/* Data */}
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-                rounded-xl
-                border
-                border-slate-200
-                bg-white/70
-                backdrop-blur
-                px-3 py-2
-                w-fit
-                max-w-full
-              "
-            >
+            {/* Data + Imprimir — items-stretch faz o botão (1 linha) acompanhar a
+                altura do chip de data (2 linhas) em vez de sobrar espaço nas laterais */}
+            <div className="flex flex-wrap items-stretch gap-2">
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-3
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white/70
+                  backdrop-blur
+                  px-3 py-2
+                  w-fit
+                  max-w-full
+                "
+              >
 
-              <Clock
-                size={15}
-                className="text-blue-500 shrink-0"
-              />
-
-
-              <div className="min-w-0">
-
-                <p className="text-[11px] text-slate-500">
-                  Aberta em
-                </p>
+                <Clock
+                  size={15}
+                  className="text-blue-500 shrink-0"
+                />
 
 
-                <p
-                  className="
-                    text-xs
-                    sm:text-sm
-                    font-semibold
-                    text-slate-700
-                    truncate
-                  "
-                >
-                  {formatDateTime(os.data_abertura)}
-                </p>
+                <div className="min-w-0">
+
+                  <p className="text-[11px] text-slate-500">
+                    Aberta em
+                  </p>
+
+
+                  <p
+                    className="
+                      text-xs
+                      sm:text-sm
+                      font-semibold
+                      text-slate-700
+                      truncate
+                    "
+                  >
+                    {formatDateTime(os.data_abertura)}
+                  </p>
+
+                </div>
 
               </div>
 
+              {/* some no papel — não faz sentido imprimir o próprio botão de imprimir/baixar.
+                  items-stretch no pai já estica o trigger pra bater com a altura do chip de
+                  data ao lado — "height: 100%" aqui atrapalharia o stretch (o pai não tem
+                  altura própria definida, só a do conteúdo), por isso NÃO usar h-full */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={baixando}
+                    title="Imprimir ou baixar esta O.S."
+                    className="
+                      print:hidden
+                      flex items-center gap-1.5
+                      rounded-xl border border-slate-200
+                      bg-white/70 backdrop-blur
+                      px-3 py-2
+                      text-xs sm:text-sm font-semibold text-slate-700
+                      hover:bg-white hover:border-slate-300
+                      transition
+                      disabled:opacity-60 disabled:cursor-wait
+                    "
+                  >
+                    {baixando ? (
+                      <Loader2 size={15} className="text-blue-500 shrink-0 animate-spin" />
+                    ) : (
+                      <Printer size={15} className="text-blue-500 shrink-0" />
+                    )}
+                    Baixar / Imprimir
+                    <ChevronDown size={13} className="text-slate-400 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" sideOffset={6} className="w-56">
+                  <DropdownMenuItem onSelect={onImprimir} className="gap-2.5 cursor-pointer">
+                    <Printer size={15} className="text-slate-400" />
+                    <span>
+                      Imprimir
+                      <span className="block text-[11px] font-normal text-slate-400">Abre a caixa de impressão</span>
+                    </span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onSelect={onBaixarCompleto}
+                    disabled={baixando}
+                    className="gap-2.5 cursor-pointer"
+                  >
+                    <FileDown size={15} className="text-slate-400" />
+                    <span>
+                      Baixar arquivo
+                      <span className="block text-[11px] font-normal text-slate-400">PDF, ou .zip se houver fotos</span>
+                    </span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
           </div>
@@ -299,6 +380,27 @@ return (
       "
     >
       Externo
+    </span>
+  )}
+
+  {os.maquina_parada && (
+    <span
+      title={os.motivo_parada ?? undefined}
+      className="
+        inline-flex items-center gap-1
+        px-2 py-1
+        sm:px-3 sm:py-1.5
+        rounded-full
+        text-[11px]
+        sm:text-xs
+        font-semibold
+        border border-rose-200
+        bg-rose-50
+        text-rose-700
+      "
+    >
+      <OctagonPause size={11} />
+      Máquina parada
     </span>
   )}
 

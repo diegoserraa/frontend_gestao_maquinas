@@ -30,7 +30,22 @@ import { getMachineTableColumns } from "../../modules/machine/machineTableColumn
 import { getMachineCardColumns } from "../../modules/machine/machineCardColumns";
 import { useNavigate } from "react-router-dom";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { QrCode } from "lucide-react";
+import { ExportarQrModal } from "../../modules/machine/ExportarQrModal";
+import { PareamentoModal } from "../../modules/machine/PareamentoModal";
+import { ImagemAmpliadaModal, type ImagemAmpliada } from "../../modules/machine/ImagemAmpliadaModal";
+
 export default function Machines() {
+  const { pode } = usePermissoes();
+  const permitir = {
+    editar: pode("maquinas.editar"),
+    excluir: pode("maquinas.excluir"),
+    alternar: pode("maquinas.alterar_status"),
+    // quem cadastra máquinas é quem imprime os QR Codes
+    qr: pode("maquinas.criar"),
+  };
+
   const [data, setData] = useState<Machine[]>([]);
   const [setores, setSetores] = useState<Setor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +65,13 @@ export default function Machines() {
 
   // Anexos existentes carregados ao abrir edição
   const [existingAttachments, setExistingAttachments] = useState<ExistingAttachment[]>([]);
+
+  // exportar QR Codes: aberto=true; maquina definida = só a etiqueta dela
+  const [qr, setQr] = useState<{ aberto: boolean; maquina: Machine | null }>({ aberto: false, maquina: null });
+  const [pareamento, setPareamento] = useState<Machine | null>(null);
+
+  // visualizador em tela cheia da foto/QR de uma linha (substitui o hover:scale antigo)
+  const [imagemAmpliada, setImagemAmpliada] = useState<ImagemAmpliada>(null);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [machineToDelete, setMachineToDelete] = useState<Machine | null>(null);
@@ -209,8 +231,12 @@ setExistingAttachments(
         onDelete: handleOpenDelete,
         onRowClick: (id) => navigate(`/machines/${id}`),
         onViewOS: (id) => navigate(`/machines/${id}?tab=os`),
+        onQr: (machine) => setQr({ aberto: true, maquina: machine }),
+        onAmpliar: setImagemAmpliada,
+        onParear: setPareamento,
+        permitir,
       }),
-    []
+    [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
   );
 
   const cardColumns = useMemo(
@@ -219,9 +245,13 @@ setExistingAttachments(
         handleOpenEdit,
         toggleStatus,
         handleOpenDelete,
-        (machine) => navigate(`/machines/${machine.id}?tab=history`)
+        (machine) => navigate(`/machines/${machine.id}?tab=history`),
+        permitir,
+        (machine) => setQr({ aberto: true, maquina: machine }),
+        setImagemAmpliada,
+        setPareamento
       ),
-    []
+    [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
   );
 
   return (
@@ -232,16 +262,27 @@ setExistingAttachments(
           <h1 className="text-xl font-semibold text-slate-900">Máquinas</h1>
           <p className="text-sm text-slate-500">Gestão de ativos industriais</p>
         </div>
-        <button
-          onClick={() => {
-            setSelectedMachine(undefined);
-            setExistingAttachments([]);
-            setOpenModal(true);
-          }}
-          className="w-full sm:w-auto px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-        >
-          + Nova máquina
-        </button>
+        {pode("maquinas.criar") && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setQr({ aberto: true, maquina: null })}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50"
+            >
+              <QrCode size={15} aria-hidden="true" /> Exportar QR Codes
+            </button>
+            <button
+              onClick={() => {
+                setSelectedMachine(undefined);
+                setExistingAttachments([]);
+                setOpenModal(true);
+              }}
+              className="w-full sm:w-auto px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+            >
+              + Nova máquina
+            </button>
+          </div>
+)}
       </div>
 
       <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -292,6 +333,20 @@ setExistingAttachments(
         onSave={handleSave}
       />
 
+      <ExportarQrModal
+        open={qr.aberto}
+        onClose={() => setQr((atual) => ({ ...atual, aberto: false }))}
+        setores={setores}
+        maquinas={data}
+        maquina={qr.maquina}
+      />
+
+      <PareamentoModal
+        open={pareamento !== null}
+        onClose={() => setPareamento(null)}
+        maquina={pareamento}
+      />
+
       <ConfirmDialog
         open={openDelete}
         onOpenChange={setOpenDelete}
@@ -300,6 +355,8 @@ setExistingAttachments(
         loading={deleteLoading}
         onConfirm={handleDeleteConfirm}
       />
+
+      <ImagemAmpliadaModal aberto={imagemAmpliada} onClose={() => setImagemAmpliada(null)} />
     </div>
   );
 }

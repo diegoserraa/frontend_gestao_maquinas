@@ -7,9 +7,12 @@ import {
   Trash2,
 } from "lucide-react";
 
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
+
 export function getPartnerCardColumns(
   onEdit: (partner: Partner) => void,
-  onDelete: (partner: Partner) => void
+  onDelete: (partner: Partner) => void,
+  permitir?: AcoesPermitidas
 ): CardColumn<Partner>[] {
   return [
     {
@@ -92,7 +95,8 @@ export function getPartnerCardColumns(
           </div>
 
           <div className="flex justify-end gap-1 border-t border-slate-300 pt-3">
-            <button
+            {permitir?.editar !== false && (
+<button
               onClick={() =>
                 onEdit(partner)
               }
@@ -107,8 +111,10 @@ export function getPartnerCardColumns(
             >
               <Pencil size={14} />
             </button>
+)}
 
-            <button
+            {permitir?.excluir !== false && (
+<button
               onClick={() =>
                 onDelete(partner)
               }
@@ -123,6 +129,7 @@ export function getPartnerCardColumns(
             >
               <Trash2 size={14} />
             </button>
+)}
           </div>
         </div>
       ),
