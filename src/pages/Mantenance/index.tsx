@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/data/DataTable";
@@ -92,12 +92,26 @@ function FiltersSkeleton() {
 export default function MachineDetails() {
   const { id } = useParams<{ id: string }>();
   const machineId = Number(id);
+  const [searchParams] = useSearchParams();
 
   const { sectors } = useSectors();
 
   const [machine, setMachine] = useState<Machine | null>(null);
   const [osList, setOsList] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // "Ver O.S." na lista de Máquinas manda pra cá com ?tab=os — como esta
+  // página é uma tela só (sem abas de verdade), o jeito de "levar pra O.S."
+  // é rolar até a seção da tabela assim que ela terminar de carregar.
+  useEffect(() => {
+    if (loading) return;
+    if (searchParams.get("tab") !== "os") return;
+
+    document
+      .getElementById("secao-ordens-servico")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const [selectedOS, setSelectedOS] =
     useState<OrdemServico | null>(null);
@@ -298,7 +312,7 @@ const tecnicoAtual = selectedOS?.id_tecnico
       </div>
 
       {/* TABELA + TIMELINE */}
-      <div className={`flex gap-4 items-start ${hasOS ? "xl:flex-row" : ""}`}>
+      <div id="secao-ordens-servico" className={`flex gap-4 items-start ${hasOS ? "xl:flex-row" : ""}`}>
 
         <div className={`transition-all duration-300 w-full ${hasOS ? "xl:w-[65%]" : "xl:w-full"}`}>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
