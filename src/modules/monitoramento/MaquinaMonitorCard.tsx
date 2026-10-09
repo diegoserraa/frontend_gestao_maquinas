@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { ChevronRight, Thermometer, Activity, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -17,6 +17,34 @@ import {
   tempoRelativo,
   type Nivel,
 } from "./monitoramentoHelpers";
+
+// mesmo limiar do firmware (dashboard_provisionamento.ino, LIMIAR_RODANDO) —
+// abaixo disso o ESP32 não soma horímetro, então aqui também não deve
+const LIMIAR_RODANDO = 0.12;
+
+/** Horas acumuladas + o tempo corrido desde a última leitura real, se a
+ * máquina seguir rodando — só pra exibição, nunca é salvo/enviado. Evita a
+ * tela ficar "parada" por até 8s (intervalo real de leitura do sensor). */
+function useHorasAoVivo(leitura: TelemetriaAtual): number | null {
+  const [agora, setAgora] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (leitura.horas_ligadas === null) return null;
+
+  const rodando =
+    leitura.vibracao !== null &&
+    leitura.vibracao >= LIMIAR_RODANDO &&
+    estaAoVivo(leitura.atualizado_em);
+
+  if (!rodando || !leitura.atualizado_em) return leitura.horas_ligadas;
+
+  const desdeMs = agora - new Date(leitura.atualizado_em).getTime();
+  return leitura.horas_ligadas + Math.max(desdeMs, 0) / 3_600_000;
+}
 
 type Props = {
   leitura: TelemetriaAtual;
@@ -41,6 +69,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
   const atencao = estadoNivel === "atencao" && aoVivo;
 
   const ui = escuro ? NIVEL_UI_ESCURO[estadoNivel] : NIVEL_UI[estadoNivel];
+  const horasAoVivo = useHorasAoVivo(leitura);
 
   // se a foto falhar (link quebrado, offline etc.), volta pro layout sem foto
   // em vez de deixar um espaço quebrado — a imagem em si nunca é obrigatória
@@ -205,7 +234,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
         <Metrica
           icone={Clock}
           rotulo="Horas"
-          valor={formatarNumero(leitura.horas_ligadas, 0)}
+          valor={formatarNumero(horasAoVivo, 2)}
           unidade="h"
           nivel="ok"
           serie={historico.map((p) => p.horas_ligadas)}
