@@ -17,8 +17,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 
+import { ParametrosMaquina } from "./ParametrosMaquina";
+import { useHorasAoVivo } from "./useHorasAoVivo";
 import { getHistoricoAgregado } from "./monitoramentoService";
 import type {
   FaixaHistorico,
@@ -34,6 +38,9 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
+// horas_ligadas fica de fora do seletor de gráfico de propósito: é um
+// contador que só sobe, um gráfico de linha dele não ajuda muito — melhor
+// como número fixo em destaque (ver bloco "HORÍMETRO" logo abaixo do header)
 const METRICAS: {
   chave: MetricaHistorico;
   rotulo: string;
@@ -43,7 +50,6 @@ const METRICAS: {
 }[] = [
   { chave: "temperatura", rotulo: "Temperatura", cor: "#e11d48", unidade: "°C", icone: Thermometer },
   { chave: "vibracao", rotulo: "Vibração", cor: "#2563eb", unidade: "m/s²", icone: Activity },
-  { chave: "horas_ligadas", rotulo: "Horas ligadas", cor: "#0f766e", unidade: "h", icone: Clock },
 ];
 
 const FAIXAS: { chave: FaixaHistorico; rotulo: string }[] = [
@@ -81,6 +87,10 @@ function rotuloEixo(iso: string, faixa: FaixaHistorico): string {
 }
 
 export function TelemetriaHistoricoDialog({ leitura, open, onOpenChange }: Props) {
+  const { pode } = usePermissoes();
+  const mostrarParametros = pode("monitoramento.configurar_limites");
+  const horas = useHorasAoVivo(leitura);
+
   const [pontos, setPontos] = useState<PontoAgregado[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [metrica, setMetrica] = useState<MetricaHistorico>("temperatura");
@@ -176,7 +186,40 @@ export function TelemetriaHistoricoDialog({ leitura, open, onOpenChange }: Props
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 p-6">
+        {/* HORÍMETRO — fixo e em destaque, fora das abas (sempre visível,
+            independente de estar vendo Histórico ou Parâmetros). Não entra
+            como gráfico: é um contador que só sobe, uma linha do tempo dele
+            não ajuda muito — o número atual, ao vivo, é o que importa. */}
+        <div className="mx-6 mt-4 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+          <Clock size={18} className="shrink-0 text-blue-500" />
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-blue-400">Horímetro</p>
+            <p className="font-mono text-2xl font-bold tabular-nums text-blue-700">
+              {horas !== null ? horas.toFixed(2) : "--"}
+              <span className="ml-1 text-xs font-medium text-blue-400">h</span>
+            </p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="historico" className="flex flex-col p-6 pt-0">
+          {mostrarParametros && (
+            <TabsList className="mb-3 grid w-full grid-cols-2 bg-slate-100 p-1 rounded-xl h-10">
+              <TabsTrigger
+                value="historico"
+                className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
+              >
+                Histórico
+              </TabsTrigger>
+              <TabsTrigger
+                value="parametros"
+                className="rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-blue-200 data-[state=inactive]:text-slate-500"
+              >
+                Parâmetros
+              </TabsTrigger>
+            </TabsList>
+          )}
+
+          <TabsContent value="historico" className="space-y-3 data-[state=inactive]:hidden" forceMount>
           {/* MÉTRICA */}
           <div className="flex flex-wrap gap-2">
             {METRICAS.map((m) => {
@@ -339,7 +382,14 @@ export function TelemetriaHistoricoDialog({ leitura, open, onOpenChange }: Props
           <p className="text-center text-[10px] text-slate-400">
             Linha = média do período · faixa clara = mínimo e máximo
           </p>
-        </div>
+          </TabsContent>
+
+          {mostrarParametros && (
+            <TabsContent value="parametros" className="data-[state=inactive]:hidden">
+              <ParametrosMaquina maquinaId={leitura?.maquina_id} />
+            </TabsContent>
+          )}
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

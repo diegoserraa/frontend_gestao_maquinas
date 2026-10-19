@@ -1,8 +1,10 @@
-import { memo, useEffect, useState } from "react";
-import { ChevronRight, Thermometer, Activity, Clock } from "lucide-react";
+import { memo, useState } from "react";
+import { ChevronRight, Thermometer, Activity, Clock, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
+import { useHorasAoVivo } from "./useHorasAoVivo";
 import type { TelemetriaAtual } from "./monitoramentoTypes";
 import type { PontoHistorico } from "./useMonitoramentoDados";
 import {
@@ -17,34 +19,6 @@ import {
   tempoRelativo,
   type Nivel,
 } from "./monitoramentoHelpers";
-
-// mesmo limiar do firmware (dashboard_provisionamento.ino, LIMIAR_RODANDO) —
-// abaixo disso o ESP32 não soma horímetro, então aqui também não deve
-const LIMIAR_RODANDO = 0.12;
-
-/** Horas acumuladas + o tempo corrido desde a última leitura real, se a
- * máquina seguir rodando — só pra exibição, nunca é salvo/enviado. Evita a
- * tela ficar "parada" por até 8s (intervalo real de leitura do sensor). */
-function useHorasAoVivo(leitura: TelemetriaAtual): number | null {
-  const [agora, setAgora] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setAgora(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  if (leitura.horas_ligadas === null) return null;
-
-  const rodando =
-    leitura.vibracao !== null &&
-    leitura.vibracao >= LIMIAR_RODANDO &&
-    estaAoVivo(leitura.atualizado_em);
-
-  if (!rodando || !leitura.atualizado_em) return leitura.horas_ligadas;
-
-  const desdeMs = agora - new Date(leitura.atualizado_em).getTime();
-  return leitura.horas_ligadas + Math.max(desdeMs, 0) / 3_600_000;
-}
 
 type Props = {
   leitura: TelemetriaAtual;
@@ -70,6 +44,7 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
 
   const ui = escuro ? NIVEL_UI_ESCURO[estadoNivel] : NIVEL_UI[estadoNivel];
   const horasAoVivo = useHorasAoVivo(leitura);
+  const navigate = useNavigate();
 
   // se a foto falhar (link quebrado, offline etc.), volta pro layout sem foto
   // em vez de deixar um espaço quebrado — a imagem em si nunca é obrigatória
@@ -254,13 +229,24 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
           <span className={cn("h-1 w-1 rounded-full", aoVivo ? ui.ponto : escuro ? "bg-slate-600" : "bg-slate-300")} />
           {tempoRelativo(leitura.atualizado_em)}
         </span>
-        <span
-          className={cn(
-            "text-[10px] font-semibold opacity-0 transition-opacity group-hover:opacity-100",
-            escuro ? "text-blue-400" : "text-blue-600"
-          )}
-        >
-          Ver histórico →
+        <span className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            type="button"
+            title="Modo vitrine (tela cheia, exibição)"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/monitoring/vitrine/${leitura.maquina_id}`);
+            }}
+            className={cn(
+              "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+              escuro ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-700"
+            )}
+          >
+            <Sparkles size={11} /> Vitrine
+          </button>
+          <span className={cn("text-[10px] font-semibold", escuro ? "text-blue-400" : "text-blue-600")}>
+            Ver histórico →
+          </span>
         </span>
       </div>
     </div>
@@ -309,7 +295,7 @@ function Metrica({
       <div className="flex min-w-0 items-baseline gap-1">
         <span
           className={cn(
-            "truncate text-2xl font-bold tabular-nums tracking-tight",
+            "truncate font-mono text-2xl font-bold tabular-nums tracking-tight",
             neutro ? (escuro ? "text-slate-200" : "text-slate-700") : ui.texto
           )}
         >
