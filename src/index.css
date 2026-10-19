@@ -73,3 +73,54 @@ html {
   .animate-selo-pulo,
   .animate-notificacao-chegando { animation: none; }
 }
+
+/* ── Modo Vitrine (exibição em feira/estande) ──────────────────
+   Precisa "chamar atenção o tempo todo" mesmo com a máquina em estado
+   normal — por isso as animações rodam sempre, não só em alerta. */
+@keyframes vitrine-scan {
+  0% { transform: translateY(-10%); opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translateY(110%); opacity: 0; }
+}
+
+@keyframes vitrine-grade {
+  from { background-position: 0 0; }
+  to { background-position: 0 56px; }
+}
+
+@keyframes vitrine-respirar {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.015); }
+}
+
+@keyframes vitrine-orbita {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes vitrine-piscar-vivo {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.vitrine-fundo-grade {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+  animation: vitrine-grade 6s linear infinite;
+}
+
+.animate-vitrine-scan { animation: vitrine-scan 5s ease-in-out infinite; }
+.animate-vitrine-respirar { animation: vitrine-respirar 3.2s ease-in-out infinite; }
+.animate-vitrine-orbita { animation: vitrine-orbita 18s linear infinite; }
+.animate-vitrine-piscar-vivo { animation: vitrine-piscar-vivo 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vitrine-fundo-grade,
+  .animate-vitrine-scan,
+  .animate-vitrine-respirar,
+  .animate-vitrine-orbita,
+  .animate-vitrine-piscar-vivo { animation: none; }
+}

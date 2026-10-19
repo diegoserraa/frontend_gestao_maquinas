@@ -21,6 +21,7 @@ import Reports from "@/pages/Relatorio";
 import Monitoring from "@/pages/Monitoring";
 import Empresas from "@/pages/Empresas";
 import TrocarSenha from "@/pages/TrocarSenha";
+import Vitrine from "@/pages/Vitrine";
 
 
 
@@ -39,6 +40,21 @@ export const router = createBrowserRouter([
   {
     path: "/trocar-senha",
     element: <TrocarSenha />,
+    errorElement: <RouteError />,
+  },
+
+
+  // Modo vitrine: tela cheia de verdade, sem menu/sidebar do sistema — por
+  // isso fica fora do MainLayout, mas ainda exige login + permissão.
+  {
+    path: "/monitoring/vitrine/:id",
+    element: (
+      <ProtectedRoute>
+        <RotaComPermissao permissao="monitoramento.ver">
+          <Vitrine />
+        </RotaComPermissao>
+      </ProtectedRoute>
+    ),
     errorElement: <RouteError />,
   },
 
