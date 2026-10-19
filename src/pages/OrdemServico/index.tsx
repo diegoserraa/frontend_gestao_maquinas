@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { FileText, ListChecks, ClipboardX } from "lucide-react";
 
-import type { OrdemServico } from "@/modules/ordemServico/ordemServicoType";
+import type { OrdemServico, Tecnico } from "@/modules/ordemServico/ordemServicoType";
 import {
   getOrdemServicoById,
   getMachineById,
   listarTecnicos,
 } from "@/modules/ordemServico/ordemServicoService";
+import { LogoIcone, LogoNome } from "@/components/brand/Logo";
 
 import { getUser } from "@/modules/login/loginStorage";
 import type { UserRole } from "@/modules/login/loginType";
@@ -15,32 +17,25 @@ import type { UserRole } from "@/modules/login/loginType";
 import { OSHeader } from "./../../modules/ordemServico/ordemServicoDetails/OSHeader";
 import { OSSummaryCards } from "../../modules/ordemServico/ordemServicoDetails/OSSummaryCards";
 import { OSActions } from "../../modules/ordemServico/ordemServicoDetails/OSActions";
+import { PausaBanner } from "../../modules/ordemServico/ordemServicoDetails/PausaBanner";
 import { OSPhotosGallery } from "../../modules/ordemServico/ordemServicoDetails/OSPhotosGallery";
 import { formatDateTime, getStatusStyle } from "../../modules/ordemServico/ordemServicoDetails/osDetailsHelpers";
+import { baixarOrdemServicoCompleta } from "../../modules/ordemServico/ordemServicoDetails/osDownload";
 
-type Tecnico = { id: number; nome: string };
-
+// Mesma estrutura (sem max-w/padding extra) da tela carregada, logo abaixo —
+// senão o conteúdo real "pula" pra uma largura diferente assim que termina de
+// carregar (o <main> do MainLayout já dá o padding da página; aqui não é pra
+// somar outro por cima nem travar numa largura máxima que a tela real não tem).
 function DetailsSkeleton() {
   return (
-    <div
-      className="
-        min-h-screen
-        bg-gradient-to-br
-        from-slate-50
-        via-blue-50/40
-        to-indigo-50/40
-        px-2 sm:px-3 md:px-4
-        pb-6
-      "
-    >
+    <div className="space-y-4 w-full max-w-full overflow-x-hidden">
       <div
         className="
-          max-w-7xl mx-auto
-          rounded-3xl
-          border border-slate-200/70
-          bg-white/95
+          bg-white
+          rounded-2xl
+          border border-slate-200
+          shadow-sm
           overflow-hidden
-          shadow-[0_20px_60px_rgba(15,23,42,0.08)]
         "
       >
         {/* HEADER */}
@@ -142,6 +137,7 @@ export default function OrdemServicoDetails() {
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(false);
+  const [baixando, setBaixando] = useState(false);
 
   const usuario = getUser();
   const userRole: UserRole = usuario?.role ?? "OPERADOR";
@@ -188,6 +184,22 @@ export default function OrdemServicoDetails() {
     carregar();
   }
 
+  async function handleBaixarCompleto() {
+    if (!os || baixando) return;
+
+    setBaixando(true);
+    const tecnicoNome = tecnicos.find((t) => t.id === os.id_tecnico)?.nome;
+
+    toast.promise(
+      baixarOrdemServicoCompleta({ os, maquinaNome, tecnicoNome }).finally(() => setBaixando(false)),
+      {
+        loading: "Preparando o arquivo...",
+        success: "Download pronto.",
+        error: "Não foi possível gerar o arquivo. Tente de novo.",
+      }
+    );
+  }
+
   if (loading) return <DetailsSkeleton />;
 
   if (erro || !os) {
@@ -217,31 +229,36 @@ export default function OrdemServicoDetails() {
   const statusStyle = getStatusStyle(os.status);
 
  return (
-<div className="
-  min-h-screen
-  bg-gradient-to-br
-  from-slate-50
-  via-blue-50/40
-  to-indigo-50/40
-  pt-0
-  px-2 sm:px-3 md:px-4
-  pb-6
-">
+  <div className="space-y-4 w-full max-w-full overflow-x-hidden">
+    {/*
+      Cabeçalho de identificação do papel: só aparece na impressão (menu, botões etc. já saem).
+      Não depende do cabeçalho automático do navegador (data/título) — aquele é opcional e o
+      usuário pode desativá-lo na caixa de impressão, então o documento carrega a própria marca.
+    */}
+    <div className="hidden print:flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+      <div className="flex items-center gap-2">
+        <LogoIcone size={26} />
+        <LogoNome className="text-sm" />
+      </div>
+      <p className="text-xs text-slate-500">
+        Impresso em {formatDateTime(new Date().toISOString())}
+      </p>
+    </div>
+
     <div
       className="
-        max-w-7xl mx-auto
-        rounded-3xl
-        border border-slate-200/70
-        bg-white/95
-        backdrop-blur-sm
+        bg-white rounded-2xl border border-slate-200 shadow-sm
         overflow-hidden
-        shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+        print:border-0 print:shadow-none print:rounded-none
       "
     >
       <OSHeader
         os={os}
         maquinaNome={maquinaNome}
         onBack={() => navigate(-1)}
+        onImprimir={() => window.print()}
+        onBaixarCompleto={handleBaixarCompleto}
+        baixando={baixando}
       />
 
       <div className="border-t border-slate-100">
@@ -251,8 +268,16 @@ export default function OrdemServicoDetails() {
         />
       </div>
 
+      {statusUpper === "PAUSADA" && (
+        <div className="border-t border-slate-100 p-3 sm:p-4">
+          <PausaBanner os={os} />
+        </div>
+      )}
+
+      {/* ações (iniciar, atribuir, finalizar...) não fazem sentido numa cópia em papel */}
       <div
         className={`
+          print:hidden
           border-t border-slate-100
           bg-gradient-to-r
           from-blue-50/50
@@ -355,7 +380,7 @@ export default function OrdemServicoDetails() {
 
   
 
-      <div className="border-t border-slate-100 bg-slate-50/50">
+      <div className="print:hidden border-t border-slate-100 bg-slate-50/50">
         <OSPhotosGallery osId={os.id} />
       </div>
     </div>

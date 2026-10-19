@@ -1,10 +1,18 @@
 import type { User } from "./loginType";
+import { limparPermissoes, salvarPermissoes } from "@/modules/permissoes/permissoesStore";
 
+
+/** Recado que a tela de login mostra uma vez (ex.: sessão encerrada por troca de senha). */
+export const AVISO_DE_LOGIN = "aviso_de_login";
 
 export function saveAuth(
   token:string,
-  user:User
+  user:User,
+  permissoes:string[] = []
 ){
+
+  salvarPermissoes(permissoes);
+
 
   localStorage.setItem(
     "token",
@@ -45,6 +53,8 @@ export function getUser():User|null{
 
 
 export function logout(){
+
+  limparPermissoes();
 
   localStorage.removeItem(
     "token"

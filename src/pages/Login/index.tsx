@@ -4,34 +4,9 @@ import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { login } from "@/modules/login/loginService";
-import { saveAuth } from "@/modules/login/loginStorage";
-
-function GearIcon({ size = 28 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
-        stroke="white"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-        stroke="white"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+import { AVISO_DE_LOGIN, saveAuth } from "@/modules/login/loginStorage";
+import { consumirDestino } from "@/modules/login/destino";
+import { LogoIcone, LogoNome } from "@/components/brand/Logo";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -40,6 +15,16 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSenha, setShowSenha] = useState(false);
+  // recado deixado por quem derrubou a sessão (ex.: senha trocada em outro aparelho); aparece uma vez só
+  const [aviso] = useState(() => {
+    try {
+      const texto = sessionStorage.getItem(AVISO_DE_LOGIN);
+      sessionStorage.removeItem(AVISO_DE_LOGIN);
+      return texto;
+    } catch {
+      return null;
+    }
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,10 +32,16 @@ export default function Login() {
     try {
       setLoading(true);
       const data = await login({ email, senha });
-      saveAuth(data.token, data.user);
-      navigate("/");
-    } catch {
-      setError("E-mail ou senha inválidos. Tente novamente.");
+      saveAuth(data.token, data.user, data.permissoes);
+      // conta nova (senha temporária): primeiro cria a senha própria
+      // volta para onde a pessoa ia antes de entrar (ex.: QR Code da máquina); senão, o início
+      navigate(data.user.deve_trocar_senha ? "/trocar-senha" : (consumirDestino() ?? "/"));
+    } catch (erro) {
+      setError(
+        erro instanceof Error && /inativ/i.test(erro.message)
+          ? erro.message
+          : "E-mail ou senha inválidos. Tente novamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -72,12 +63,8 @@ export default function Login() {
 
         {/* LOGO */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-slate-700 flex items-center justify-center mb-4 shadow-md">
-            <GearIcon size={28} />
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
-            ZDM<span className="text-blue-600">SaaS</span>
-          </h1>
+          <LogoIcone size={56} className="mb-3" />
+          <LogoNome className="text-2xl tracking-tight" />
           <p className="text-sm text-slate-400 mt-1">
             Gestão de manutenção industrial
           </p>
@@ -90,6 +77,13 @@ export default function Login() {
             <h2 className="text-base font-semibold text-slate-800">Acesse sua conta</h2>
             <p className="text-sm text-slate-400 mt-0.5">Entre com suas credenciais</p>
           </div>
+
+          {aviso && (
+            <div role="status" className="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-blue-50 border border-blue-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
+              <p className="text-xs text-blue-700">{aviso}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -169,7 +163,7 @@ export default function Login() {
 
         {/* RODAPÉ */}
         <p className="text-center text-xs text-slate-400 mt-6">
-          ZDM SaaS • v1.0 • Gestão industrial inteligente
+          MYMAQ360 • v1.0 • Gestão industrial inteligente
         </p>
       </div>
     </div>

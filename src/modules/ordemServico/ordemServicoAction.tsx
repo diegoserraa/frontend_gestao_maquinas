@@ -1,28 +1,32 @@
 import { Eye, ClipboardList, HardHat } from "lucide-react";
 import { useState } from "react";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import {
   atribuirTecnicoOS,
+  atribuirExternoOS,
   iniciarAtendimentoOS,
+  pausarOS,
+  retomarOS,
   finalizarOS,
   cancelarOS,
 } from "./ordemServicoService";
-import { ID_TECNICO_EXTERNO } from "./ordemServicoConstants";
 
 import type { OrdemServico } from "../machineDetails/machineDetailsTypes";
+import type { Tecnico } from "./ordemServicoType";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { acoesDaOS } from "./regrasAcoesOS";
 
 import { FinalizarOrdemServicoModal } from "../../components/modals/ordemServico/FinalizarOrdemServico";
 import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
+import { PausarOrdemServicoModal } from "../../components/modals/ordemServico/PausarOrdemServico";
 
 type Props = {
   mode?: "table" | "panel" | "mobile";
   ordem?: OrdemServico;
-  userRole: "ADMIN" | "GESTOR" | "TECNICO" | "OPERADOR";
+  /** mantido por compatibilidade: as regras agora vêm das permissões do usuário */
+  userRole?: "ADMIN" | "GESTOR" | "TECNICO" | "OPERADOR";
   userId?: number;
   tecnicos?: Tecnico[];
   machineId?: number;
@@ -36,7 +40,6 @@ type Props = {
 export function OrdemServicoActions({
   mode = "table",
   ordem,
-  userRole,
   userId = 0,
   tecnicos = [],
   machineId,
@@ -50,19 +53,13 @@ export function OrdemServicoActions({
   const [osSelecionada, setOsSelecionada] = useState<OrdemServico | null>(null);
   const [definindoExterno, setDefinindoExterno] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
-   
+  const [openPausar, setOpenPausar] = useState(false);
+  const [tecnicoSelecionado, setTecnicoSelecionado] = useState("");
 
-  const isAdmin = userRole === "ADMIN";
 
-const isGestor =
-  userRole === "GESTOR" ||
-  isAdmin;
-
-const isTecnico =
-  userRole === "TECNICO";
-
-const isOperador =
-  userRole === "OPERADOR";
+  const { pode, podeQualquer, role } = usePermissoes();
+  const podeCriarOS = pode("os.criar");
+  const podeVerOS = podeQualquer("os.ver", "os.ver_proprias");
 
   /* =========================
      PAINEL DA MÁQUINA
@@ -70,8 +67,7 @@ const isOperador =
   if (mode === "panel") {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {isOperador && (
-          <>
+        {podeCriarOS && (
             <button
               onClick={() => machineId && onCreateOS?.(machineId)}
               className="
@@ -90,7 +86,9 @@ const isOperador =
                 Abrir OS
               </span>
             </button>
+        )}
 
+        {podeVerOS && (
             <button
               onClick={onViewOS}
               className="
@@ -109,7 +107,6 @@ const isOperador =
                 Ver última OS
               </span>
             </button>
-          </>
         )}
       </div>
     );
@@ -121,51 +118,20 @@ const isOperador =
 
   if (!ordem) return null;
 
-  const status = String(ordem.status ?? "").toUpperCase();
-  const isExterno = ordem.id_tecnico === ID_TECNICO_EXTERNO;
+  const isExterno = ordem.execucao_externa === true;
  
 
-  // ── Técnico ──────────────────────────────────────────────
-  const podeAssumir =
-    isTecnico && status === "ABERTA" && !isExterno;
-
-  const podeIniciar =
-    isTecnico &&
-    status === "ATRIBUIDA" &&
-    ordem.id_tecnico === userId &&
-    !isExterno;
-
-  const podeFinalizar =
-    // Técnico próprio finaliza normalmente
-    (isTecnico &&
-      status === "EM_ANDAMENTO" &&
-      ordem.id_tecnico === userId &&
-      !isExterno) ||
-    // Gestor pode finalizar qualquer OS em andamento
-    (isGestor && status === "EM_ANDAMENTO") ||
-    // Gestor finaliza OS marcada como técnico externo, em qualquer status aberto
-    (isGestor &&
-      isExterno &&
-      !["FINALIZADA", "CANCELADA"].includes(status));
-
-  // ── Gestor ───────────────────────────────────────────────
-  const tecnicoJaDefinido =
-  !!ordem.id_tecnico &&
-  ordem.id_tecnico !== 0;
-
-const podeAtribuir =
-  isGestor &&
-  !["FINALIZADA", "CANCELADA"].includes(status) &&
-  !tecnicoJaDefinido;
-
-  // Marcar como técnico externo — só faz sentido antes de já estar marcado assim
-const podeDefinirExterno =
-  isGestor &&
-  !tecnicoJaDefinido &&
-  !["FINALIZADA", "CANCELADA"].includes(status);
-
-  const podeCancelar =
-    isGestor && status !== "FINALIZADA";
+  // quais botões mostrar: permissões do usuário + estado da O.S. (ver regrasAcoesOS.ts)
+  const {
+    assumir: podeAssumir,
+    iniciar: podeIniciar,
+    pausar: podePausar,
+    retomar: podeRetomar,
+    finalizar: podeFinalizar,
+    atribuir: podeAtribuir,
+    definirExterno: podeDefinirExterno,
+    cancelar: podeCancelar,
+  } = acoesDaOS(ordem, userId, pode, role);
 
     async function handleCancelar(motivo: string) {
   if (!osSelecionada) return;
@@ -187,17 +153,47 @@ const podeDefinirExterno =
 
     try {
       setDefinindoExterno(true);
-      // Reaproveita o endpoint de atribuir técnico, com o id fixo do placeholder
-      await atribuirTecnicoOS(ordem.id, ID_TECNICO_EXTERNO, userId);
-      // Pula direto pra EM_ANDAMENTO — não existe etapa intermediária visível
-      // pra técnico externo, então já habilita a finalização (evita erro de
-      // transição de status "ATRIBUIDA → FINALIZADA" no backend)
-      await iniciarAtendimentoOS(ordem.id);
-      onRefresh?.("EM_ANDAMENTO"); // 👈 pula ATRIBUIDA e já vai pra EM_ANDAMENTO
+      // o parceiro já está executando: o servidor coloca a O.S. direto em andamento
+      // (o gestor não "inicia" atendimento; ele define o executor externo e, no fim, finaliza)
+      await atribuirExternoOS(ordem.id);
+      onRefresh?.("EM_ANDAMENTO");
     } catch (err) {
       console.error(err);
     } finally {
       setDefinindoExterno(false);
+    }
+  }
+
+  async function handleAtribuirTecnico(valor: string) {
+    if (!ordem) return;
+    const tecnicoId = Number(valor);
+    if (!tecnicoId) return;
+    try {
+      await atribuirTecnicoOS(ordem.id, tecnicoId);
+      onRefresh?.();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTecnicoSelecionado(""); // volta pro placeholder — é uma ação de disparo único, não um campo de formulário
+    }
+  }
+
+  async function handlePausar(motivo: string) {
+    if (!osSelecionada) return;
+    await pausarOS(osSelecionada.id, motivo);
+    setOsSelecionada(null);
+    onRefresh?.("PAUSADA");
+  }
+
+  async function handleRetomar(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!ordem) return;
+
+    try {
+      await retomarOS(ordem.id);
+      onRefresh?.("EM_ANDAMENTO");
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -234,7 +230,7 @@ const podeDefinirExterno =
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  await atribuirTecnicoOS(ordem.id, userId, userId);
+                  await atribuirTecnicoOS(ordem.id, userId);
                   onRefresh?.("ATRIBUIDA"); // 👈
                 } catch (err) {
                   console.error(err);
@@ -263,6 +259,28 @@ const podeDefinirExterno =
             </button>
           )}
 
+          {podePausar && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOsSelecionada(ordem);
+                setOpenPausar(true);
+              }}
+              className="w-full h-10 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600"
+            >
+              Pausar atendimento
+            </button>
+          )}
+
+          {podeRetomar && (
+            <button
+              onClick={handleRetomar}
+              className="w-full h-10 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            >
+              Retomar atendimento
+            </button>
+          )}
+
           {podeFinalizar && (
             <button
               onClick={(e) => {
@@ -287,29 +305,20 @@ const podeDefinirExterno =
           )}
 
           {podeAtribuir && (
-            <select
-              className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
-              defaultValue=""
-              onClick={(e) => e.stopPropagation()}
-              onChange={async (e) => {
-                const tecnicoId = Number(e.target.value);
-                if (!tecnicoId) return;
-                try {
-                  await atribuirTecnicoOS(ordem.id, tecnicoId, userId);
-                  onRefresh?.();
-                } catch (err) {
-                  console.error(err);
-                }
-                e.target.value = "";
-              }}
-            >
-              <option value="">Atribuir técnico</option>
-              {tecnicos.map((tecnico) => (
-                <option key={tecnico.id} value={tecnico.id}>
-                  {tecnico.nome}
-                </option>
-              ))}
-            </select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select value={tecnicoSelecionado} onValueChange={handleAtribuirTecnico}>
+                <SelectTrigger className="w-full h-10 rounded-lg text-sm">
+                  <SelectValue placeholder="Atribuir técnico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tecnicos.map((tecnico) => (
+                    <SelectItem key={tecnico.id} value={String(tecnico.id)}>
+                      {tecnico.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
   {podeCancelar && (
@@ -345,10 +354,20 @@ const podeDefinirExterno =
       setOsSelecionada(null);
     }}
     osId={osSelecionada.id}
-    isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
+    isExterno={osSelecionada.execucao_externa === true}
     onConfirm={handleFinalizar}
   />
 )}
+
+{/* MODAL PAUSAR */}
+<PausarOrdemServicoModal
+  open={openPausar}
+  onClose={() => {
+    setOpenPausar(false);
+    setOsSelecionada(null);
+  }}
+  onConfirm={handlePausar}
+/>
 
 {/* MODAL CANCELAR */}
 {osSelecionada && (
@@ -384,7 +403,7 @@ const podeDefinirExterno =
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  await atribuirTecnicoOS(ordem.id, userId, userId);
+                  await atribuirTecnicoOS(ordem.id, userId);
                   onRefresh?.("ATRIBUIDA"); // 👈
                 } catch (err) {
                   console.error(err);
@@ -413,6 +432,28 @@ const podeDefinirExterno =
             </button>
           )}
 
+          {podePausar && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOsSelecionada(ordem);
+                setOpenPausar(true);
+              }}
+              className="rounded px-2 py-1 text-[11px] font-medium text-orange-700 hover:bg-orange-100"
+            >
+              Pausar
+            </button>
+          )}
+
+          {podeRetomar && (
+            <button
+              onClick={handleRetomar}
+              className="rounded px-2 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100"
+            >
+              Retomar
+            </button>
+          )}
+
           {podeFinalizar && (
             <button
               onClick={(e) => {
@@ -437,29 +478,20 @@ const podeDefinirExterno =
           )}
 
           {podeAtribuir && (
-            <select
-              className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs"
-              defaultValue=""
-              onClick={(e) => e.stopPropagation()}
-              onChange={async (e) => {
-                const tecnicoId = Number(e.target.value);
-                if (!tecnicoId) return;
-                try {
-                  await atribuirTecnicoOS(ordem.id, tecnicoId, userId);
-                  onRefresh?.();
-                } catch (err) {
-                  console.error(err);
-                }
-                e.target.value = "";
-              }}
-            >
-              <option value="">Atribuir</option>
-              {tecnicos.map((tecnico) => (
-                <option key={tecnico.id} value={tecnico.id}>
-                  {tecnico.nome}
-                </option>
-              ))}
-            </select>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select value={tecnicoSelecionado} onValueChange={handleAtribuirTecnico}>
+                <SelectTrigger className="h-8 w-fit rounded-md px-2 text-xs [&_svg]:size-3.5">
+                  <SelectValue placeholder="Atribuir" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tecnicos.map((tecnico) => (
+                    <SelectItem key={tecnico.id} value={String(tecnico.id)}>
+                      {tecnico.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
     {podeCancelar && (
@@ -496,10 +528,20 @@ const podeDefinirExterno =
       setOsSelecionada(null);
     }}
     osId={osSelecionada.id}
-    isExterno={osSelecionada.id_tecnico === ID_TECNICO_EXTERNO}
+    isExterno={osSelecionada.execucao_externa === true}
     onConfirm={handleFinalizar}
   />
 )}
+
+{/* MODAL PAUSAR */}
+<PausarOrdemServicoModal
+  open={openPausar}
+  onClose={() => {
+    setOpenPausar(false);
+    setOsSelecionada(null);
+  }}
+  onConfirm={handlePausar}
+/>
 
 {/* MODAL CANCELAR */}
 <CancelarOrdemServicoModal

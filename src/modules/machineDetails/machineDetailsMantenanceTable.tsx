@@ -2,11 +2,8 @@ import type { Column } from "@/components/data/DataTable";
 import type { OrdemServico } from "./machineDetailsTypes";
 import { OrdemServicoActions } from "../ordemServico/ordemServicoAction";
 import type { UserRole } from "@/modules/login/loginType";
-
-type Tecnico = {
-  id: number;
-  nome: string;
-};
+import type { Tecnico } from "../ordemServico/ordemServicoType";
+import { estaPausada, formatarSegundos, segundosDaPausaAtual } from "../ordemServico/pausaOSLogica";
 
 function getTipoStyle(tipo: string) {
   const t = tipo?.toLowerCase();
@@ -85,6 +82,8 @@ export function getMachineDetailsColumns(
             ? "bg-blue-50 text-blue-700 border border-blue-200"
             : status.includes("atribu")
             ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+            : status.includes("paus")
+            ? "bg-orange-50 text-orange-700 border border-orange-200"
             : status.includes("andamento")
             ? "bg-amber-50 text-amber-700 border border-amber-200"
             : status.includes("final")
@@ -94,11 +93,28 @@ export function getMachineDetailsColumns(
             : "bg-slate-100 text-slate-700 border border-slate-200";
 
         return (
-          <span
-            className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${classes}`}
-          >
-            {status.replaceAll("_", " ")}
-          </span>
+          <div className="flex flex-col items-start gap-0.5">
+            <span
+              className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium capitalize ${classes}`}
+            >
+              {status.replaceAll("_", " ")}
+            </span>
+
+            {estaPausada(row) && (
+              <span
+                className="text-[10px] text-orange-600"
+                title={row.motivo_pausa ?? undefined}
+              >
+                parada há {formatarSegundos(segundosDaPausaAtual(row))}
+              </span>
+            )}
+
+            {!estaPausada(row) && Number(row.tempo_pausado_segundos ?? 0) > 0 && (
+              <span className="text-[10px] text-slate-400">
+                {formatarSegundos(row.tempo_pausado_segundos)} pausada
+              </span>
+            )}
+          </div>
         );
       },
     },

@@ -1,15 +1,8 @@
 import { cn } from "@/lib/utils";
 import { NavLink, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Cpu,
-  Users,
-  Building2,
-  Handshake,
-  X,
-  LogOut,
-  FileBarChart
-} from "lucide-react";
+import { X, LogOut } from "lucide-react";
+import { useItensDoMenu } from "./menuItens";
+import { Logo } from "@/components/brand/Logo";
 
 interface Props {
   isOpen: boolean;
@@ -28,38 +21,7 @@ export default function SidebarMobile({
     navigate("/login");
   };
 
-  const items = [
-    {
-      label: "Dashboard",
-      path: "/",
-      icon: LayoutDashboard,
-    },
-    {
-      label: "Máquinas",
-      path: "/machines",
-      icon: Cpu,
-    },
-    {
-      label: "Setores",
-      path: "/sector",
-      icon: Building2,
-    },
-    {
-      label: "Parceiros",
-      path: "/partner",
-      icon: Handshake,
-    },
-    {
-      label: "Usuários",
-      path: "/user",
-      icon: Users,
-    },
-    {
-  label: "Relatórios",
-  path: "/reports",
-  icon: FileBarChart,
-},
-  ];
+  const items = useItensDoMenu();
 
   return (
     <div
@@ -93,12 +55,7 @@ export default function SidebarMobile({
       >
         {/* HEADER */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-blue-100">
-          <div className="text-sm font-semibold text-slate-800">
-            ZDM{" "}
-            <span className="text-blue-600">
-              SaaS
-            </span>
-          </div>
+          <Logo size={24} textoClassName="text-sm" />
 
           <button
             onClick={closeSidebar}
@@ -171,7 +128,7 @@ export default function SidebarMobile({
 
           <div className="h-10 flex items-center justify-center">
             <span className="text-xs text-slate-500">
-              v1.0 SaaS
+              v1.0
             </span>
           </div>
         </div>

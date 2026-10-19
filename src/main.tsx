@@ -1,8 +1,12 @@
+import "./lib/authFetch"; // anexa o token em toda chamada pra API — ver o arquivo
+
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { InstalarAppBanner } from "@/components/pwa/InstalarAppBanner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { registerSW } from "virtual:pwa-register";
 
@@ -43,7 +47,10 @@ updateSW = registerSW({
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <TooltipProvider>
-    <RouterProvider router={router} />
-  </TooltipProvider>
+  <ErrorBoundary>
+    <TooltipProvider>
+      <RouterProvider router={router} />
+      <InstalarAppBanner />
+    </TooltipProvider>
+  </ErrorBoundary>
 );

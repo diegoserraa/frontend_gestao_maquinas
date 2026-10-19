@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/data/DataTable";
@@ -29,6 +29,7 @@ import type {
   OrdemServico,
   OrdemServicoFormData,
 } from "../../modules/machineDetails/machineDetailsTypes";
+import type { Tecnico } from "../../modules/ordemServico/ordemServicoType";
 
 import { getMachineDetailsColumns } from "../../modules/machineDetails/machineDetailsMantenanceTable";
 import { getMachineDetailsMobileColumns } from "../../modules/machineDetails/machineDetailsMantenanceCard";
@@ -36,7 +37,6 @@ import { getMachineDetailsMobileColumns } from "../../modules/machineDetails/mac
 import { useSectors } from "@/hooks/useSector";
 import { OrdemServicoTimeline } from "../../modules/ordemServico/ordemDeServicoTimeline";
 import { OrdemServicoModal } from "../../components/modals/ordemServico/CriarOrdemServico";
-import { CancelarOrdemServicoModal } from "../../components/modals/ordemServico/CancelarOrdemServico"; // 👈 ADICIONADO
 
 /* ------------------------------------------------------------------ */
 /* SKELETONS — mesmo padrão visual do restante da tela (rounded-2xl,   */
@@ -92,12 +92,26 @@ function FiltersSkeleton() {
 export default function MachineDetails() {
   const { id } = useParams<{ id: string }>();
   const machineId = Number(id);
+  const [searchParams] = useSearchParams();
 
   const { sectors } = useSectors();
 
   const [machine, setMachine] = useState<Machine | null>(null);
   const [osList, setOsList] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // "Ver O.S." na lista de Máquinas manda pra cá com ?tab=os — como esta
+  // página é uma tela só (sem abas de verdade), o jeito de "levar pra O.S."
+  // é rolar até a seção da tabela assim que ela terminar de carregar.
+  useEffect(() => {
+    if (loading) return;
+    if (searchParams.get("tab") !== "os") return;
+
+    document
+      .getElementById("secao-ordens-servico")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const [selectedOS, setSelectedOS] =
     useState<OrdemServico | null>(null);
@@ -121,16 +135,10 @@ export default function MachineDetails() {
   const [pageSize, setPageSize] = useState(5);
 
   const [isMobile, setIsMobile] = useState(false);
-  const [tecnicos, setTecnicos] = useState<
-    { id: number; nome: string }[]
-  >([]);
-  const [tecnicosLoading, setTecnicosLoading] = useState(true);
+  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
 
   // 👇 MODAL CREATE OS
   const [openCreateOS, setOpenCreateOS] = useState(false);
-  const [openCancelar, setOpenCancelar] = useState(false);
-  const [osParaCancelar, setOsParaCancelar] =
-  useState<OrdemServico | null>(null);
 
   // 👇 usado no refreshOsList pra saber se acompanha o filtro automaticamente
   const isTecnico = userRole === "TECNICO";
@@ -138,13 +146,10 @@ export default function MachineDetails() {
   useEffect(() => {
     async function carregarTecnicos() {
       try {
-        setTecnicosLoading(true);
         const data = await listarTecnicos();
         setTecnicos(data ?? []);
       } catch (error) {
         console.error(error);
-      } finally {
-        setTecnicosLoading(false);
       }
     }
 
@@ -250,10 +255,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
   ? tecnicos.find((t) => t.id === selectedOS.id_tecnico)
   : undefined;
   // 👇 CREATE OS HANDLER
-  function handleCancelarOS(os: OrdemServico) {
-  setOsParaCancelar(os);
-  setOpenCancelar(true);
-}
   async function handleCreateOS(data: OrdemServicoFormData) {
   try {
     const createdOS = await createOrdemServico(data); // 👈 guarda o retorno
@@ -285,7 +286,7 @@ const tecnicoAtual = selectedOS?.id_tecnico
 
       {/* HEADER + AÇÕES */}
       <div className="flex flex-col xl:flex-row gap-4 items-stretch">
-        <div className="w-full xl:w-1/2">
+        <div className="w-full xl:w-1/2 flex">
           {loading || !machine ? (
             <HeaderSkeleton />
           ) : (
@@ -296,19 +297,12 @@ const tecnicoAtual = selectedOS?.id_tecnico
           )}
         </div>
 
-        <div className="w-full xl:w-1/2">
+        <div className="w-full xl:w-1/2 flex">
           {loading || !machine ? (
             <ActionsSkeleton />
           ) : (
             <MachineDetailsActions
               machineId={machine.id}
-              osStatus={
-                osList.find((os) =>
-                  ["aberta", "atribuida", "andamento"].includes(
-                    os.status
-                  )
-                )?.status as any ?? null
-              }
               papel={userRole} // 👈 AQUI PASSA O PAPEL DO USUÁRIO
               onCreateOS={() => setOpenCreateOS(true)} // 👈 AQUI ABRE O MODAL
               onViewOS={() => setSelectedOS(osList[0] ?? null)}
@@ -318,7 +312,7 @@ const tecnicoAtual = selectedOS?.id_tecnico
       </div>
 
       {/* TABELA + TIMELINE */}
-      <div className={`flex gap-4 items-start ${hasOS ? "xl:flex-row" : ""}`}>
+      <div id="secao-ordens-servico" className={`flex gap-4 items-start ${hasOS ? "xl:flex-row" : ""}`}>
 
         <div className={`transition-all duration-300 w-full ${hasOS ? "xl:w-[65%]" : "xl:w-full"}`}>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -329,7 +323,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
               ) : (
                 <MachineDetailsFilters
                   status={status}
-                  userRole={userRole}
                   onSearch={setSearch}
                   onStatus={setStatus}
                   onPriority={setPriority}
@@ -408,7 +401,6 @@ const tecnicoAtual = selectedOS?.id_tecnico
         open={openCreateOS}
         onClose={() => setOpenCreateOS(false)}
         machineId={machineId}
-        tecnicos={tecnicosLoading ? [] : tecnicos} // depois você pluga seu hook de técnicos
         onSave={handleCreateOS}
       />
     </div>

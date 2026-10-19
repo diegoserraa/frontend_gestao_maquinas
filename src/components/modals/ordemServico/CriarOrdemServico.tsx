@@ -25,16 +25,10 @@ import type { ExistingAttachment } from "@/components/modals/machine/AdicionarEd
 import { uploadOSAberturaAttachment } from "@/modules/attachment/attachmentService";
 import { notify } from "@/lib/notify";
 
-type Tecnico = {
-  id: number;
-  nome: string;
-};
-
 type Props = {
   open: boolean;
   onClose: () => void;
   machineId: number;
-  tecnicos: Tecnico[];
   // Anexos já existentes (útil se esse modal futuramente também editar uma OS já aberta)
   existingAttachments?: ExistingAttachment[];
   // 👇 Precisa retornar a OS criada (com o id) — é o que permite subir os anexos de abertura depois
@@ -45,7 +39,6 @@ export function OrdemServicoModal({
   open,
   onClose,
   machineId,
-  tecnicos,
   existingAttachments = [],
   onSave,
 }: Props) {
@@ -156,7 +149,6 @@ export function OrdemServicoModal({
           >
             <OrdemServicoForm
               machineId={machineId}
-              tecnicos={tecnicos}
               loading={loading}
               onSubmit={handleSubmit}
             />

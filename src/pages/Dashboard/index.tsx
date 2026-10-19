@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 
 import { getUser } from "@/modules/login/loginStorage";
 import { registrarPush } from "@/modules/push/pushService";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { ShieldOff } from "lucide-react";
 
 import { DashboardGestorDesktop } from "@/modules/dashboardGestor/DashBoardGestorDesktop";
 import { DashboardGestorMobile } from "@/modules/dashboardGestor/DashboardGestorMobile";
 
+import { DashboardAdmin } from "@/modules/empresas/DashboardAdmin";
 import { DashboardTecnico } from "@/modules/dashboardGestor/DashboardTecnico";
 import { DashboardOperador } from "@/modules/dashboardGestor/DasboardOperador";
 
@@ -37,13 +40,15 @@ export default function Dashboard() {
   const [periodo, setPeriodo] = useState(getDefaultPeriodo());
 
   const isMobile = useIsMobile();
+  const { pode } = usePermissoes();
 
   const usuario = getUser();
 
   useEffect(() => {
     async function registrarDispositivo() {
       try {
-        if (!usuario?.id) {
+        // o administrador (dono do sistema) não recebe avisos de manutenção
+        if (!usuario?.id || usuario.role === "ADMIN") {
           return;
         }
 
@@ -56,8 +61,6 @@ export default function Dashboard() {
     registrarDispositivo();
   }, [usuario]);
 
-  console.log("USUARIO:", usuario);
-
   if (!usuario) {
     return <div>Usuário não encontrado.</div>;
   }
@@ -65,9 +68,23 @@ export default function Dashboard() {
   // AJUSTE AQUI SE NO SEU OBJETO FOR "tipo" AO INVÉS DE "role"
   const perfil = usuario.role;
 
-  console.log("PERFIL:", perfil);
+  // o dono do sistema vê o dashboard das EMPRESAS (não o de uma empresa)
+  if (perfil === "ADMIN") {
+    return <DashboardAdmin />;
+  }
 
-  if (perfil === "GESTOR" || perfil === "ADMIN") {
+  if (perfil === "GESTOR") {
+    // o gestor da empresa pode ter tirado este acesso deste funcionário
+    if (!pode("dashboard.ver_gestor")) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-3 py-24 text-center text-slate-500">
+          <ShieldOff size={36} className="text-slate-400" />
+          <p className="text-base font-medium text-slate-700">Você não tem acesso ao dashboard geral</p>
+          <p className="max-w-sm text-sm">Use o menu ao lado para acessar as telas liberadas para você.</p>
+        </div>
+      );
+    }
+
     return isMobile ? (
       <DashboardGestorMobile
         periodo={periodo}

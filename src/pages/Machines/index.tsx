@@ -16,6 +16,7 @@ import {
 import type { Machine, Setor } from "../../modules/machine/machineTypes";
 import type { MachineFormData } from "@/components/forms/MachineForm";
 import type { ExistingAttachment } from "@/components/modals/machine/AdicionarEditarMachine";
+import type { Anexo } from "../../modules/attachment/attachmentTypes";
 
 import {
   toggleMachineStatus,
@@ -30,7 +31,22 @@ import { getMachineTableColumns } from "../../modules/machine/machineTableColumn
 import { getMachineCardColumns } from "../../modules/machine/machineCardColumns";
 import { useNavigate } from "react-router-dom";
 
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { QrCode } from "lucide-react";
+import { ExportarQrModal } from "../../modules/machine/ExportarQrModal";
+import { PareamentoModal } from "../../modules/machine/PareamentoModal";
+import { ImagemAmpliadaModal, type ImagemAmpliada } from "../../modules/machine/ImagemAmpliadaModal";
+
 export default function Machines() {
+  const { pode } = usePermissoes();
+  const permitir = {
+    editar: pode("maquinas.editar"),
+    excluir: pode("maquinas.excluir"),
+    alternar: pode("maquinas.alterar_status"),
+    // quem cadastra máquinas é quem imprime os QR Codes
+    qr: pode("maquinas.criar"),
+  };
+
   const [data, setData] = useState<Machine[]>([]);
   const [setores, setSetores] = useState<Setor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +63,21 @@ export default function Machines() {
   const navigate = useNavigate();
 
   const [selectedMachine, setSelectedMachine] = useState<Machine | undefined>();
+  // controla se o modal mostra o assistente (criar) ou as abas (editar) —
+  // decidido só no momento em que o modal ABRE, não a cada mudança de
+  // "selectedMachine" (senão o assistente "viraria" tela de editar sozinho
+  // assim que o passo 1 cria a máquina e preenche selectedMachine)
+  const [criandoNova, setCriandoNova] = useState(false);
 
   // Anexos existentes carregados ao abrir edição
   const [existingAttachments, setExistingAttachments] = useState<ExistingAttachment[]>([]);
+
+  // exportar QR Codes: aberto=true; maquina definida = só a etiqueta dela
+  const [qr, setQr] = useState<{ aberto: boolean; maquina: Machine | null }>({ aberto: false, maquina: null });
+  const [pareamento, setPareamento] = useState<Machine | null>(null);
+
+  // visualizador em tela cheia da foto/QR de uma linha (substitui o hover:scale antigo)
+  const [imagemAmpliada, setImagemAmpliada] = useState<ImagemAmpliada>(null);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [machineToDelete, setMachineToDelete] = useState<Machine | null>(null);
@@ -84,20 +112,22 @@ export default function Machines() {
   // ABRIR MODAL DE EDIÇÃO
   // Busca os anexos existentes antes de abrir
   // =========================
+  // Mapeia Anexo (API) -> ExistingAttachment (o que o modal espera)
+  function mapearAnexos(anexos: Anexo[]): ExistingAttachment[] {
+    return anexos.map((a) => ({
+      id: a.id,
+      nome: a.nome_arquivo,
+      url: a.url_arquivo,
+      tipo: a.tipo_arquivo,
+    }));
+  }
+
   async function handleOpenEdit(machine: Machine) {
+    setCriandoNova(false);
     setSelectedMachine(machine);
     try {
       const anexos = await getMachineAttachments(machine.id);
-      // Mapeia Anexo -> ExistingAttachment
-    
-setExistingAttachments(
-  anexos.map((a) => ({
-    id: a.id,
-    nome: a.nome_arquivo,
-    url: a.url_arquivo,
-    tipo: a.tipo_arquivo,
-  }))
-);
+      setExistingAttachments(mapearAnexos(anexos));
     } catch {
       setExistingAttachments([]);
     }
@@ -144,44 +174,58 @@ setExistingAttachments(
   }
 
   // =========================
-  // SAVE — nova assinatura com removedAttachmentIds
+  // SALVAR DADOS — aba "Dados", só no modo EDITAR (máquina já existe).
+  // Salva e fecha o modal — fluxo rápido de "só editei o nome" continua 1
+  // clique, igual sempre foi.
   // =========================
-  async function handleSave(
-    form: MachineFormData,
-    newFiles: File[],
-    removedAttachmentIds: number[]
-  ) {
+  async function handleSaveDados(form: MachineFormData) {
+    if (!selectedMachine) return;
     try {
-      if (selectedMachine) {
-        await updateMachine(selectedMachine.id, form);
-
-        // Remove anexos marcados para deletar
-        if (removedAttachmentIds.length > 0) {
-          await Promise.all(removedAttachmentIds.map((id) => deleteAttachment(id)));
-        }
-
-        // Faz upload dos novos anexos
-        if (newFiles.length > 0) {
-          await uploadMachineAttachments(selectedMachine.id, newFiles);
-        }
-
-        notify.success("Máquina atualizada");
-      } else {
-        const machine = await createMachine(form);
-
-        if (machine?.id && newFiles.length > 0) {
-          await uploadMachineAttachments(machine.id, newFiles);
-        }
-
-        notify.success("Máquina criada");
-      }
-
+      await updateMachine(selectedMachine.id, form);
+      notify.success("Máquina atualizada");
       await loadMachines();
       setOpenModal(false);
       setSelectedMachine(undefined);
       setExistingAttachments([]);
     } catch (error) {
       notify.error("Erro ao salvar máquina");
+      console.error(error);
+    }
+  }
+
+  // =========================
+  // CRIAR MÁQUINA — passo 1 do assistente (NovaMaquinaWizard). Cria de
+  // verdade e devolve o registro (com id) pro assistente seguir pros
+  // próximos passos — o modal NÃO fecha aqui, quem fecha é o assistente
+  // ao concluir (ou cancelar).
+  // =========================
+  async function handleCriarMaquina(form: MachineFormData): Promise<Machine> {
+    const criada = await createMachine(form);
+    notify.success("Máquina criada");
+    await loadMachines();
+    setSelectedMachine(criada);
+    return criada;
+  }
+
+  // =========================
+  // SALVAR ANEXOS — aba "Anexos", sozinha. Só chamável com a máquina já
+  // existindo (a própria aba trava isso antes, ver AdicionarEditarMachine).
+  // =========================
+  async function handleSaveAnexos(newFiles: File[], removedAttachmentIds: number[]) {
+    if (!selectedMachine) return;
+    try {
+      if (removedAttachmentIds.length > 0) {
+        await Promise.all(removedAttachmentIds.map((id) => deleteAttachment(id)));
+      }
+      if (newFiles.length > 0) {
+        await uploadMachineAttachments(selectedMachine.id, newFiles);
+      }
+
+      const anexos = await getMachineAttachments(selectedMachine.id);
+      setExistingAttachments(mapearAnexos(anexos));
+      notify.success("Anexos atualizados");
+    } catch (error) {
+      notify.error("Erro ao salvar anexos");
       console.error(error);
     }
   }
@@ -209,8 +253,12 @@ setExistingAttachments(
         onDelete: handleOpenDelete,
         onRowClick: (id) => navigate(`/machines/${id}`),
         onViewOS: (id) => navigate(`/machines/${id}?tab=os`),
+        onQr: (machine) => setQr({ aberto: true, maquina: machine }),
+        onAmpliar: setImagemAmpliada,
+        onParear: setPareamento,
+        permitir,
       }),
-    []
+    [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
   );
 
   const cardColumns = useMemo(
@@ -219,9 +267,13 @@ setExistingAttachments(
         handleOpenEdit,
         toggleStatus,
         handleOpenDelete,
-        (machine) => navigate(`/machines/${machine.id}?tab=history`)
+        (machine) => navigate(`/machines/${machine.id}?tab=history`),
+        permitir,
+        (machine) => setQr({ aberto: true, maquina: machine }),
+        setImagemAmpliada,
+        setPareamento
       ),
-    []
+    [permitir.editar, permitir.excluir, permitir.alternar, permitir.qr]
   );
 
   return (
@@ -232,16 +284,28 @@ setExistingAttachments(
           <h1 className="text-xl font-semibold text-slate-900">Máquinas</h1>
           <p className="text-sm text-slate-500">Gestão de ativos industriais</p>
         </div>
-        <button
-          onClick={() => {
-            setSelectedMachine(undefined);
-            setExistingAttachments([]);
-            setOpenModal(true);
-          }}
-          className="w-full sm:w-auto px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-        >
-          + Nova máquina
-        </button>
+        {pode("maquinas.criar") && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setQr({ aberto: true, maquina: null })}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50"
+            >
+              <QrCode size={15} aria-hidden="true" /> Exportar QR Codes
+            </button>
+            <button
+              onClick={() => {
+                setCriandoNova(true);
+                setSelectedMachine(undefined);
+                setExistingAttachments([]);
+                setOpenModal(true);
+              }}
+              className="w-full sm:w-auto px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+            >
+              + Nova máquina
+            </button>
+          </div>
+)}
       </div>
 
       <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -281,15 +345,33 @@ setExistingAttachments(
 
       <MachineModal
         open={openModal}
+        novaMaquina={criandoNova}
         onClose={() => {
           setOpenModal(false);
           setSelectedMachine(undefined);
           setExistingAttachments([]);
+          setCriandoNova(false);
         }}
         sectors={setores}
         machine={selectedMachine}
         existingAttachments={existingAttachments}
-        onSave={handleSave}
+        onSaveDados={handleSaveDados}
+        onCriarMaquina={handleCriarMaquina}
+        onSaveAnexos={handleSaveAnexos}
+      />
+
+      <ExportarQrModal
+        open={qr.aberto}
+        onClose={() => setQr((atual) => ({ ...atual, aberto: false }))}
+        setores={setores}
+        maquinas={data}
+        maquina={qr.maquina}
+      />
+
+      <PareamentoModal
+        open={pareamento !== null}
+        onClose={() => setPareamento(null)}
+        maquina={pareamento}
       />
 
       <ConfirmDialog
@@ -300,6 +382,8 @@ setExistingAttachments(
         loading={deleteLoading}
         onConfirm={handleDeleteConfirm}
       />
+
+      <ImagemAmpliadaModal aberto={imagemAmpliada} onClose={() => setImagemAmpliada(null)} />
     </div>
   );
 }

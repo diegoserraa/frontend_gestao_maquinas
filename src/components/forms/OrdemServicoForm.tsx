@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -11,14 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import {
-  Wrench,
-  AlertTriangle,
-  User,
-  ClipboardList,
-  Settings,
-  Gauge,
-} from "lucide-react";
+import { Settings, Gauge, OctagonPause } from "lucide-react";
 
 export type OrdemServicoFormData = {
   id_solicitante?: number;
@@ -29,16 +21,20 @@ export type OrdemServicoFormData = {
   prioridade: "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
   id_tecnico?: number | null;
   resolucao?: string;
+  // "máquina parada" v1 enxuto: só respondido aqui, na abertura — sem
+  // reabrir/fechar depois. A duração vira automática (abertura -> fim da
+  // O.S.), calculada no backend, nunca editada à mão.
+  maquina_parada?: boolean;
+  motivo_parada?: string;
 };
 
-type Tecnico = {
-  id: number;
-  nome: string;
-};
-
+// atribuir técnico é sempre um passo separado, depois de criar a O.S.
+// (regra de negócio: gestor atribui a técnico/parceiro externo depois de
+// aberta) — não existe seletor de técnico neste formulário, então "tecnicos"
+// nunca chegou a ser usado aqui; a busca em si continua acontecendo em
+// Mantenance/index.tsx pra outras telas que precisam dela.
 type Props = {
   machineId: number;
-  tecnicos: Tecnico[];
   loading?: boolean;
   onSubmit: (data: OrdemServicoFormData) => void;
 };
@@ -51,6 +47,9 @@ function validate(form: OrdemServicoFormData): FormErrors {
   if (!form.descricao.trim()) errors.descricao = "Descrição obrigatória.";
   if (!form.tipo_manutencao) errors.tipo_manutencao = "Selecione o tipo.";
   if (!form.prioridade) errors.prioridade = "Selecione a prioridade.";
+  if (form.maquina_parada && !form.motivo_parada?.trim()) {
+    errors.motivo_parada = "Informe o motivo da parada.";
+  }
 
   return errors;
 }
@@ -58,7 +57,6 @@ function validate(form: OrdemServicoFormData): FormErrors {
 
 export function OrdemServicoForm({
   machineId,
-  tecnicos,
   loading,
   onSubmit,
 }: Props) {
@@ -75,6 +73,8 @@ export function OrdemServicoForm({
     prioridade: "MEDIA",
     id_tecnico: null,
     resolucao: "",
+    maquina_parada: false,
+    motivo_parada: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -204,7 +204,55 @@ export function OrdemServicoForm({
           </Select>
         </div>
 
-    
+
+      </div>
+
+      {/* MÁQUINA PARADA */}
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <OctagonPause size={15} className="text-slate-400" />
+          A máquina está parada?
+        </label>
+
+        <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          <button
+            type="button"
+            onClick={() => handleChange("maquina_parada", false)}
+            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              !form.maquina_parada ? "bg-slate-100 text-slate-800" : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            Não
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChange("maquina_parada", true)}
+            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              form.maquina_parada ? "bg-rose-50 text-rose-700" : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            Sim, está parada
+          </button>
+        </div>
+
+        {form.maquina_parada && (
+          <div className="pt-1.5">
+            <input
+              type="text"
+              placeholder="Motivo da parada (ex.: correia rompida)"
+              value={form.motivo_parada ?? ""}
+              onChange={(e) => handleChange("motivo_parada", e.target.value)}
+              onBlur={() => touch("motivo_parada")}
+              className={inputClass("motivo_parada")}
+            />
+            {touched.motivo_parada && errors.motivo_parada && (
+              <p className="mt-1 text-xs text-red-500">{errors.motivo_parada}</p>
+            )}
+            <p className="mt-1 text-xs text-slate-400">
+              O tempo parado é contado a partir de agora até a O.S. ser finalizada ou cancelada.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* BOTÃO */}
