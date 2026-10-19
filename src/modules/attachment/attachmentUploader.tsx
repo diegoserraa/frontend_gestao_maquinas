@@ -26,6 +26,9 @@ type Props = {
   removedIds: number[];
   onRemoveExisting: (id: number) => void;
   onRestoreExisting: (id: number) => void;
+  // cada tela usa esse uploader num momento diferente do fluxo de salvar —
+  // o texto de rodapé é quem explica isso, então é customizável por quem usa
+  textoRodape?: string;
 };
 
 // ── Comprime e normaliza fotos tiradas na hora ────────────
@@ -143,6 +146,7 @@ export function AttachmentUploader({
   removedIds,
   onRemoveExisting,
   onRestoreExisting,
+  textoRodape = "Os arquivos serão enviados automaticamente após salvar.",
 }: Props) {
   // sem "anexos.enviar" não há como adicionar arquivos; sem "anexos.excluir" não há como remover os já salvos
   const { pode } = usePermissoes();
@@ -553,7 +557,7 @@ export function AttachmentUploader({
 
       {podeEnviar && (
       <p className="text-xs text-slate-400">
-        Os arquivos serão enviados automaticamente após salvar a máquina.
+        {textoRodape}
       </p>
       )}
 

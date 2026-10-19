@@ -16,6 +16,7 @@ import {
 import type { Machine, Setor } from "../../modules/machine/machineTypes";
 import type { MachineFormData } from "@/components/forms/MachineForm";
 import type { ExistingAttachment } from "@/components/modals/machine/AdicionarEditarMachine";
+import type { Anexo } from "../../modules/attachment/attachmentTypes";
 
 import {
   toggleMachineStatus,
@@ -62,6 +63,11 @@ export default function Machines() {
   const navigate = useNavigate();
 
   const [selectedMachine, setSelectedMachine] = useState<Machine | undefined>();
+  // controla se o modal mostra o assistente (criar) ou as abas (editar) —
+  // decidido só no momento em que o modal ABRE, não a cada mudança de
+  // "selectedMachine" (senão o assistente "viraria" tela de editar sozinho
+  // assim que o passo 1 cria a máquina e preenche selectedMachine)
+  const [criandoNova, setCriandoNova] = useState(false);
 
   // Anexos existentes carregados ao abrir edição
   const [existingAttachments, setExistingAttachments] = useState<ExistingAttachment[]>([]);
@@ -106,20 +112,22 @@ export default function Machines() {
   // ABRIR MODAL DE EDIÇÃO
   // Busca os anexos existentes antes de abrir
   // =========================
+  // Mapeia Anexo (API) -> ExistingAttachment (o que o modal espera)
+  function mapearAnexos(anexos: Anexo[]): ExistingAttachment[] {
+    return anexos.map((a) => ({
+      id: a.id,
+      nome: a.nome_arquivo,
+      url: a.url_arquivo,
+      tipo: a.tipo_arquivo,
+    }));
+  }
+
   async function handleOpenEdit(machine: Machine) {
+    setCriandoNova(false);
     setSelectedMachine(machine);
     try {
       const anexos = await getMachineAttachments(machine.id);
-      // Mapeia Anexo -> ExistingAttachment
-    
-setExistingAttachments(
-  anexos.map((a) => ({
-    id: a.id,
-    nome: a.nome_arquivo,
-    url: a.url_arquivo,
-    tipo: a.tipo_arquivo,
-  }))
-);
+      setExistingAttachments(mapearAnexos(anexos));
     } catch {
       setExistingAttachments([]);
     }
@@ -166,44 +174,58 @@ setExistingAttachments(
   }
 
   // =========================
-  // SAVE — nova assinatura com removedAttachmentIds
+  // SALVAR DADOS — aba "Dados", só no modo EDITAR (máquina já existe).
+  // Salva e fecha o modal — fluxo rápido de "só editei o nome" continua 1
+  // clique, igual sempre foi.
   // =========================
-  async function handleSave(
-    form: MachineFormData,
-    newFiles: File[],
-    removedAttachmentIds: number[]
-  ) {
+  async function handleSaveDados(form: MachineFormData) {
+    if (!selectedMachine) return;
     try {
-      if (selectedMachine) {
-        await updateMachine(selectedMachine.id, form);
-
-        // Remove anexos marcados para deletar
-        if (removedAttachmentIds.length > 0) {
-          await Promise.all(removedAttachmentIds.map((id) => deleteAttachment(id)));
-        }
-
-        // Faz upload dos novos anexos
-        if (newFiles.length > 0) {
-          await uploadMachineAttachments(selectedMachine.id, newFiles);
-        }
-
-        notify.success("Máquina atualizada");
-      } else {
-        const machine = await createMachine(form);
-
-        if (machine?.id && newFiles.length > 0) {
-          await uploadMachineAttachments(machine.id, newFiles);
-        }
-
-        notify.success("Máquina criada");
-      }
-
+      await updateMachine(selectedMachine.id, form);
+      notify.success("Máquina atualizada");
       await loadMachines();
       setOpenModal(false);
       setSelectedMachine(undefined);
       setExistingAttachments([]);
     } catch (error) {
       notify.error("Erro ao salvar máquina");
+      console.error(error);
+    }
+  }
+
+  // =========================
+  // CRIAR MÁQUINA — passo 1 do assistente (NovaMaquinaWizard). Cria de
+  // verdade e devolve o registro (com id) pro assistente seguir pros
+  // próximos passos — o modal NÃO fecha aqui, quem fecha é o assistente
+  // ao concluir (ou cancelar).
+  // =========================
+  async function handleCriarMaquina(form: MachineFormData): Promise<Machine> {
+    const criada = await createMachine(form);
+    notify.success("Máquina criada");
+    await loadMachines();
+    setSelectedMachine(criada);
+    return criada;
+  }
+
+  // =========================
+  // SALVAR ANEXOS — aba "Anexos", sozinha. Só chamável com a máquina já
+  // existindo (a própria aba trava isso antes, ver AdicionarEditarMachine).
+  // =========================
+  async function handleSaveAnexos(newFiles: File[], removedAttachmentIds: number[]) {
+    if (!selectedMachine) return;
+    try {
+      if (removedAttachmentIds.length > 0) {
+        await Promise.all(removedAttachmentIds.map((id) => deleteAttachment(id)));
+      }
+      if (newFiles.length > 0) {
+        await uploadMachineAttachments(selectedMachine.id, newFiles);
+      }
+
+      const anexos = await getMachineAttachments(selectedMachine.id);
+      setExistingAttachments(mapearAnexos(anexos));
+      notify.success("Anexos atualizados");
+    } catch (error) {
+      notify.error("Erro ao salvar anexos");
       console.error(error);
     }
   }
@@ -273,6 +295,7 @@ setExistingAttachments(
             </button>
             <button
               onClick={() => {
+                setCriandoNova(true);
                 setSelectedMachine(undefined);
                 setExistingAttachments([]);
                 setOpenModal(true);
@@ -322,15 +345,19 @@ setExistingAttachments(
 
       <MachineModal
         open={openModal}
+        novaMaquina={criandoNova}
         onClose={() => {
           setOpenModal(false);
           setSelectedMachine(undefined);
           setExistingAttachments([]);
+          setCriandoNova(false);
         }}
         sectors={setores}
         machine={selectedMachine}
         existingAttachments={existingAttachments}
-        onSave={handleSave}
+        onSaveDados={handleSaveDados}
+        onCriarMaquina={handleCriarMaquina}
+        onSaveAnexos={handleSaveAnexos}
       />
 
       <ExportarQrModal
