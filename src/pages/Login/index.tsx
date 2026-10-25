@@ -63,9 +63,9 @@ export default function Login() {
 
         {/* LOGO */}
         <div className="flex flex-col items-center mb-8">
-          <LogoIcone size={56} className="mb-3" />
-          <LogoNome className="text-2xl tracking-tight" />
-          <p className="text-sm text-slate-400 mt-1">
+          <LogoIcone size={76} className="mb-4 drop-shadow-sm" />
+          <LogoNome className="text-3xl tracking-tight" />
+          <p className="text-sm text-slate-400 mt-2">
             Gestão de manutenção industrial
           </p>
         </div>

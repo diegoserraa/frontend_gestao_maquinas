@@ -40,7 +40,7 @@ export default function Sidebar({
               : "justify-between px-3"
           )}
         >
-          {!isCollapsed && <Logo size={24} textoClassName="text-sm" />}
+          {!isCollapsed && <Logo size={30} textoClassName="text-base" />}
 
           <button
             onClick={toggleCollapse}

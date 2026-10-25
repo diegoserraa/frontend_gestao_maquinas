@@ -1,5 +1,4 @@
 import { Menu } from "lucide-react";
-import { useLocation } from "react-router-dom";
 
 import { NotificationBell } from "@/modules/notificacao/notificacaoBell";
 import { getUser } from "@/modules/login/loginStorage";
@@ -9,26 +8,19 @@ interface Props {
   openSidebar: () => void;
 }
 
-// título do cabeçalho ficava travado em "Dashboard" em toda tela do sistema
-// (Máquinas, Monitoramento, O.S. ...) — cada rota tem o seu, igual ao que a
-// própria tela já mostra no corpo, pra não ficarem dizendo coisas diferentes
-function tituloDaPagina(pathname: string): { titulo: string; subtitulo: string } {
-  if (pathname.startsWith("/machines/")) return { titulo: "Máquina", subtitulo: "Detalhes do ativo" };
-  if (pathname.startsWith("/machines")) return { titulo: "Máquinas", subtitulo: "Gestão de ativos industriais" };
-  if (pathname.startsWith("/monitoring")) return { titulo: "Monitoramento", subtitulo: "Máquinas em tempo real" };
-  if (pathname.startsWith("/ordens-servico/")) return { titulo: "Ordem de Serviço", subtitulo: "Detalhes do atendimento" };
-  if (pathname.startsWith("/sector")) return { titulo: "Setores", subtitulo: "Organização da planta" };
-  if (pathname.startsWith("/partner")) return { titulo: "Parceiros", subtitulo: "Prestadores externos" };
-  if (pathname.startsWith("/user")) return { titulo: "Usuários", subtitulo: "Equipe e acessos" };
-  if (pathname.startsWith("/admin/empresas")) return { titulo: "Empresas", subtitulo: "Painel do administrador" };
-  if (pathname.startsWith("/reports")) return { titulo: "Relatórios", subtitulo: "Indicadores e exportação" };
-  return { titulo: "Dashboard", subtitulo: "Visão geral" };
+// o cabeçalho mostrava "Dashboard" fixo em toda tela — tentamos trocar pelo
+// título da própria rota, mas aí ficava repetindo o que a tela já escreve
+// no corpo (ex.: "Máquinas" duas vezes). Uma saudação nunca duplica nada.
+function saudacao(): string {
+  const hora = new Date().getHours();
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default function Header({ openSidebar }: Props) {
   const usuario = getUser();
-  const { pathname } = useLocation();
-  const { titulo, subtitulo } = tituloDaPagina(pathname);
+  const primeiroNome = usuario?.nome?.trim().split(" ")[0];
 
   return (
     <header
@@ -57,10 +49,10 @@ export default function Header({ openSidebar }: Props) {
 
         <div className="flex flex-col leading-tight">
           <h1 className="text-sm md:text-base font-semibold text-slate-800">
-            {titulo}
+            {saudacao()}{primeiroNome ? `, ${primeiroNome}` : ""}
           </h1>
           <span className="text-[11px] text-slate-500 hidden sm:block">
-            {subtitulo}
+            Bem-vindo(a) de volta
           </span>
         </div>
       </div>

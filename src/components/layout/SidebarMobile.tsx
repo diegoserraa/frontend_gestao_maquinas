@@ -55,7 +55,7 @@ export default function SidebarMobile({
       >
         {/* HEADER */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-blue-100">
-          <Logo size={24} textoClassName="text-sm" />
+          <Logo size={30} textoClassName="text-base" />
 
           <button
             onClick={closeSidebar}
