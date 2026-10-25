@@ -3,8 +3,9 @@ import { ChevronLeft, Radio, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GaugeNeon } from "./GaugeNeon";
 import { OndaNeon } from "./OndaNeon";
+import { SeletorModo } from "./MonitoramentoPecas";
 import { useHorasAoVivo } from "./useHorasAoVivo";
-import type { PontoHistorico } from "./useMonitoramentoDados";
+import type { ModoDados, PontoHistorico } from "./useMonitoramentoDados";
 import type { TelemetriaAtual } from "./monitoramentoTypes";
 import {
   LIMITES_PADRAO,
@@ -19,6 +20,9 @@ type Props = {
   leitura: TelemetriaAtual;
   historico: PontoHistorico[];
   onSair: () => void;
+  modo: ModoDados;
+  demoAtivo: boolean;
+  onMudarModo: (m: ModoDados) => void;
 };
 
 const COR_HEX: Record<Nivel, string> = {
@@ -28,7 +32,7 @@ const COR_HEX: Record<Nivel, string> = {
   "sem-dado": "#64748b",
 };
 
-export function VitrineMaquina({ leitura, historico, onSair }: Props) {
+export function VitrineMaquina({ leitura, historico, onSair, modo, demoAtivo, onMudarModo }: Props) {
   const aoVivo = estaAoVivo(leitura.atualizado_em);
   const nivel: Nivel = !aoVivo ? "sem-dado" : nivelGeral(leitura);
   const critico = nivel === "critico" && aoVivo;
@@ -72,14 +76,22 @@ export function VitrineMaquina({ leitura, historico, onSair }: Props) {
         <div className="pointer-events-none absolute inset-0 ring-[6px] ring-rose-500/50 animate-vitrine-respirar" aria-hidden />
       )}
 
-      <button
-        type="button"
-        onClick={onSair}
-        className="group absolute left-5 top-5 z-10 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-400 backdrop-blur transition-colors hover:border-white/20 hover:text-slate-100"
-      >
-        <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
-        Sair da vitrine
-      </button>
+      <div className="absolute left-5 top-5 z-10 flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={onSair}
+          className="group flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-400 backdrop-blur transition-colors hover:border-white/20 hover:text-slate-100"
+        >
+          <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
+          Sair da vitrine
+        </button>
+        <SeletorModo
+          modo={modo}
+          modoEfetivo={demoAtivo ? "demo" : "real"}
+          onChange={onMudarModo}
+          escuro
+        />
+      </div>
 
       <div className="relative z-[1] mx-auto flex min-h-screen max-w-[1400px] flex-col items-center justify-center gap-10 px-6 py-16">
         {/* CABEÇALHO */}
@@ -147,12 +159,32 @@ export function VitrineMaquina({ leitura, historico, onSair }: Props) {
           </div>
         </div>
 
-        {/* ONDA AO VIVO (vibração) */}
-        <div className="w-full max-w-4xl rounded-3xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Vibração em tempo real
-          </p>
-          <OndaNeon valores={historico.map((p) => p.vibracao)} cor={COR_HEX[aoVivo ? nivelVib : "sem-dado"]} altura={140} />
+        {/* HISTÓRICO AO VIVO — mesmas faixas configuradas em Parâmetros da máquina */}
+        <div className="grid w-full max-w-5xl gap-5 lg:grid-cols-2">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Temperatura — histórico
+            </p>
+            <OndaNeon
+              valores={historico.map((p) => p.temperatura)}
+              cor={COR_HEX[aoVivo ? nivelTemp : "sem-dado"]}
+              altura={140}
+              unidade="°C"
+              limites={{ atencao: limiteTemp.atencao, alarme: limiteTemp.alarme }}
+            />
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Vibração — histórico
+            </p>
+            <OndaNeon
+              valores={historico.map((p) => p.vibracao)}
+              cor={COR_HEX[aoVivo ? nivelVib : "sem-dado"]}
+              altura={140}
+              unidade=" mm/s"
+              limites={{ atencao: limiteVib.atencao, alarme: limiteVib.alarme }}
+            />
+          </div>
         </div>
       </div>
     </div>

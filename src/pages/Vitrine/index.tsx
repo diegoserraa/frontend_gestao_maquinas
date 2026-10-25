@@ -7,7 +7,7 @@ import { VitrineMaquina } from "@/modules/monitoramento/VitrineMaquina";
 export default function Vitrine() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { leituras, historico, carregando } = useMonitoramentoDados();
+  const { leituras, historico, carregando, demoAtivo, modo, setModo } = useMonitoramentoDados();
 
   const leitura = leituras.find((l) => String(l.maquina_id) === id);
 
@@ -59,6 +59,9 @@ export default function Vitrine() {
       leitura={leitura}
       historico={historico[leitura.maquina_id] ?? []}
       onSair={sair}
+      modo={modo}
+      demoAtivo={demoAtivo}
+      onMudarModo={setModo}
     />
   );
 }
