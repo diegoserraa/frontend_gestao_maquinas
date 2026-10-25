@@ -74,13 +74,17 @@ function formatarVencimento(p: PlanoManutencao): string {
   }
   const referencia = p.horas_referencia != null ? Number(p.horas_referencia) : null;
   if (referencia == null) return "—";
-  return `próxima aos ${(referencia + (p.intervalo_horas ?? 0)).toFixed(0)}h de uso`;
+  // intervalo_horas é NUMERIC no Postgres — o node-pg devolve como string,
+  // não number; sem o Number(...) aqui "referencia + intervalo_horas" virava
+  // concatenação de texto ("1200" + "500" = "1200500"), e o .toFixed quebrava
+  const intervalo = p.intervalo_horas != null ? Number(p.intervalo_horas) : 0;
+  return `próxima aos ${(referencia + intervalo).toFixed(0)}h de uso`;
 }
 
 function resumoIntervalo(dados: {
   tipo_gatilho: TipoGatilhoPreventiva;
   intervalo_dias?: number | null;
-  intervalo_horas?: number | null;
+  intervalo_horas?: number | string | null;
 }): string {
   return dados.tipo_gatilho === "DIAS"
     ? `a cada ${dados.intervalo_dias} dia${dados.intervalo_dias === 1 ? "" : "s"}`
@@ -164,7 +168,7 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
           descricao: real.descricao,
           tipo_gatilho: real.tipo_gatilho,
           intervalo_dias: real.intervalo_dias ?? undefined,
-          intervalo_horas: real.intervalo_horas ?? undefined,
+          intervalo_horas: real.intervalo_horas != null ? Number(real.intervalo_horas) : undefined,
           ultima_manutencao: real.ultima_manutencao ?? undefined,
           ativo: real.ativo,
         };

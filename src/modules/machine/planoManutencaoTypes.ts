@@ -6,7 +6,8 @@ export type PlanoManutencao = {
   descricao: string;
   tipo_gatilho: TipoGatilhoPreventiva;
   intervalo_dias?: number | null;
-  intervalo_horas?: number | null;
+  // NUMERIC no banco — o node-pg devolve como string, não number
+  intervalo_horas?: number | string | null;
   proxima_data?: string | null;
   horas_referencia?: number | string | null;
   ultima_manutencao?: string | null;
