@@ -385,7 +385,7 @@ export function TelemetriaHistoricoDialog({ leitura, open, onOpenChange }: Props
 
           {mostrarParametros && (
             <TabsContent value="parametros" className="data-[state=inactive]:hidden">
-              <ParametrosMaquina maquinaId={leitura?.maquina_id} />
+              <ParametrosMaquina maquinaId={leitura?.maquina_id} onSalvou={() => onOpenChange(false)} />
             </TabsContent>
           )}
         </Tabs>

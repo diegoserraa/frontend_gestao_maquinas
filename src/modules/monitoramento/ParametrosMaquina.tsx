@@ -8,7 +8,7 @@ import {
   type MaquinaParametro,
 } from "./monitoramentoService";
 
-type Props = { maquinaId?: number };
+type Props = { maquinaId?: number; onSalvou?: () => void };
 
 const ROTULO: Record<string, string> = {
   temperatura: "Temperatura",
@@ -26,7 +26,7 @@ function num(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function ParametrosMaquina({ maquinaId }: Props) {
+export function ParametrosMaquina({ maquinaId, onSalvou }: Props) {
   const [lista, setLista] = useState<MaquinaParametro[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -56,6 +56,7 @@ export function ParametrosMaquina({ maquinaId }: Props) {
       const salvos = await salvarParametros(maquinaId, lista);
       setLista(salvos);
       notify.success("Parâmetros salvos");
+      onSalvou?.();
     } catch {
       notify.error("Erro ao salvar parâmetros");
     } finally {
