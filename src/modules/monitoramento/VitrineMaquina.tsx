@@ -10,6 +10,7 @@ import type { TelemetriaAtual } from "./monitoramentoTypes";
 import {
   LIMITES_PADRAO,
   estaAoVivo,
+  formatarHoras,
   nivelGeral,
   nivelTemperatura,
   nivelVibracao,
@@ -150,9 +151,8 @@ export function VitrineMaquina({ leitura, historico, onSair, modo, demoAtivo, on
 
           <div className="flex flex-col items-center gap-1 rounded-3xl border border-white/10 bg-white/[0.03] px-10 py-8 backdrop-blur">
             <span className="font-mono text-5xl font-bold tabular-nums text-cyan-300 drop-shadow-[0_0_18px_rgba(34,211,238,0.5)]">
-              {horas !== null ? horas.toFixed(2) : "--"}
+              {formatarHoras(horas)}
             </span>
-            <span className="text-sm font-medium text-slate-400">horas</span>
             <span className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
               Horímetro
             </span>
