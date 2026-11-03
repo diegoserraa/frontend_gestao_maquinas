@@ -12,6 +12,7 @@ import {
   NIVEL_UI_ESCURO,
   ROTULO_NIVEL,
   estaAoVivo,
+  formatarHoras,
   formatarNumero,
   nivelGeral,
   nivelTemperatura,
@@ -208,9 +209,9 @@ export const MaquinaMonitorCard = memo(function MaquinaMonitorCard({
         />
         <Metrica
           icone={Clock}
-          rotulo="Horas"
-          valor={formatarNumero(horasAoVivo, 2)}
-          unidade="h"
+          rotulo="Ligada há"
+          valor={formatarHoras(horasAoVivo)}
+          unidade=""
           nivel="ok"
           serie={historico.map((p) => p.horas_ligadas)}
           neutro

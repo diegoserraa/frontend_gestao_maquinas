@@ -30,7 +30,7 @@ import type {
   PontoAgregado,
   TelemetriaAtual,
 } from "./monitoramentoTypes";
-import { formatarNumero } from "./monitoramentoHelpers";
+import { formatarHoras, formatarNumero } from "./monitoramentoHelpers";
 
 type Props = {
   leitura: TelemetriaAtual | null;
@@ -195,8 +195,7 @@ export function TelemetriaHistoricoDialog({ leitura, open, onOpenChange }: Props
           <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-wide text-blue-400">Horímetro</p>
             <p className="font-mono text-2xl font-bold tabular-nums text-blue-700">
-              {horas !== null ? horas.toFixed(2) : "--"}
-              <span className="ml-1 text-xs font-medium text-blue-400">h</span>
+              {formatarHoras(horas)}
             </p>
           </div>
         </div>

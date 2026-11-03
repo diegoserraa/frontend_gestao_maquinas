@@ -150,6 +150,26 @@ export function formatarNumero(valor: number | null, casas = 1): string {
   });
 }
 
+/** Horímetro em formato que qualquer um lê de cara (sem casa decimal de
+ * hora): "42min", "2h 15min", "3d 5h" — em vez de "0.70h" ou "77.25h", que
+ * obriga quem olha a fazer conta de cabeça pra saber quanto é isso. */
+export function formatarHoras(valor: number | null): string {
+  if (valor === null || !Number.isFinite(valor) || valor < 0) return "--";
+
+  const minutosTotais = Math.round(valor * 60);
+  if (minutosTotais < 60) return `${minutosTotais}min`;
+
+  const horasTotais = Math.floor(minutosTotais / 60);
+  const minutoResto = minutosTotais % 60;
+  if (horasTotais < 24) {
+    return minutoResto > 0 ? `${horasTotais}h ${minutoResto}min` : `${horasTotais}h`;
+  }
+
+  const dias = Math.floor(horasTotais / 24);
+  const horaResto = horasTotais % 24;
+  return horaResto > 0 ? `${dias}d ${horaResto}h` : `${dias}d`;
+}
+
 /** Considera a leitura "ao vivo" se chegou nos últimos N segundos. */
 export function estaAoVivo(atualizadoEm: string | null, janelaSegundos = 90): boolean {
   if (!atualizadoEm) return false;
