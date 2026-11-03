@@ -46,50 +46,71 @@ export function OndaNeon({ valores, cor, altura = 160, limites, unidade = "" }: 
   const area = `${linha} L${largura} ${altura} L0 ${altura} Z`;
   const [fx, fy] = coords[coords.length - 1];
 
+  // Os rótulos de atenção/alarme são HTML sobreposto, não <text> do SVG: o
+  // SVG usa preserveAspectRatio="none" (viewBox 1000 de largura esticado pra
+  // caber o card, bem mais estreito que isso em pixels reais) — um <text>
+  // dentro dele fica espremido/ilegível no eixo X. HTML por cima não sofre
+  // essa distorção.
+  const rotuloTop = (v: number) => `${(y(v) / altura) * 100}%`;
+  // se os dois limites ficarem perto um do outro na tela, empurra o de
+  // atenção um pouco pra cima pra não sobrepor o de alarme
+  const pxAtencao = limites?.atencao != null ? y(limites.atencao) : null;
+  const pxAlarme = limites?.alarme != null ? y(limites.alarme) : null;
+  const colidindo = pxAtencao != null && pxAlarme != null && Math.abs(pxAtencao - pxAlarme) < altura * 0.14;
+
   return (
-    <svg viewBox={`0 0 ${largura} ${altura}`} preserveAspectRatio="none" style={{ height: altura, width: "100%" }}>
-      <defs>
-        <linearGradient id={`onda-area-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={cor} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={cor} stopOpacity="0" />
-        </linearGradient>
-        <filter id={`onda-brilho-${id}`} x="-20%" y="-60%" width="140%" height="220%">
-          <feGaussianBlur stdDeviation="5" result="desfoque" />
-          <feMerge>
-            <feMergeNode in="desfoque" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
+    <div style={{ position: "relative", height: altura, width: "100%" }}>
+      <svg viewBox={`0 0 ${largura} ${altura}`} preserveAspectRatio="none" style={{ height: altura, width: "100%" }}>
+        <defs>
+          <linearGradient id={`onda-area-${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={cor} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={cor} stopOpacity="0" />
+          </linearGradient>
+          <filter id={`onda-brilho-${id}`} x="-20%" y="-60%" width="140%" height="220%">
+            <feGaussianBlur stdDeviation="5" result="desfoque" />
+            <feMerge>
+              <feMergeNode in="desfoque" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-      {/* linhas de grade horizontais, clima "osciloscópio" */}
-      {[0.25, 0.5, 0.75].map((f) => (
-        <line key={f} x1={0} y1={altura * f} x2={largura} y2={altura * f} stroke="rgba(148,163,184,0.12)" strokeWidth={1} />
-      ))}
+        {/* linhas de grade horizontais, clima "osciloscópio" */}
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line key={f} x1={0} y1={altura * f} x2={largura} y2={altura * f} stroke="rgba(148,163,184,0.12)" strokeWidth={1} />
+        ))}
 
-      {/* limites reais configurados em Parâmetros — mesma faixa que abre alerta/OS */}
-      {limites?.atencao != null && (
-        <g>
+        {/* limites reais configurados em Parâmetros — mesma faixa que abre alerta/OS */}
+        {limites?.atencao != null && (
           <line x1={0} y1={y(limites.atencao)} x2={largura} y2={y(limites.atencao)} stroke="#fbbf24" strokeOpacity={0.55} strokeWidth={1.5} strokeDasharray="7 7" />
-          <text x={largura - 6} y={y(limites.atencao) - 8} textAnchor="end" fontSize={20} fill="#fbbf24" fillOpacity={0.85} fontFamily="monospace">
-            atenção {limites.atencao}{unidade}
-          </text>
-        </g>
+        )}
+        {limites?.alarme != null && (
+          <line x1={0} y1={y(limites.alarme)} x2={largura} y2={y(limites.alarme)} stroke="#fb7185" strokeOpacity={0.6} strokeWidth={1.5} strokeDasharray="7 7" />
+        )}
+
+        <path d={area} fill={`url(#onda-area-${id})`} />
+        <path d={linha} fill="none" stroke={cor} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" filter={`url(#onda-brilho-${id})`} style={{ transition: "stroke 0.5s ease" }} />
+        <path d={linha} fill="none" stroke={cor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.5s ease" }} />
+
+        <circle cx={fx} cy={fy} r={6} fill={cor} filter={`url(#onda-brilho-${id})`} />
+      </svg>
+
+      {limites?.atencao != null && (
+        <span
+          className="pointer-events-none absolute right-2 whitespace-nowrap rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-400"
+          style={{ top: rotuloTop(limites.atencao), transform: `translateY(${colidindo ? "-120%" : "-100%"})` }}
+        >
+          atenção {limites.atencao}{unidade}
+        </span>
       )}
       {limites?.alarme != null && (
-        <g>
-          <line x1={0} y1={y(limites.alarme)} x2={largura} y2={y(limites.alarme)} stroke="#fb7185" strokeOpacity={0.6} strokeWidth={1.5} strokeDasharray="7 7" />
-          <text x={largura - 6} y={y(limites.alarme) - 8} textAnchor="end" fontSize={20} fill="#fb7185" fillOpacity={0.85} fontFamily="monospace">
-            alarme {limites.alarme}{unidade}
-          </text>
-        </g>
+        <span
+          className="pointer-events-none absolute right-2 whitespace-nowrap rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-rose-400"
+          style={{ top: rotuloTop(limites.alarme), transform: "translateY(-100%)" }}
+        >
+          alarme {limites.alarme}{unidade}
+        </span>
       )}
-
-      <path d={area} fill={`url(#onda-area-${id})`} />
-      <path d={linha} fill="none" stroke={cor} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" filter={`url(#onda-brilho-${id})`} style={{ transition: "stroke 0.5s ease" }} />
-      <path d={linha} fill="none" stroke={cor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.5s ease" }} />
-
-      <circle cx={fx} cy={fy} r={6} fill={cor} filter={`url(#onda-brilho-${id})`} />
-    </svg>
+    </div>
   );
 }
