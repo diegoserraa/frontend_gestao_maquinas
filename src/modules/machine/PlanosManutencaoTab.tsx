@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Pencil, Trash2, Calendar, Gauge, Sparkles, Check, Save } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Calendar, Gauge, Sparkles, Check, Save, RotateCcw } from "lucide-react";
 
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
@@ -104,6 +104,10 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
   const [formAberto, setFormAberto] = useState<"novo" | number | string | null>(null);
   const [excluindo, setExcluindo] = useState<PlanoManutencao | null>(null);
   const [excluindoCarregando, setExcluindoCarregando] = useState(false);
+  // ids de planos reais marcados pra excluir — no modo padrão (!direto) só
+  // vira de verdade quando clicar em "Salvar", igual às edições/novos na
+  // fila de pendentes; no modo "direto" a exclusão já é imediata (ver abaixo).
+  const [exclusoes, setExclusoes] = useState<number[]>([]);
 
   async function carregar() {
     if (!maquinaId) return;
@@ -218,9 +222,10 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
   }
 
   async function salvarTudo() {
-    if (pendentes.length === 0 || !maquinaId) return;
+    if ((pendentes.length === 0 && exclusoes.length === 0) || !maquinaId) return;
     setSalvandoTudo(true);
     const falharam: PlanoPendente[] = [];
+    const exclusoesFalharam: number[] = [];
 
     for (const p of pendentes) {
       try {
@@ -234,12 +239,22 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
       }
     }
 
+    for (const id of exclusoes) {
+      try {
+        await excluirPlanoManutencao(maquinaId, id);
+      } catch {
+        exclusoesFalharam.push(id);
+      }
+    }
+
     setPendentes(falharam);
+    setExclusoes(exclusoesFalharam);
     await carregar();
     setSalvandoTudo(false);
 
-    if (falharam.length > 0) {
-      notify.error(`${falharam.length} plano(s) não foram salvos — corrija e tente de novo`);
+    const totalFalhas = falharam.length + exclusoesFalharam.length;
+    if (totalFalhas > 0) {
+      notify.error(`${totalFalhas} alteração(ões) não foram salvas — corrija e tente de novo`);
     } else {
       notify.success("Planos de preventiva salvos");
       onSalvou?.();
@@ -250,8 +265,20 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
     setPendentes((prev) => prev.filter((p) => p.chave !== chave));
   }
 
+  // marca um plano real pra excluir ao salvar — descarta qualquer edição
+  // dele que já estivesse na fila (não faz sentido editar algo que vai sumir)
+  function marcarExclusao(id: number) {
+    setExclusoes((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setPendentes((prev) => prev.filter((p) => p.idExistente !== id));
+    setFormAberto((atual) => (atual === id ? null : atual));
+  }
+
+  function desfazerExclusao(id: number) {
+    setExclusoes((prev) => prev.filter((x) => x !== id));
+  }
+
   const pendentesNovos = pendentes.filter((p) => p.idExistente == null);
-  const temPendencias = pendentes.length > 0;
+  const temPendencias = pendentes.length > 0 || exclusoes.length > 0;
 
   return (
     <div className="space-y-4">
@@ -259,7 +286,7 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
         Cada plano gera sua própria O.S. preventiva, no próprio ritmo — pode ter
         quantos quiser (ex.: "troca de óleo" a cada 90 dias e "verificar
         correias" a cada 500h de uso, ao mesmo tempo).
-        {!direto && ' "Guardar" só coloca na lista; nada vira realidade até clicar em "Salvar".'}
+        {!direto && ' "Guardar", excluir ou aproveitar de outra máquina só altera a lista; nada vira realidade até clicar em "Salvar".'}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -273,8 +300,10 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
 
         <BotaoAproveitarPlano
           maquinaId={maquinaId}
+          direto={direto}
+          temSensor={temSensor}
           onClonado={carregar}
-          onSalvou={direto ? undefined : onSalvou}
+          onAproveitar={(novos) => setPendentes((prev) => [...prev, ...novos])}
         />
       </div>
 
@@ -297,18 +326,21 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
         <div className="space-y-2">
           {planos.map((real) => {
             const pendenteEdicao = pendentes.find((p) => p.idExistente === real.id);
+            const marcadoExcluir = exclusoes.includes(real.id);
             return (
               <CardPlano
                 key={real.id}
                 descricao={pendenteEdicao?.dados.descricao ?? real.descricao}
                 resumo={resumoIntervalo(pendenteEdicao?.dados ?? real)}
-                vencimento={pendenteEdicao ? "alterações não salvas" : formatarVencimento(real)}
-                ultimaManutencao={!pendenteEdicao ? formatarUltimaManutencao(real.ultima_manutencao) : null}
+                vencimento={marcadoExcluir ? "será excluído ao salvar" : pendenteEdicao ? "alterações não salvas" : formatarVencimento(real)}
+                ultimaManutencao={!pendenteEdicao && !marcadoExcluir ? formatarUltimaManutencao(real.ultima_manutencao) : null}
                 ativo={pendenteEdicao?.dados.ativo ?? real.ativo}
                 tipoGatilho={pendenteEdicao?.dados.tipo_gatilho ?? real.tipo_gatilho}
                 pendente={!!pendenteEdicao}
+                marcadoExcluir={marcadoExcluir}
                 onEditar={() => setFormAberto(real.id)}
                 onExcluir={() => setExcluindo(real)}
+                onDesfazerExclusao={() => desfazerExclusao(real.id)}
               />
             );
           })}
@@ -339,7 +371,7 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
             className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:shadow-md disabled:opacity-60"
           >
             {salvandoTudo ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-            {temPendencias ? `Salvar (${pendentes.length})` : "Salvar"}
+            {temPendencias ? `Salvar (${pendentes.length + exclusoes.length})` : "Salvar"}
           </button>
         </div>
       )}
@@ -347,23 +379,34 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
       <ConfirmDialog
         open={!!excluindo}
         title="Excluir plano de manutenção"
-        description={`Tem certeza que deseja excluir "${excluindo?.descricao}"? Essa ação não pode ser desfeita.`}
+        description={
+          direto
+            ? `Tem certeza que deseja excluir "${excluindo?.descricao}"? Essa ação não pode ser desfeita.`
+            : `"${excluindo?.descricao}" fica marcado pra excluir — só é removido de verdade quando clicar em "Salvar" (e dá pra desfazer antes disso).`
+        }
         loading={excluindoCarregando}
         onOpenChange={(v) => !v && setExcluindo(null)}
         onConfirm={async () => {
           if (!excluindo || !maquinaId) return;
-          setExcluindoCarregando(true);
-          try {
-            await excluirPlanoManutencao(maquinaId, excluindo.id);
-            notify.success("Plano excluído");
-            setPendentes((prev) => prev.filter((p) => p.idExistente !== excluindo.id));
-            setExcluindo(null);
-            carregar();
-          } catch {
-            notify.error("Erro ao excluir plano");
-          } finally {
-            setExcluindoCarregando(false);
+          // modo direto (assistente de criação): exclui na hora, sem fila —
+          // ver handleGuardar, que segue o mesmo padrão nesse modo
+          if (direto) {
+            setExcluindoCarregando(true);
+            try {
+              await excluirPlanoManutencao(maquinaId, excluindo.id);
+              notify.success("Plano excluído");
+              setExcluindo(null);
+              carregar();
+            } catch {
+              notify.error("Erro ao excluir plano");
+            } finally {
+              setExcluindoCarregando(false);
+            }
+            return;
           }
+
+          marcarExclusao(excluindo.id);
+          setExcluindo(null);
         }}
       />
     </div>
@@ -378,8 +421,10 @@ function CardPlano({
   ativo,
   tipoGatilho,
   pendente,
+  marcadoExcluir,
   onEditar,
   onExcluir,
+  onDesfazerExclusao,
 }: {
   descricao: string;
   resumo: string;
@@ -388,8 +433,10 @@ function CardPlano({
   ativo: boolean;
   tipoGatilho: TipoGatilhoPreventiva;
   pendente: boolean;
+  marcadoExcluir?: boolean;
   onEditar: () => void;
   onExcluir: () => void;
+  onDesfazerExclusao?: () => void;
 }) {
   const Icone = tipoGatilho === "DIAS" ? Calendar : Gauge;
 
@@ -397,20 +444,33 @@ function CardPlano({
     <div
       className={cn(
         "rounded-xl border bg-white p-3 shadow-sm",
-        pendente ? "border-amber-300 bg-amber-50/40" : ativo ? "border-slate-200" : "border-slate-100 opacity-60"
+        marcadoExcluir
+          ? "border-rose-300 bg-rose-50/40"
+          : pendente
+          ? "border-amber-300 bg-amber-50/40"
+          : ativo
+          ? "border-slate-200"
+          : "border-slate-100 opacity-60"
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <Icone size={14} className={pendente ? "shrink-0 text-amber-500" : "shrink-0 text-blue-500"} />
-            <span className="truncate text-sm font-medium text-slate-800">{descricao}</span>
-            {pendente && (
+            <Icone size={14} className={cn("shrink-0", marcadoExcluir ? "text-rose-500" : pendente ? "text-amber-500" : "text-blue-500")} />
+            <span className={cn("truncate text-sm font-medium text-slate-800", marcadoExcluir && "text-slate-400 line-through")}>
+              {descricao}
+            </span>
+            {marcadoExcluir && (
+              <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                marcado p/ excluir
+              </span>
+            )}
+            {!marcadoExcluir && pendente && (
               <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
                 não salvo
               </span>
             )}
-            {!pendente && !ativo && (
+            {!marcadoExcluir && !pendente && !ativo && (
               <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                 inativo
               </span>
@@ -425,12 +485,25 @@ function CardPlano({
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <button type="button" onClick={onEditar} title="Editar" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <Pencil size={14} />
-          </button>
-          <button type="button" onClick={onExcluir} title="Excluir" className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600">
-            <Trash2 size={14} />
-          </button>
+          {marcadoExcluir ? (
+            <button
+              type="button"
+              onClick={onDesfazerExclusao}
+              title="Desfazer exclusão"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            >
+              <RotateCcw size={13} /> Desfazer
+            </button>
+          ) : (
+            <>
+              <button type="button" onClick={onEditar} title="Editar" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                <Pencil size={14} />
+              </button>
+              <button type="button" onClick={onExcluir} title="Excluir" className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                <Trash2 size={14} />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -572,15 +645,18 @@ function FormPlano({
 
 function BotaoAproveitarPlano({
   maquinaId,
+  direto,
+  temSensor,
   onClonado,
-  onSalvou,
+  onAproveitar,
 }: {
   maquinaId: number;
+  // modo direto (assistente de criação): clona na hora, igual handleGuardar
+  // nesse modo — fora dele, só entra na fila de pendentes (ver onAproveitar).
+  direto?: boolean;
+  temSensor: boolean;
   onClonado: () => void;
-  // clonar já salva na API na hora (não entra na fila de "pendentes"), então
-  // sem isso o botão "Salvar" geral nunca habilita e o modal nunca fecha
-  // depois de aproveitar um plano — ver PlanosManutencaoTab (onSalvou).
-  onSalvou?: () => void;
+  onAproveitar: (novos: PlanoPendente[]) => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const [maquinas, setMaquinas] = useState<Machine[]>([]);
@@ -599,16 +675,57 @@ function BotaoAproveitarPlano({
   async function escolher(origem: Machine) {
     setCopiando(true);
     try {
-      const resultado = await clonarPlanosManutencao(maquinaId, origem.id);
+      if (direto) {
+        const resultado = await clonarPlanosManutencao(maquinaId, origem.id);
+        setAberto(false);
+        if (resultado.criados.length > 0) {
+          notify.success(`${resultado.criados.length} plano(s) copiado(s) de "${origem.nome}"`);
+        }
+        if (resultado.ignorados.length > 0) {
+          notify.error(`${resultado.ignorados.length} plano(s) não copiado(s): ${resultado.ignorados.map((i) => i.descricao).join(", ")}`);
+        }
+        onClonado();
+        return;
+      }
+
+      // fora do modo direto: não salva nada ainda, só prepara os planos
+      // dessa outra máquina pra entrar na mesma fila de "pendentes" dos
+      // planos novos/editados — some se "Salvar" não for clicado.
+      const planosOrigem = (await listarPlanosManutencao(origem.id)).filter((p) => p.ativo);
+      if (planosOrigem.length === 0) {
+        notify.error(`"${origem.nome}" não tem planos de manutenção ativos`);
+        return;
+      }
+
+      const ignorados: string[] = [];
+      const novos: PlanoPendente[] = [];
+      for (const plano of planosOrigem) {
+        // mesma regra do backend (PlanoManutencaoService.criar): plano por
+        // horas exige que a máquina de destino já tenha sensor de horímetro
+        if (plano.tipo_gatilho === "HORAS" && !temSensor) {
+          ignorados.push(plano.descricao);
+          continue;
+        }
+        novos.push({
+          chave: `clone-${origem.id}-${plano.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          dados: {
+            descricao: plano.descricao,
+            tipo_gatilho: plano.tipo_gatilho,
+            intervalo_dias: plano.intervalo_dias ?? undefined,
+            intervalo_horas: plano.intervalo_horas != null ? Number(plano.intervalo_horas) : undefined,
+            ativo: true,
+          },
+        });
+      }
+
       setAberto(false);
-      if (resultado.criados.length > 0) {
-        notify.success(`${resultado.criados.length} plano(s) copiado(s) de "${origem.nome}"`);
+      if (novos.length > 0) {
+        onAproveitar(novos);
+        notify.success(`${novos.length} plano(s) de "${origem.nome}" adicionados — clique em "Salvar" pra confirmar`);
       }
-      if (resultado.ignorados.length > 0) {
-        notify.error(`${resultado.ignorados.length} plano(s) não copiado(s): ${resultado.ignorados.map((i) => i.descricao).join(", ")}`);
+      if (ignorados.length > 0) {
+        notify.error(`${ignorados.length} plano(s) não copiado(s) (sem sensor de horímetro): ${ignorados.join(", ")}`);
       }
-      onClonado();
-      if (resultado.criados.length > 0) onSalvou?.();
     } catch (erro: any) {
       notify.error(erro?.message ?? "Erro ao copiar planos");
     } finally {
