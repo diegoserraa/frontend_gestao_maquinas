@@ -397,10 +397,14 @@ return (
         border border-rose-200
         bg-rose-50
         text-rose-700
+        max-w-full
       "
     >
-      <OctagonPause size={11} />
-      Máquina parada
+      <OctagonPause size={11} className="shrink-0" />
+      <span className="truncate">
+        Máquina parada
+        {os.motivo_parada && <span className="font-normal text-rose-600"> — {os.motivo_parada}</span>}
+      </span>
     </span>
   )}
 
