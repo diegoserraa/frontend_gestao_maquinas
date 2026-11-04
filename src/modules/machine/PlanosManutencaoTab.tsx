@@ -271,7 +271,11 @@ export function PlanosManutencaoTab({ maquinaId, onSalvou, direto }: Props) {
           <Plus size={14} /> Novo plano
         </button>
 
-        <BotaoAproveitarPlano maquinaId={maquinaId} onClonado={carregar} />
+        <BotaoAproveitarPlano
+          maquinaId={maquinaId}
+          onClonado={carregar}
+          onSalvou={direto ? undefined : onSalvou}
+        />
       </div>
 
       {formAberto !== null && (
@@ -566,7 +570,18 @@ function FormPlano({
   );
 }
 
-function BotaoAproveitarPlano({ maquinaId, onClonado }: { maquinaId: number; onClonado: () => void }) {
+function BotaoAproveitarPlano({
+  maquinaId,
+  onClonado,
+  onSalvou,
+}: {
+  maquinaId: number;
+  onClonado: () => void;
+  // clonar já salva na API na hora (não entra na fila de "pendentes"), então
+  // sem isso o botão "Salvar" geral nunca habilita e o modal nunca fecha
+  // depois de aproveitar um plano — ver PlanosManutencaoTab (onSalvou).
+  onSalvou?: () => void;
+}) {
   const [aberto, setAberto] = useState(false);
   const [maquinas, setMaquinas] = useState<Machine[]>([]);
   const [carregandoLista, setCarregandoLista] = useState(false);
@@ -593,6 +608,7 @@ function BotaoAproveitarPlano({ maquinaId, onClonado }: { maquinaId: number; onC
         notify.error(`${resultado.ignorados.length} plano(s) não copiado(s): ${resultado.ignorados.map((i) => i.descricao).join(", ")}`);
       }
       onClonado();
+      if (resultado.criados.length > 0) onSalvou?.();
     } catch (erro: any) {
       notify.error(erro?.message ?? "Erro ao copiar planos");
     } finally {
