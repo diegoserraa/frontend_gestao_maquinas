@@ -62,3 +62,45 @@ export type PontoAgregado = {
   minimo: number | null;
   maximo: number | null;
 };
+
+/* ================= Relatório (tela "Relatórios" do módulo) ================= */
+
+export type TelemetriaLeituraComMaquina = TelemetriaLeitura & {
+  maquina_nome: string | null;
+  // limites configurados da máquina dessa leitura — usado pra colorir
+  // atenção/crítico na tabela do relatório, mesma régua do resto do sistema
+  limites?: Record<string, LimiteMetrica>;
+};
+
+export type FaixaMetrica = {
+  media: number | null;
+  minimo: number | null;
+  maximo: number | null;
+};
+
+export type ResumoRelatorioTelemetria = {
+  total_leituras: number;
+  periodo_desde: string | null;
+  periodo_ate: string | null;
+  temperatura: FaixaMetrica;
+  vibracao: FaixaMetrica;
+  // só vem preenchido quando o filtro é de uma máquina só
+  horas: { inicio: number | null; fim: number | null; trabalhadas: number | null } | null;
+};
+
+export type PontoRelatorioDiario = {
+  dia: string; // ISO (meia-noite do dia, America/Sao_Paulo)
+  leituras: number;
+  temperatura: number | null;
+  vibracao: number | null;
+};
+
+export type RelatorioTelemetria = {
+  leituras: TelemetriaLeituraComMaquina[];
+  resumo: ResumoRelatorioTelemetria;
+  // tendência diária — sempre do período inteiro (nunca cortada pelo limite)
+  porDia: PontoRelatorioDiario[];
+  // true = tinha mais leitura no período do que o limite trouxe (resumo
+  // continua certo; só a lista crua vem cortada)
+  truncado: boolean;
+};

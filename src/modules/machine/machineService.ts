@@ -1,5 +1,5 @@
 import { apiGet, apiUpload, apiDelete, apiPatch, apiPost } from "@/lib/apiClient";
-import type { EtiquetasResposta, Machine, PareamentoGerado, Setor } from "./machineTypes";
+import type { EtiquetasResposta, Machine, NovoVinculoExterno, PareamentoGerado, Setor } from "./machineTypes";
 
 export async function getMachines(): Promise<Machine[]> {
   return apiGet<Machine[]>("/maquinas");
@@ -53,6 +53,26 @@ export async function toggleMachineStatus(id: number): Promise<Machine> {
     return await apiPatch<Machine>(`/maquinas/${id}/status`);
   } catch {
     throw new Error("Erro ao alterar status da máquina");
+  }
+}
+
+/** Ativa/desativa a máquina no módulo de Monitoramento (não cria cadastro novo). */
+export async function toggleMonitoramento(id: number, ativo: boolean): Promise<Machine> {
+  try {
+    return await apiPatch<Machine>(`/maquinas/${id}/monitoramento`, { ativo });
+  } catch {
+    throw new Error("Erro ao atualizar monitoramento da máquina");
+  }
+}
+
+/** "Vincular máquina do cliente" — cadastro enxuto pra quem gerencia o
+ * próprio parque em outro sistema e só quer plugar o sensor aqui. Já nasce
+ * com o monitoramento ativado (é pra isso que ela existe). */
+export async function criarVinculoExterno(dados: NovoVinculoExterno): Promise<Machine> {
+  try {
+    return await apiPost<Machine>("/maquinas/vinculo-externo", dados);
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : "Erro ao vincular máquina do cliente");
   }
 }
 

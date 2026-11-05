@@ -19,6 +19,9 @@ import Login from "@/pages/Login";
 import OrdemServicoDetails from "@/pages/OrdemServico";
 import Reports from "@/pages/Relatorio";
 import Monitoring from "@/pages/Monitoring";
+import MonitoringLayout from "@/pages/Monitoring/MonitoringLayout";
+import MonitoringRelatorios from "@/pages/Monitoring/Relatorios";
+import MonitoringAdicionarMaquinas from "@/pages/Monitoring/AdicionarMaquinas";
 import Empresas from "@/pages/Empresas";
 import TrocarSenha from "@/pages/TrocarSenha";
 import Vitrine from "@/pages/Vitrine";
@@ -95,9 +98,21 @@ export const router = createBrowserRouter([
         path: "monitoring",
         element: (
           <RotaComPermissao permissao="monitoramento.ver">
-            <Monitoring />
+            <MonitoringLayout />
           </RotaComPermissao>
         ),
+        children: [
+          { index: true, element: <Monitoring /> },
+          { path: "relatorios", element: <MonitoringRelatorios /> },
+          {
+            path: "maquinas",
+            element: (
+              <RotaComPermissao permissao="monitoramento.configurar_limites">
+                <MonitoringAdicionarMaquinas />
+              </RotaComPermissao>
+            ),
+          },
+        ],
       },
 
 

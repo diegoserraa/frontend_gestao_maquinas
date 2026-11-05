@@ -22,6 +22,25 @@ export type Machine = {
   ultima_manutencao?: string | null;
   proxima_manutencao?: string | null;
   imagem_url?: string | null;
+
+  // módulo "Monitoramento" independente: só aparece no dashboard quem foi
+  // ativado manualmente aqui (ver pages/Monitoring/AdicionarMaquinas.tsx)
+  monitoramento_ativo?: boolean;
+  // preenchido só quando veio de "Vincular máquina do cliente" — cadastro
+  // enxuto pra quem gerencia o próprio parque em outro sistema
+  referencia_externa?: string | null;
+  sistema_origem?: string | null;
+  // sinal confiável de "veio desse fluxo" (referencia/sistema podem ficar em
+  // branco mesmo numa máquina vinculada)
+  vinculo_externo?: boolean;
+};
+
+export type NovoVinculoExterno = {
+  nome: string;
+  setor_id: number;
+  referencia_externa?: string;
+  sistema_origem?: string;
+  observacao?: string;
 };
 
 /** Uma etiqueta para imprimir (o QR já vem pronto do servidor, gerado com o endereço atual do sistema). */

@@ -5,6 +5,7 @@ import type {
   MetricaHistorico,
   MqttStatus,
   PontoAgregado,
+  RelatorioTelemetria,
   TelemetriaAtual,
   TelemetriaLeitura,
 } from "./monitoramentoTypes";
@@ -174,5 +175,24 @@ export function getHistoricoAgregado(
   return fetchJson<PontoAgregado[]>(
     `/telemetria/${maquinaId}/historico-agregado?faixa=${faixa}&metrica=${metrica}`
   );
+}
+
+/* ================= Relatório ================= */
+
+export function getRelatorioTelemetria(params: {
+  maquinaId?: number | null;
+  desde?: string | null;
+  ate?: string | null;
+  limite?: number;
+}): Promise<RelatorioTelemetria> {
+  const qs = new URLSearchParams();
+
+  if (params.maquinaId) qs.set("maquina_id", String(params.maquinaId));
+  if (params.desde) qs.set("desde", params.desde);
+  if (params.ate) qs.set("ate", params.ate);
+  if (params.limite) qs.set("limite", String(params.limite));
+
+  const query = qs.toString();
+  return fetchJson<RelatorioTelemetria>(`/telemetria/relatorio${query ? `?${query}` : ""}`);
 }
 
