@@ -11,6 +11,13 @@ export const LIMITES_PADRAO: Record<string, LimiteMetrica> = {
   vibracao: { atencao: 4.5, alarme: 7, minimo: null },
 };
 
+// mesmo valor do firmware (ver LIMIAR_RODANDO em telemetria_esp32.ino):
+// abaixo disso é ruído de sensor parado (ESP32 energizado, máquina
+// desligada) — checado ao vivo via MQTT, ruído fica em ~0.04–0.05 m/s².
+// Usado só pra decidir se extrapola o horímetro ao vivo entre leituras
+// (o acúmulo de verdade é feito no firmware, isso aqui é só exibição).
+export const LIMIAR_VIBRACAO_RODANDO = 0.15;
+
 /**
  * Nível de uma métrica conforme o limite configurado da máquina.
  * Se `limite` não vier, usa o padrão da métrica.

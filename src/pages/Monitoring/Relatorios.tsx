@@ -313,14 +313,14 @@ export default function Relatorios() {
             <CartaoKpi
               icone={Thermometer}
               corIcone="bg-rose-50 text-rose-600"
-              rotulo="Temperatura média"
+              rotulo="Temperatura média (rodando)"
               valor={`${formatarNumero(resultado.resumo.temperatura.media, 1)} °C`}
               detalhe={`mín ${formatarNumero(resultado.resumo.temperatura.minimo, 1)} · máx ${formatarNumero(resultado.resumo.temperatura.maximo, 1)}`}
             />
             <CartaoKpi
               icone={Activity}
               corIcone="bg-blue-50 text-blue-600"
-              rotulo="Vibração média"
+              rotulo="Vibração média (rodando)"
               valor={`${formatarNumero(resultado.resumo.vibracao.media, 2)} mm/s`}
               detalhe={`mín ${formatarNumero(resultado.resumo.vibracao.minimo, 2)} · máx ${formatarNumero(resultado.resumo.vibracao.maximo, 2)}`}
             />
@@ -332,6 +332,11 @@ export default function Relatorios() {
               detalhe={resultado.resumo.horas ? undefined : "selecione 1 máquina"}
             />
           </div>
+          <p className="-mt-2 text-[11px] text-slate-400">
+            Temperatura e vibração acima são só de quando a máquina estava rodando de verdade —
+            tempo parada (sensor ligado, máquina desligada) não entra na média nem no gráfico,
+            senão ela ficaria mascarada.
+          </p>
 
           {/* TENDÊNCIA */}
           {grafico.length > 1 && (
@@ -571,7 +576,9 @@ function GraficoTendencia({
               stroke={cor}
               strokeWidth={2.5}
               fill={`url(#grad-${campo})`}
-              connectNulls
+              // SEM connectNulls: dia em que a máquina não rodou nada vira um
+              // buraco de verdade na linha, não uma ponte escondendo que
+              // faltou dado (ver FILTER em TelemetriaRepository.listarRelatorio)
               isAnimationActive={false}
             />
           </AreaChart>
