@@ -27,6 +27,7 @@ import {
   AvisoDemo,
 } from "@/modules/monitoramento/MonitoramentoPecas";
 import {
+  LIMIAR_VIBRACAO_RODANDO,
   estaAoVivo,
   nivelGeral,
   alertasDeDemonstracao,
@@ -89,6 +90,7 @@ export default function Monitoring() {
 
   const [busca, setBusca] = useState("");
   const [setorFiltro, setSetorFiltro] = useState("all");
+  const [statusFiltro, setStatusFiltro] = useState<"todas" | "rodando" | "parada">("todas");
   const [selecionada, setSelecionada] = useState<TelemetriaAtual | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [escuro, setEscuroState] = useState<boolean>(lerTemaSalvo);
@@ -217,7 +219,10 @@ export default function Monitoring() {
         (l.setor_nome ?? "").toLowerCase().includes(termo);
       const casaSetor =
         setorFiltro === "all" || String(l.setor_id ?? "") === setorFiltro;
-      return casaBusca && casaSetor;
+      const rodando = estaAoVivo(l.atualizado_em) && l.vibracao !== null && l.vibracao >= LIMIAR_VIBRACAO_RODANDO;
+      const casaStatus =
+        statusFiltro === "todas" || rodando === (statusFiltro === "rodando");
+      return casaBusca && casaSetor && casaStatus;
     });
 
     const porSetor = new Map<string, TelemetriaAtual[]>();
@@ -247,7 +252,7 @@ export default function Monitoring() {
           chave === CHAVE_SEM_SETOR ? "Sem setor" : nomes.get(chave) ?? "Setor",
         itens: ordena(porSetor.get(chave)!),
       }));
-  }, [leituras, busca, setorFiltro, opcoesSetor]);
+  }, [leituras, busca, setorFiltro, statusFiltro, opcoesSetor]);
 
   const abrirHistorico = useCallback((l: TelemetriaAtual) => {
     setSelecionada(l);
@@ -325,6 +330,35 @@ export default function Monitoring() {
                     className={cn(escuro && "text-slate-200 focus:bg-white/10 focus:text-white data-[state=checked]:bg-blue-500/20 data-[state=checked]:text-blue-300")}
                   >
                     {s.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-full sm:w-44">
+            <Select value={statusFiltro} onValueChange={(v) => setStatusFiltro(v as typeof statusFiltro)}>
+              <SelectTrigger
+                className={cn(
+                  "h-10",
+                  escuro && "border-white/10 bg-white/5 text-slate-100 hover:border-white/20 [&_svg]:text-slate-400"
+                )}
+              >
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className={cn(escuro && "border-white/10 bg-slate-900 text-slate-100")}>
+                {(
+                  [
+                    ["todas", "Todas"],
+                    ["rodando", "Rodando"],
+                    ["parada", "Parada"],
+                  ] as const
+                ).map(([valor, rotulo]) => (
+                  <SelectItem
+                    key={valor}
+                    value={valor}
+                    className={cn(escuro && "text-slate-200 focus:bg-white/10 focus:text-white data-[state=checked]:bg-blue-500/20 data-[state=checked]:text-blue-300")}
+                  >
+                    {rotulo}
                   </SelectItem>
                 ))}
               </SelectContent>

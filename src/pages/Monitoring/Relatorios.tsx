@@ -35,6 +35,7 @@ import { getMachines } from "@/modules/machine/machineService";
 import type { Machine } from "@/modules/machine/machineTypes";
 import { getRelatorioTelemetria } from "../../modules/monitoramento/monitoramentoService";
 import {
+  LIMIAR_VIBRACAO_RODANDO,
   NIVEL_UI,
   formatarHoras,
   formatarNumero,
@@ -86,10 +87,11 @@ function calcularPeriodo(preset: Preset): { desde: string; ate: string } {
 }
 
 function exportarCsv(resultado: RelatorioTelemetria, nomeArquivo: string) {
-  const cabecalho = ["data_hora", "maquina", "temperatura_c", "vibracao_mm_s", "horas_ligadas"];
+  const cabecalho = ["data_hora", "maquina", "status", "temperatura_c", "vibracao_mm_s", "horas_ligadas"];
   const linhas = resultado.leituras.map((l) => [
     new Date(l.recebido_em).toLocaleString("pt-BR"),
     l.maquina_nome ?? "",
+    l.vibracao !== null && l.vibracao >= LIMIAR_VIBRACAO_RODANDO ? "rodando" : "parada",
     l.temperatura ?? "",
     l.vibracao ?? "",
     l.horas_ligadas ?? "",
@@ -125,6 +127,7 @@ export default function Relatorios() {
   const [carregando, setCarregando] = useState(false);
   const [resultado, setResultado] = useState<RelatorioTelemetria | null>(null);
   const [soForaDaFaixa, setSoForaDaFaixa] = useState(false);
+  const [filtroStatus, setFiltroStatus] = useState<"todas" | "rodando" | "parada">("todas");
 
   useEffect(() => {
     getMachines()
@@ -185,17 +188,24 @@ export default function Relatorios() {
   // não só as que acabam renderizadas na tela — senão uma anomalia fora da
   // "dobra" sumiria sem o usuário saber que precisa rolar ou filtrar
   const leiturasAnalisadas = useMemo(
-    () => (resultado?.leituras ?? []).map((l) => ({ l, nivel: nivelLeitura(l) })),
+    () =>
+      (resultado?.leituras ?? []).map((l) => ({
+        l,
+        nivel: nivelLeitura(l),
+        rodando: l.vibracao !== null && l.vibracao >= LIMIAR_VIBRACAO_RODANDO,
+      })),
     [resultado]
   );
   const totalForaDaFaixa = useMemo(
     () => leiturasAnalisadas.filter((x) => x.nivel !== "ok").length,
     [leiturasAnalisadas]
   );
-  const leiturasExibidas = useMemo(
-    () => (soForaDaFaixa ? leiturasAnalisadas.filter((x) => x.nivel !== "ok") : leiturasAnalisadas),
-    [leiturasAnalisadas, soForaDaFaixa]
-  );
+  const leiturasExibidas = useMemo(() => {
+    let lista = leiturasAnalisadas;
+    if (soForaDaFaixa) lista = lista.filter((x) => x.nivel !== "ok");
+    if (filtroStatus !== "todas") lista = lista.filter((x) => x.rodando === (filtroStatus === "rodando"));
+    return lista;
+  }, [leiturasAnalisadas, soForaDaFaixa, filtroStatus]);
 
   // trocar o filtro (data/máquina) pode fazer a contagem cair a zero — sem
   // isso, o filtro "só fora da faixa" ficava ligado com a tabela vazia e sem
@@ -381,7 +391,9 @@ export default function Relatorios() {
                     {Math.min(leiturasExibidas.length, LINHAS_NA_TELA).toLocaleString("pt-BR")}
                   </span>{" "}
                   de <span className="font-semibold text-slate-800">{leiturasExibidas.length.toLocaleString("pt-BR")}</span>{" "}
-                  leitura(s){soForaDaFaixa ? " fora da faixa" : " carregadas"}
+                  leitura(s)
+                  {filtroStatus !== "todas" ? ` ${filtroStatus === "rodando" ? "rodando" : "parada"}` : ""}
+                  {soForaDaFaixa ? " fora da faixa" : filtroStatus === "todas" ? " carregadas" : ""}
                   {maquinaId === "all" ? "" : ` de ${maquinaNome}`}.
                 </p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
@@ -395,6 +407,28 @@ export default function Relatorios() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-0.5">
+                  {(
+                    [
+                      ["todas", "Todas"],
+                      ["rodando", "Rodando"],
+                      ["parada", "Parada"],
+                    ] as const
+                  ).map(([valor, rotulo]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setFiltroStatus(valor)}
+                      className={cn(
+                        "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors",
+                        filtroStatus === valor ? "bg-slate-800 text-white" : "text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+
                 {/* sempre visível (não só quando há anomalia): senão, ao trocar
                     o filtro pra um período sem nenhuma fora da faixa, o botão
                     sumia e não tinha como desmarcar o "só fora da faixa" que
@@ -435,6 +469,7 @@ export default function Relatorios() {
                   <tr>
                     <th className="px-4 py-2.5">Data/hora</th>
                     {maquinaId === "all" && <th className="px-4 py-2.5">Máquina</th>}
+                    <th className="px-4 py-2.5">Status</th>
                     <th className="px-4 py-2.5">Temperatura</th>
                     <th className="px-4 py-2.5">Vibração</th>
                     <th className="px-4 py-2.5">Horímetro</th>
@@ -465,6 +500,7 @@ function LinhaLeitura({
 }) {
   const nivelTemp = nivelTemperatura(l.temperatura, l.limites?.temperatura);
   const nivelVib = nivelVibracao(l.vibracao, l.limites?.vibracao);
+  const rodando = l.vibracao !== null && l.vibracao >= LIMIAR_VIBRACAO_RODANDO;
 
   return (
     <tr
@@ -481,6 +517,17 @@ function LinhaLeitura({
         {new Date(l.recebido_em).toLocaleString("pt-BR")}
       </td>
       {mostrarMaquina && <td className="truncate px-4 py-2">{l.maquina_nome ?? "—"}</td>}
+      <td className="px-4 py-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+            rodando ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+          )}
+        >
+          <span className={cn("size-1.5 rounded-full", rodando ? "bg-emerald-500" : "bg-slate-400")} />
+          {rodando ? "Rodando" : "Parada"}
+        </span>
+      </td>
       <td
         className={cn(
           "px-4 py-2 tabular-nums",
