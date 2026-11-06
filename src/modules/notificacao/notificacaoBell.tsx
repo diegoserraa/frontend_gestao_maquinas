@@ -13,6 +13,14 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import { assinarRealtime, observarStatusRealtime, type StatusRealtime } from "@/lib/realtime";
+import {
+  aplicarEventoNaLista,
+  ehEventoDeNotificacao,
+  tituloComContador,
+} from "@/modules/notificacao/notificacaoRealtimeLogica";
 
 import type { Notificacao } from "@/modules/notificacao/notificacaoType";
 import {
@@ -88,6 +96,13 @@ export function NotificationBell() {
 
   const [contador, setContador] = useState(0);
 
+  // tempo real: estado da conexão, animação do sino e notificações recém-chegadas (destaque)
+  const [statusRt, setStatusRt] = useState<StatusRealtime>("conectando");
+  const [tocando, setTocando] = useState(false);
+  const [recemChegadas, setRecemChegadas] = useState<Set<number>>(new Set());
+  const abertoRef = useRef(false);
+  const estavaOffline = useRef(false);
+
   const [lista, setLista] = useState<Notificacao[]>([]);
   const [loadingLista, setLoadingLista] = useState(false);
 
@@ -152,9 +167,94 @@ export function NotificationBell() {
 
   useEffect(() => {
     carregarContador();
+  }, [carregarContador]);
+
+  useEffect(() => {
+    abertoRef.current = open;
+  }, [open]);
+
+  /* ── tempo real: o servidor empurra cada notificação na hora ── */
+  useEffect(() => {
+    if (!usuarioId) return;
+
+    const cancelarStatus = observarStatusRealtime(setStatusRt);
+
+    const cancelarMensagens = assinarRealtime((msg) => {
+      if (!ehEventoDeNotificacao(msg)) return;
+
+      // o servidor já manda o total de não lidas: o sino nunca "desincroniza"
+      setContador(msg.data.nao_lidas);
+      setLista((atual) => aplicarEventoNaLista(atual, msg));
+
+      if (msg.type !== "notificacao") return;
+
+      const nova = msg.data.notificacao;
+
+      // sino balança, selo "pula" e a linha nova pisca no painel
+      setTocando(true);
+      window.setTimeout(() => setTocando(false), 1000);
+
+      setRecemChegadas((atual) => new Set(atual).add(nova.id));
+      window.setTimeout(
+        () =>
+          setRecemChegadas((atual) => {
+            const novo = new Set(atual);
+            novo.delete(nova.id);
+            return novo;
+          }),
+        4000
+      );
+
+      // com o painel aberto a própria lista já mostra; fechado, avisa com um toast clicável
+      if (!abertoRef.current) {
+        toast(nova.titulo, {
+          description: nova.mensagem,
+          duration: 7000,
+          action: nova.url
+            ? {
+                label: "Abrir",
+                onClick: () => {
+                  navigate(nova.url.startsWith("/") ? nova.url : `/${nova.url}`);
+                  marcarNotificacaoComoLida(nova.id).catch(() => undefined);
+                },
+              }
+            : undefined,
+        });
+      }
+    });
+
+    return () => {
+      cancelarStatus();
+      cancelarMensagens();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuarioId]);
+
+  /* ── plano B: se a conexão cair, volta a consultar de tempo em tempo; ao voltar, reconcilia ── */
+  useEffect(() => {
+    if (statusRt === "online") {
+      if (estavaOffline.current) {
+        estavaOffline.current = false;
+        carregarContador();
+        if (carregouLista.current) void carregarLista(true);
+      }
+      return;
+    }
+
+    estavaOffline.current = true;
     const interval = setInterval(carregarContador, 30000);
     return () => clearInterval(interval);
-  }, [carregarContador]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusRt, carregarContador]);
+
+  /* ── número de não lidas no título da aba: "(3) Sistema" ── */
+  useEffect(() => {
+    const base = document.title.replace(/^\((\d+|99\+)\)\s/, "");
+    document.title = tituloComContador(base, contador);
+    return () => {
+      document.title = base;
+    };
+  }, [contador]);
 
   async function carregarLista(force = false) {
     if (!usuarioId) return;
@@ -214,8 +314,6 @@ export function NotificationBell() {
 
 async function handleClicarNotificacao(notificacao: Notificacao) {
 
-  console.log("🔔 CLICOU:", notificacao);
-  console.log("➡️ URL:", notificacao.url);
 
   // marca visualmente como lida
   setLista((atual) =>
@@ -237,7 +335,6 @@ async function handleClicarNotificacao(notificacao: Notificacao) {
       ? notificacao.url
       : `/${notificacao.url}`;
 
-    console.log("🚀 Navegando para:", url);
 
     navigate(url);
     handleClose();
@@ -249,7 +346,6 @@ async function handleClicarNotificacao(notificacao: Notificacao) {
   // marca como lida em segundo plano
   try {
     await marcarNotificacaoComoLida(notificacao.id);
-    console.log("✅ Marcada como lida");
   } catch (error) {
     console.error("Erro ao marcar como lida:", error);
   }
@@ -390,6 +486,7 @@ async function handleClicarNotificacao(notificacao: Notificacao) {
                   : "border-l-slate-300 bg-slate-50 hover:bg-slate-100",
                 isExcluindo ? "opacity-40 pointer-events-none" : "",
                 isSelecionada ? "ring-1 ring-inset ring-blue-300" : "",
+                recemChegadas.has(item.id) ? "animate-notificacao-chegando" : "",
               ].join(" ")}
             >
               {selectionMode && (
@@ -489,11 +586,13 @@ async function handleClicarNotificacao(notificacao: Notificacao) {
           hover:bg-blue-50 hover:border-blue-200 transition shadow-sm
         "
       >
-        <Bell size={18} className="text-slate-600" />
+        <Bell size={18} className={`text-slate-600 ${tocando ? "animate-sino" : ""}`} />
 
         {contador > 0 && (
           <span
+            key={contador}
             className="
+              animate-selo-pulo
               absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
               rounded-full bg-red-500 text-white text-[10px] font-bold
               flex items-center justify-center leading-none
@@ -533,6 +632,17 @@ async function handleClicarNotificacao(notificacao: Notificacao) {
                 <h3 className="font-semibold text-sm text-slate-800 shrink-0">
                   Notificações
                 </h3>
+                <span
+                  className="hidden min-[400px]:inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 shrink-0"
+                  title={statusRt === "online" ? "Recebendo em tempo real" : "Reconectando ao tempo real..."}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      statusRt === "online" ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                    }`}
+                  />
+                  {statusRt === "online" ? "Ao vivo" : "Reconectando"}
+                </span>
                 {naoLidasCount > 0 && (
                   <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 shrink-0">
                     {naoLidasCount} nova{naoLidasCount > 1 ? "s" : ""}

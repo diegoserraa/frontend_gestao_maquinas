@@ -7,7 +7,10 @@ import {
   Trash2,
 } from "lucide-react";
 
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
+
 type Props = {
+  permitir?: AcoesPermitidas;
   onEdit: (
     partner: Partner
   ) => void;
@@ -20,6 +23,7 @@ type Props = {
 export function getPartnerTableColumns({
   onEdit,
   onDelete,
+  permitir,
 }: Props): Column<Partner>[] {
   return [
     {
@@ -81,7 +85,8 @@ export function getPartnerTableColumns({
       label: "Ações",
       render: (_, row) => (
         <div className="flex gap-1">
-          <button
+          {permitir?.editar !== false && (
+<button
             onClick={() =>
               onEdit(row)
             }
@@ -94,8 +99,10 @@ export function getPartnerTableColumns({
           >
             <Pencil size={14} />
           </button>
+)}
 
-          <button
+          {permitir?.excluir !== false && (
+<button
             onClick={() =>
               onDelete(row)
             }
@@ -108,6 +115,7 @@ export function getPartnerTableColumns({
           >
             <Trash2 size={14} />
           </button>
+)}
         </div>
       ),
     },

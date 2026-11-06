@@ -1,12 +1,27 @@
 import { Menu } from "lucide-react";
 
 import { NotificationBell } from "@/modules/notificacao/notificacaoBell";
+import { getUser } from "@/modules/login/loginStorage";
+import { MenuDoUsuario } from "@/modules/conta/MenuDoUsuario";
 
 interface Props {
   openSidebar: () => void;
 }
 
+// o cabeçalho mostrava "Dashboard" fixo em toda tela — tentamos trocar pelo
+// título da própria rota, mas aí ficava repetindo o que a tela já escreve
+// no corpo (ex.: "Máquinas" duas vezes). Uma saudação nunca duplica nada.
+function saudacao(): string {
+  const hora = new Date().getHours();
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 export default function Header({ openSidebar }: Props) {
+  const usuario = getUser();
+  const primeiroNome = usuario?.nome?.trim().split(" ")[0];
+
   return (
     <header
       className="
@@ -34,30 +49,21 @@ export default function Header({ openSidebar }: Props) {
 
         <div className="flex flex-col leading-tight">
           <h1 className="text-sm md:text-base font-semibold text-slate-800">
-            Dashboard
+            {saudacao()}{primeiroNome ? `, ${primeiroNome}` : ""}
           </h1>
           <span className="text-[11px] text-slate-500 hidden sm:block">
-            Visão geral
+            Bem-vindo(a) de volta
           </span>
         </div>
       </div>
 
       {/* RIGHT */}
       <div className="flex items-center gap-3">
-        <NotificationBell />
+        {/* o administrador não tem notificações de manutenção */}
+        {usuario?.role !== "ADMIN" && <NotificationBell />}
 
-        {/* AVATAR */}
-        <div
-          className="
-            w-9 h-9 rounded-full
-            bg-gradient-to-br from-blue-500 to-blue-700
-            flex items-center justify-center
-            text-white text-sm font-medium
-            shadow-md border border-white
-          "
-        >
-          D
-        </div>
+        {/* AVATAR: dados da conta, alterar senha e sair */}
+        <MenuDoUsuario />
       </div>
     </header>
   );

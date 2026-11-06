@@ -5,9 +5,11 @@ import {
   Timer,
   Plus,
   Info,
+  PauseCircle,
 } from "lucide-react";
 
 import { OrdemServicoActions } from "../ordemServico/ordemServicoAction";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import type { UserRole } from "@/modules/login/loginType";
 import { useEffect, useState } from "react";
 import { getIndicadoresPorMaquina } from "@/modules/machineDetails/machineDetailsService";
@@ -18,17 +20,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type StatusOS =
-  | "aberta"
-  | "atribuida"
-  | "andamento"
-  | "finalizada"
-  | null;
-
 type Papel = UserRole;
 
 interface MachineDetailsActionsProps {
-  osStatus: StatusOS;
   machineId: number;
   papel?: Papel;
 
@@ -42,6 +36,8 @@ interface IndicadoresPorMaquina {
   mttrSegundos: number | null;
   mtbfSegundos: number | null;
   tempoAtendimentoSegundos: number | null;
+  tempoPausadoSegundos?: number;
+  osPausadas?: number;
 }
 
 /* =========================
@@ -75,6 +71,13 @@ const toneStyles = {
     icon: "bg-slate-100 text-slate-600",
     text: "text-slate-700",
     value: "text-slate-800",
+  },
+
+  orange: {
+    card: "bg-orange-50 border-orange-100",
+    icon: "bg-orange-100 text-orange-600",
+    text: "text-orange-700",
+    value: "text-orange-700",
   },
 
   rose: {
@@ -125,6 +128,7 @@ function KpiCard({
   tooltip,
   icon: Icon,
   tone = "slate",
+  className = "",
 }: {
   title: string;
   value: string;
@@ -132,6 +136,7 @@ function KpiCard({
   tooltip?: string;
   icon: React.ElementType;
   tone?: Tone;
+  className?: string;
 }) {
   const s = toneStyles[tone];
 
@@ -151,6 +156,7 @@ function KpiCard({
             transition-all
             hover:shadow-sm
             cursor-help
+            ${className}
           `}
         >
           <div
@@ -215,7 +221,6 @@ function KpiCard({
 ========================= */
 
 export function MachineDetailsActions({
-  osStatus,
   machineId,
   papel,
   onCreateOS,
@@ -231,10 +236,8 @@ export function MachineDetailsActions({
      PERMISSÃO PARA ABRIR OS
   ========================= */
 
-  const podeAbrirOS =
-    papel === "GESTOR" ||
-    papel === "OPERADOR" ||
-    papel === "TECNICO";
+  const { pode } = usePermissoes();
+  const podeAbrirOS = pode("os.criar");
 
   /* =========================
      CARREGAR INDICADORES
@@ -267,6 +270,23 @@ export function MachineDetailsActions({
   /* =========================
      VALOR DOS INDICADORES
   ========================= */
+
+  const pausadas = indicadores?.osPausadas ?? 0;
+
+  const avisoPausadas =
+    pausadas > 0 ? (
+      <span
+        className="
+          inline-flex shrink-0 items-center gap-1
+          rounded-full border border-orange-200 bg-orange-50
+          px-2.5 py-1 text-[10px] font-semibold text-orange-700
+        "
+        title="Ordens de serviço desta máquina que estão pausadas agora"
+      >
+        <PauseCircle size={11} aria-hidden="true" />
+        {pausadas === 1 ? "1 O.S. pausada" : `${pausadas} O.S. pausadas`}
+      </span>
+    ) : null;
 
   const valor = (valor?: number | null) => {
     if (loadingIndicadores) {
@@ -333,6 +353,8 @@ export function MachineDetailsActions({
               </button>
             )}
 
+            {avisoPausadas}
+
             <span
               className="
                 shrink-0
@@ -391,6 +413,8 @@ export function MachineDetailsActions({
             </span>
 
           </div>
+
+          {avisoPausadas && <div className="mt-2">{avisoPausadas}</div>}
 
           {/* BOTÃO MOBILE */}
           {podeAbrirOS && (
@@ -475,7 +499,7 @@ export function MachineDetailsActions({
               sub="tempo de reparo"
               icon={Wrench}
               tone="emerald"
-              tooltip="MTTR (Mean Time To Repair) representa o tempo médio necessário para reparar a máquina e concluir uma manutenção corretiva."
+              tooltip="MTTR (Mean Time To Repair) representa o tempo médio necessário para reparar a máquina e concluir uma manutenção corretiva. O tempo em que a O.S. ficou pausada (aguardando peça etc.) é descontado."
             />
 
             {/* MTBF */}

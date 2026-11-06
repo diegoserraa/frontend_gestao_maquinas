@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/data/DataTable";
 import { DataCards } from "@/components/data/DataCard";
@@ -9,7 +9,13 @@ import { notify } from "@/lib/notify";
 
 import { ConfirmDialog } from "@/components/modals/machine/confirmDialog";
 
-import type { User } from "../../modules/user/userType";
+import type { AcoesDaLinhaUsuario, User } from "../../modules/user/userType";
+
+import { getUser } from "@/modules/login/loginStorage";
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
+import { PermissoesUsuarioModal } from "@/modules/permissoes/PermissoesUsuarioModal";
+import { PermissoesGrupoModal } from "@/modules/permissoes/PermissoesGrupoModal";
+import { UsersRound } from "lucide-react";
 
 import { UserFilters } from "../../modules/user/userFilters";
 
@@ -27,6 +33,40 @@ import { getUserCardColumns } from "../../modules/user/userCardColumn";
 import { UserModal } from "../../components/modals/user/AdicionarEditarUser";
 
 export default function Users() {
+  const { pode, role: meuPapel } = usePermissoes();
+  const meuId = getUser()?.id;
+
+  // funcionário cujas permissões estão sendo editadas (abre o painel de permissões)
+  const [permissoesAlvo, setPermissoesAlvo] = useState<User | null>(null);
+
+  // painel de permissões em grupo
+  const [grupoAberto, setGrupoAberto] = useState(false);
+
+  /**
+   * O que dá pra fazer com cada funcionário da lista: além da permissão da ação, valem as
+   * regras de hierarquia (o servidor confere de novo). Gestor cuida só de técnicos e
+   * operadores; o dono do sistema (admin) cuida de todos; ninguém desativa/exclui a si mesmo.
+   */
+  const acoesDaLinha = useCallback(
+    (u: User): AcoesDaLinhaUsuario => {
+      const souAdmin = meuPapel === "ADMIN";
+      const ehEuMesmo = u.id === meuId;
+      const gerenciavel = souAdmin || (!ehEuMesmo && (u.role === "TECNICO" || u.role === "OPERADOR"));
+
+      return {
+        editar: pode("usuarios.editar") && gerenciavel,
+        alternar: pode("usuarios.alterar_status") && gerenciavel && !ehEuMesmo,
+        excluir: pode("usuarios.excluir") && gerenciavel && !ehEuMesmo,
+        permissoes:
+          pode("usuarios.gerenciar_permissoes") &&
+          !ehEuMesmo &&
+          u.role !== "ADMIN" &&
+          (souAdmin || u.role === "TECNICO" || u.role === "OPERADOR"),
+      };
+    },
+    [pode, meuPapel, meuId]
+  );
+
   const [data, setData] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -230,8 +270,12 @@ export default function Users() {
         onToggle: handleToggleUser,
 
         onDelete: handleOpenDelete,
+
+        onPermissoes: setPermissoesAlvo,
+
+        acoesDaLinha,
       }),
-    []
+    [acoesDaLinha]
   );
 
   const cardColumns = useMemo(
@@ -244,9 +288,13 @@ export default function Users() {
 
         handleToggleUser,
 
-        handleOpenDelete
+        handleOpenDelete,
+
+        setPermissoesAlvo,
+
+        acoesDaLinha
       ),
-    []
+    [acoesDaLinha]
   );
 
   return (
@@ -263,29 +311,61 @@ export default function Users() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setSelectedUser(
-              undefined
-            );
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {pode("usuarios.gerenciar_permissoes") && (
+            <button
+              type="button"
+              onClick={() => setGrupoAberto(true)}
+              className="
+                inline-flex
+                w-full
+                sm:w-auto
+                items-center
+                justify-center
+                gap-2
+                px-4
+                py-2
+                text-sm
+                font-medium
+                rounded-lg
+                border
+                border-indigo-200
+                bg-white
+                text-indigo-700
+                hover:bg-indigo-50
+              "
+            >
+              <UsersRound size={16} aria-hidden="true" />
+              Permissões em grupo
+            </button>
+          )}
 
-            setOpenModal(true);
-          }}
-          className="
-            w-full
-            sm:w-auto
-            px-4
-            py-2
-            text-sm
-            rounded-lg
-            bg-gradient-to-r
-            from-blue-600
-            to-indigo-600
-            text-white
-          "
-        >
-          + Novo usuário
-        </button>
+          {pode("usuarios.criar") && (
+            <button
+              onClick={() => {
+                setSelectedUser(
+                  undefined
+                );
+
+                setOpenModal(true);
+              }}
+              className="
+                w-full
+                sm:w-auto
+                px-4
+                py-2
+                text-sm
+                rounded-lg
+                bg-gradient-to-r
+                from-blue-600
+                to-indigo-600
+                text-white
+              "
+            >
+              + Novo usuário
+            </button>
+          )}
+        </div>
       </div>
 
       <div
@@ -366,6 +446,20 @@ export default function Users() {
         }}
         user={selectedUser}
         onSave={handleSave}
+      />
+
+      <PermissoesUsuarioModal
+        open={permissoesAlvo !== null}
+        onClose={() => setPermissoesAlvo(null)}
+        usuario={permissoesAlvo}
+      />
+
+      <PermissoesGrupoModal
+        open={grupoAberto}
+        onClose={() => setGrupoAberto(false)}
+        usuarios={data
+          .filter((u) => acoesDaLinha(u).permissoes)
+          .map((u) => ({ id: u.id, nome: u.nome, role: u.role, ativo: u.ativo }))}
       />
 
       <ConfirmDialog

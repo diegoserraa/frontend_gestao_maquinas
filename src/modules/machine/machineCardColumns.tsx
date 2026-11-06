@@ -6,6 +6,9 @@ import {
   Power,
   Trash2,
   ClipboardCheck,
+  QrCode,
+  ZoomIn,
+  Wifi,
 } from "lucide-react";
 
 import {
@@ -14,11 +17,19 @@ import {
   getMaintenanceStatus,
 } from "@/lib/helperMachine";
 
+import type { AcoesPermitidas } from "@/modules/permissoes/permissoesTypes";
+import type { ImagemAmpliada } from "./ImagemAmpliadaModal";
+
 export function getMachineCardColumns(
   onEdit: (machine: Machine) => void,
   onToggle: (id: number) => void,
   onDelete: (machine: Machine) => void,
-  onHistory?: (machine: Machine) => void
+  onHistory?: (machine: Machine) => void,
+  permitir?: AcoesPermitidas,
+  onQr?: (machine: Machine) => void,
+  /** amplia a foto/QR num visualizador em tela cheia */
+  onAmpliar?: (imagem: ImagemAmpliada) => void,
+  onParear?: (machine: Machine) => void
 ): CardColumn<Machine>[] {
   return [
     {
@@ -39,13 +50,24 @@ export function getMachineCardColumns(
           <div className="w-full border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
             {/* FOTO */}
             {m.imagem_url ? (
-              <div className="w-full h-32 bg-slate-100">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAmpliar?.({ src: m.imagem_url!, titulo: m.nome });
+                }}
+                title={`Ampliar foto de ${m.nome}`}
+                className="group relative block h-32 w-full cursor-pointer bg-slate-100"
+              >
                 <img
                   src={m.imagem_url}
                   alt={m.nome}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover transition group-hover:brightness-75"
                 />
-              </div>
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
+                  <ZoomIn size={22} className="text-white drop-shadow" />
+                </span>
+              </button>
             ) : (
               <div className="w-full h-20 bg-slate-50 flex items-center justify-center border-b border-slate-100">
                 <ImageOff
@@ -178,11 +200,24 @@ export function getMachineCardColumns(
                 {/* QR */}
                 <div>
                   {m.qr_code ? (
-                    <img
-                      src={m.qr_code}
-                      alt="QR Code"
-                      className="w-10 h-10 rounded-md border border-slate-200"
-                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAmpliar?.({ src: m.qr_code!, titulo: `QR Code — ${m.nome}` });
+                      }}
+                      title={`Ampliar QR Code de ${m.nome}`}
+                      className="group relative block h-10 w-10 cursor-pointer"
+                    >
+                      <img
+                        src={m.qr_code}
+                        alt={`QR Code de ${m.nome}`}
+                        className="h-10 w-10 rounded-md border border-slate-200 transition group-hover:brightness-75"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center rounded-md opacity-0 transition group-hover:opacity-100">
+                        <ZoomIn size={16} className="text-white drop-shadow" />
+                      </span>
+                    </button>
                   ) : (
                     <div className="w-10 h-10 border border-slate-200 rounded-md flex items-center justify-center text-slate-400 text-xs">
                       —
@@ -202,14 +237,39 @@ export function getMachineCardColumns(
                     <ClipboardCheck size={14} />
                   </button>
 
-                  <button
+                  {permitir?.qr !== false && onQr && (
+<button
+                    onClick={() => onQr(m)}
+                    className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                    title="Exportar QR Code"
+                    aria-label={`Exportar QR Code de ${m.nome}`}
+                  >
+                    <QrCode size={14} />
+                  </button>
+)}
+
+                  {permitir?.editar !== false && onParear && (
+<button
+                    onClick={() => onParear(m)}
+                    className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                    title="Vincular sensor (ESP32)"
+                    aria-label={`Vincular sensor à ${m.nome}`}
+                  >
+                    <Wifi size={14} />
+                  </button>
+)}
+
+                  {permitir?.editar !== false && (
+<button
                     onClick={() => onEdit(m)}
                     className="p-2 rounded-md border border-slate-200 text-blue-600 hover:bg-blue-50 transition-colors"
                   >
                     <Pencil size={14} />
                   </button>
+)}
 
-                  <button
+                  {permitir?.alternar !== false && (
+<button
                     onClick={() =>
                       onToggle(m.id)
                     }
@@ -217,8 +277,10 @@ export function getMachineCardColumns(
                   >
                     <Power size={14} />
                   </button>
+)}
 
-                  <button
+                  {permitir?.excluir !== false && (
+<button
                     onClick={() =>
                       onDelete(m)
                     }
@@ -226,6 +288,7 @@ export function getMachineCardColumns(
                   >
                     <Trash2 size={14} />
                   </button>
+)}
                 </div>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { usePermissoes } from "@/modules/permissoes/usePermissoes";
 import { useState } from "react";
 import {
   Building2,
@@ -5,6 +6,7 @@ import {
   Eye,
   FileSpreadsheet,
   Loader2,
+  OctagonPause,
   Search,
 } from "lucide-react";
 
@@ -38,6 +40,8 @@ type FiltrosRelatorioProps = {
   loading?: boolean;
   exportando?: boolean;
   nomeArquivoPadrao: string;
+  /** só o Histórico de O.S. usa — Indicadores por Máquina não tem esse filtro */
+  mostrarFiltroParada?: boolean;
 };
 
 export function FiltrosRelatorio({
@@ -50,7 +54,9 @@ export function FiltrosRelatorio({
   loading = false,
   exportando = false,
   nomeArquivoPadrao,
+  mostrarFiltroParada = false,
 }: FiltrosRelatorioProps) {
+  const { pode } = usePermissoes();
   const [modalExportarAberto, setModalExportarAberto] =
     useState(false);
 
@@ -629,7 +635,8 @@ export function FiltrosRelatorio({
             .
           </span>
 
-          <Button
+          {pode("relatorios.exportar") && (
+<Button
             type="button"
             variant="outline"
             onClick={() =>
@@ -667,8 +674,28 @@ export function FiltrosRelatorio({
               ? "Exportando..."
               : "Exportar Excel"}
           </Button>
+)}
         </div>
       </div>
+
+      {/* MÁQUINA PARADA — só aparece no Histórico de O.S. */}
+      {mostrarFiltroParada && (
+        <label className="inline-flex w-fit cursor-pointer items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={!!filtros.apenasParada}
+            onChange={(e) =>
+              onChange({
+                ...filtros,
+                apenasParada: e.target.checked,
+              })
+            }
+            className="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
+          />
+          <OctagonPause size={14} className="text-rose-500" />
+          Só ordens com máquina parada
+        </label>
+      )}
 
       {/* MODAL DE EXPORTAÇÃO */}
       <ExportarModal

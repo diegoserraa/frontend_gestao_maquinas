@@ -4,6 +4,7 @@ import {
   Wrench,
   CheckCircle2,
   XCircle,
+  PauseCircle,
 } from "lucide-react";
 
 export function formatDateTime(iso?: string | null): string {
@@ -98,6 +99,17 @@ export const STATUS_STYLES = {
     tint: "bg-amber-50/60",
     badge: "bg-amber-50 text-amber-600 border-amber-100",
   },
+  PAUSADA: {
+    label: "Pausada",
+    icon: PauseCircle,
+    text: "text-orange-700",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    dot: "bg-orange-500",
+    accent: "border-l-orange-500",
+    tint: "bg-orange-50/60",
+    badge: "bg-orange-50 text-orange-600 border-orange-100",
+  },
   FINALIZADA: {
     label: "Finalizada",
     icon: CheckCircle2,
@@ -125,26 +137,6 @@ export const STATUS_STYLES = {
 export function getStatusStyle(status?: string | null) {
   const key = String(status ?? "").toUpperCase() as keyof typeof STATUS_STYLES;
   return STATUS_STYLES[key] ?? STATUS_STYLES.ABERTA;
-}
-
-// ── prioridade ───────────────────────────────────────────
-// Deixa de ser um badge pastel do mesmo peso visual do status.
-// Por padrão é só texto neutro; só ganha cor (e um pouco de peso)
-// quando é urgente/crítica/alta — que é quando essa informação é
-// de fato acionável, não decorativa.
-export function getPrioridadeAccent(prioridade?: string | null): {
-  text: string;
-  icon: string;
-} {
-  const key = String(prioridade ?? "").toUpperCase();
-
-  if (key === "URGENTE" || key === "CRITICA") {
-    return { text: "text-red-600 font-medium", icon: "text-red-500" };
-  }
-  if (key === "ALTA") {
-    return { text: "text-amber-600 font-medium", icon: "text-amber-500" };
-  }
-  return { text: "text-slate-500", icon: "text-slate-400" };
 }
 
 // mantido por compatibilidade com outros pontos do sistema que ainda

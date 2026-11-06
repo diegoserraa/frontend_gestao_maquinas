@@ -109,11 +109,17 @@ function AlertDialogHeader({
   return (
     <div
       className={cn(
-        "border-b border-slate-100 px-6 py-5 text-left",
+        "relative border-b border-slate-100 px-6 py-5 text-left",
         className
       )}
       {...props}
     >
+      {/* barra de destaque no topo — o Content já é rounded-2xl + overflow-hidden,
+          então essa barra fica coladinha na borda arredondada sem vazar */}
+      <div
+        aria-hidden
+        className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", accent)}
+      />
       <div className="flex items-start gap-3">
         {variant === "destructive" ? (
           <div className={cn("shrink-0 rounded-full p-2", iconWrap)}>
